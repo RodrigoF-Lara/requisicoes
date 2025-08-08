@@ -1,42 +1,32 @@
-document.getElementById('csvForm').addEventListener('submit', function(e) {
+// ... código do login ...
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
+    const usuario = document.getElementById('usuario').value;
+    const pw = document.getElementById('pw').value;
+    const status = document.getElementById('loginStatus');
+    status.textContent = "Verificando...";
 
-    const fileInput = document.getElementById('csvFile');
-    if (!fileInput.files.length) {
-        alert("Selecione um arquivo CSV primeiro!");
-        return;
-    }
-
-    // Mostra animação de envio
-    const statusElem = document.getElementById('status');
-    let dots = 0;
-    statusElem.textContent = "Enviando";
-    const animInterval = setInterval(() => {
-        dots = (dots + 1) % 4;
-        statusElem.textContent = "Enviando" + ".".repeat(dots);
-    }, 500);
-
-    Papa.parse(fileInput.files[0], {
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-            fetch("https://requisicoes-five.vercel.app/api/upload", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ data: results.data })
-            })
-            .then(res => res.json())
-            .then(response => {
-                clearInterval(animInterval);
-                const now = new Date();
-                const dataHora = now.toLocaleString('pt-BR');
-                statusElem.textContent = `${response.message} (Inserido em: ${dataHora})`;
-            })
-            .catch(err => {
-                clearInterval(animInterval);
-                console.error(err);
-                statusElem.textContent = "Erro ao enviar!";
-            });
+    try {
+        const res = await fetch("https://requisicoes-five.vercel.app/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ usuario, pw })
+        });
+        const data = await res.json();
+        if (res.ok && data.usuario) {
+            status.style.color = "green";
+            status.textContent = `Bem-vindo, ${data.usuario.F_NAME} ${data.usuario.L_NAME}!`;
+            // Troca para tela de upload
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('uploadScreen').style.display = '';
+        } else {
+            status.style.color = "#c00";
+            status.textContent = data.message || "Usuário ou senha inválidos.";
         }
-    });
+    } catch (err) {
+        status.style.color = "#c00";
+        status.textContent = "Erro ao conectar ao servidor.";
+    }
 });
+
+// ...restante do seu script.js (upload, teste de conexão etc)...
