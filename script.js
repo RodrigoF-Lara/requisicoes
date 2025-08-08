@@ -29,20 +29,29 @@ document.getElementById('csvForm').addEventListener('submit', function(e) {
 });
 // ...existing code...
 
+// Código para testar conexão
 document.getElementById('testConnectionBtn').addEventListener('click', function() {
-    document.getElementById('connectionStatus').textContent = "Testando...";
+    const statusSpan = document.getElementById('connectionStatus');
+    statusSpan.textContent = "Testando...";
     fetch("https://SEU-BACKEND-VERCEL.vercel.app/api/upload", {
         method: "GET"
     })
-    .then(res => {
+    .then(async res => {
+        let msg = `Status: ${res.status} ${res.statusText}`;
+        try {
+            const data = await res.json();
+            msg += data.message ? ` | Resposta: ${data.message}` : '';
+        } catch (e) {
+            // Não é JSON ou não tem mensagem
+        }
         if (res.ok) {
-            document.getElementById('connectionStatus').textContent = "Conexão OK!";
+            statusSpan.textContent = "Conexão OK! " + msg;
         } else {
-            document.getElementById('connectionStatus').textContent = "Falha na conexão!";
+            statusSpan.textContent = "Falha na conexão! " + msg;
         }
     })
-    .catch(() => {
-        document.getElementById('connectionStatus').textContent = "Erro ao conectar!";
+    .catch(err => {
+        statusSpan.textContent = "Erro ao conectar! Detalhes: " + err;
     });
 });
 
