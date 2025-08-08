@@ -27,3 +27,22 @@ document.getElementById('csvForm').addEventListener('submit', function(e) {
         }
     });
 });
+// ...existing code...
+
+document.getElementById('testConnectionBtn').addEventListener('click', function() {
+    document.getElementById('connectionStatus').textContent = "Testando...";
+    fetch("https://SEU-BACKEND-VERCEL.vercel.app/api/upload", {
+        method: "GET"
+    })
+    .then(res => {
+        if (res.ok) {
+            document.getElementById('connectionStatus').textContent = "Conexão OK!";
+        } else {
+            document.getElementById('connectionStatus').textContent = "Falha na conexão!";
+        }
+    })
+    .catch(() => {
+        document.getElementById('connectionStatus').textContent = "Erro ao conectar!";
+    });
+});
+
