@@ -11,7 +11,7 @@ document.getElementById('csvForm').addEventListener('submit', function(e) {
         header: true,
         skipEmptyLines: true,
         complete: function(results) {
-            fetch("https://SEU-BACKEND-VERCEL.vercel.app/api/upload", {
+            fetch("https://requisicoes-five.vercel.app/api/upload", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ data: results.data })
@@ -33,7 +33,7 @@ document.getElementById('csvForm').addEventListener('submit', function(e) {
 document.getElementById('testConnectionBtn').addEventListener('click', function() {
     const statusSpan = document.getElementById('connectionStatus');
     statusSpan.textContent = "Testando...";
-    fetch("https://SEU-BACKEND-VERCEL.vercel.app/api/upload", {
+    fetch("https://requisicoes-five.vercel.app/api/upload", {
         method: "GET"
     })
     .then(async res => {
@@ -54,4 +54,5 @@ document.getElementById('testConnectionBtn').addEventListener('click', function(
         statusSpan.textContent = "Erro ao conectar! Detalhes: " + err;
     });
 });
+
 
