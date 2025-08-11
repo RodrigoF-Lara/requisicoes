@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload CSV para Azure</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Upload CSV para Azure</h1>
+    <div id="userInfo" style="text-align:center; margin-bottom:1em; color:#1976d2; font-weight:bold;"></div>
+    <button id="testConnectionBtn" type="button">Testar Conexão</button>
+    <span id="connectionStatus"></span>
+    <form id="csvForm">
+      <input type="file" id="csvFile" accept=".csv" required />
+      <button type="submit">Enviar</button>
+    </form>
+    <p class="status" id="status"></p>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // Mostra o nome do usuário salvo no localStorage
+    const userName = localStorage.getItem('userName');
+    if (userName) {
+      document.getElementById('userInfo').textContent = "Bem-vindo, " + userName + "!";
+    } else {
+      // Se não estiver logado, volta para login
+      window.location.href = "index.html";
+    }
+  </script>
+</body>
+</html>
