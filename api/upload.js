@@ -1,16 +1,6 @@
-import sql from "mssql";
+const { sql, config } = require('./db');
 
-// Configuração do Azure via variáveis de ambiente
-const config = {
-    user: process.env.AZURE_SQL_USER,
-    password: process.env.AZURE_SQL_PASSWORD,
-    database: process.env.AZURE_SQL_DATABASE,
-    server: process.env.AZURE_SQL_SERVER,
-    pool: { max: 10, min: 0, idleTimeoutMillis: 30000 },
-    options: { encrypt: true, trustServerCertificate: false }
-};
-
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
     if (req.method === "GET") {
         return res.status(200).json({ message: "API online e pronta para receber uploads!" });
     }
@@ -25,20 +15,19 @@ export default async function handler(req, res) {
     }
 
     try {
-        const pool = await sql.connect(config);
+        await sql.connect(config);
 
         for (let row of data) {
-            await pool.request()
-                .input('ID_REQ', sql.Int, row.ID_REQ || null)
-                .input('SOLICITANTE', sql.NVarChar, row.SOLICITANTE || null)
-                .input('DT_REQUISICAO', sql.Date, row.DT_REQUISICAO || null)
-                .input('HR_REQUSICAO', sql.NVarChar, row.HR_REQUSICAO || null)
-                .input('STATUS', sql.NVarChar, row.STATUS || null)
-                .query(`
-                    INSERT INTO [dbo].[TB_REQUISICOES]
-                    (ID_REQ, SOLICITANTE, DT_REQUISICAO, HR_REQUSICAO, STATUS)
-                    VALUES (@ID_REQ, @SOLICITANTE, @DT_REQUISICAO, @HR_REQUSICAO, @STATUS)
-                `);
+            await sql.query`
+                INSERT INTO [dbo].[TB_REQUISICOES]
+                (SOLICITANTE, DT_REQUISICAO, HR_REQUSICAO, STATUS)
+                VALUES (
+                    ${row.SOLICITANTE || null},
+                    ${row.DT_REQUISICAO || null},
+                    ${row.HR_REQUSICAO || null},
+                    ${row.STATUS || null}
+                )
+            `;
         }
 
         res.status(200).json({ message: "Dados inseridos com sucesso no Azure!" });
@@ -46,6 +35,7 @@ export default async function handler(req, res) {
     } catch (err) {
         console.error("Erro SQL:", err);
         res.status(500).json({ message: "Erro ao inserir no Azure", error: err.message });
+    } finally {
+        sql.close();
     }
-}
-
+};
