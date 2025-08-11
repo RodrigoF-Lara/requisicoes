@@ -1,6 +1,6 @@
-const { sql, config } = require('./db');
+import { sql, config } from './db.js';
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
     if (req.method !== "POST") {
         return res.status(405).json({ message: "Método não permitido" });
     }

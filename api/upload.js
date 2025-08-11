@@ -1,6 +1,6 @@
-const { sql, config } = require('./db');
+import { sql, config } from './db.js';
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
     if (req.method === "GET") {
         return res.status(200).json({ message: "API online e pronta para receber uploads!" });
     }
