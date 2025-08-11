@@ -17,9 +17,9 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         if (res.ok && data.usuario) {
             status.style.color = "green";
             status.textContent = `Bem-vindo, ${data.usuario.F_NAME} ${data.usuario.L_NAME}!`;
-            // Troca para tela de upload
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('uploadScreen').style.display = '';
+            // Removido: troca de tela
+            // document.getElementById('loginScreen').style.display = 'none';
+            // document.getElementById('uploadScreen').style.display = '';
         } else {
             status.style.color = "#c00";
             status.textContent = data.message || "Usuário ou senha inválidos.";
