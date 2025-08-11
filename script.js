@@ -1,3 +1,49 @@
+// --- GERAR REQUISIÇÃO INDIVIDUAL ---
+document.getElementById('requisicaoForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const solicitante = document.getElementById('solicitante').value;
+    const dtNecessidade = document.getElementById('dtNecessidade').value;
+    const prioridade = document.getElementById('prioridade').value;
+    const reqStatus = document.getElementById('reqStatus');
+    const reqId = document.getElementById('reqId');
+
+    reqStatus.style.color = "#222";
+    reqStatus.textContent = "Gerando requisição...";
+    reqId.textContent = "";
+
+    // Data e hora do sistema
+    const now = new Date();
+    const dtRequisicao = now.toISOString().slice(0,10); // yyyy-mm-dd
+    const hrRequisicao = now.toTimeString().slice(0,5); // hh:mm
+
+    try {
+        const res = await fetch("https://requisicoes-five.vercel.app/api/requisicao", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                solicitante,
+                dtRequisicao,
+                hrRequisicao,
+                status: "PENDENTE",
+                dtNecessidade,
+                prioridade
+            })
+        });
+        const data = await res.json();
+        if (res.ok && data.id) {
+            reqStatus.style.color = "green";
+            reqStatus.textContent = "Requisição gerada com sucesso!";
+            reqId.textContent = "ID da Requisição: " + data.id;
+        } else {
+            reqStatus.style.color = "#c00";
+            reqStatus.textContent = data.message || "Erro ao gerar requisição.";
+        }
+    } catch (err) {
+        reqStatus.style.color = "#c00";
+        reqStatus.textContent = "Erro ao conectar ao servidor.";
+    }
+});
 // --- UPLOAD CSV ---
 document.getElementById('csvForm').addEventListener('submit', function(e) {
     e.preventDefault();
