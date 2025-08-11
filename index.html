@@ -1,50 +1,98 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Upload CSV para Azure</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css" />
     <style>
-        body { font-family: Arial, sans-serif; background: #f7f7f7; }
-        .container { max-width: 400px; margin: 40px auto; background: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 2px 8px #0001; }
-        h1, h2 { text-align: center; }
-        form { margin-top: 1em; }
-        input, button { width: 100%; padding: 0.7em; margin-bottom: 1em; border-radius: 4px; border: 1px solid #ccc; }
-        button { background: #1976d2; color: #fff; border: none; cursor: pointer; }
-        button:hover { background: #125ea8; }
-        .status, .login-status { text-align: center; margin-top: 1em; }
-        #uploadScreen { display: none; }
-        #connectionStatus { display: block; margin-bottom: 1em; text-align: center; }
+      body {
+        font-family: Arial, sans-serif;
+        background: #f7f7f7;
+      }
+      .container {
+        max-width: 400px;
+        margin: 40px auto;
+        background: #fff;
+        padding: 2em;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px #0001;
+      }
+      h1,
+      h2 {
+        text-align: center;
+      }
+      form {
+        margin-top: 1em;
+      }
+      input,
+      button {
+        width: 100%;
+        padding: 0.7em;
+        margin-bottom: 1em;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+      }
+      button {
+        background: #1976d2;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #125ea8;
+      }
+      .status,
+      .login-status {
+        text-align: center;
+        margin-top: 1em;
+      }
+      #uploadScreen {
+        display: none;
+      }
+      #connectionStatus {
+        display: block;
+        margin-bottom: 1em;
+        text-align: center;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <!-- Tela de Login -->
-        <div id="loginScreen">
-            <h2>Login</h2>
-            <form id="loginForm">
-                <input type="text" id="usuario" placeholder="Usuário" required>
-                <input type="password" id="pw" placeholder="Senha" required>
-                <button type="submit">Entrar</button>
-            </form>
-            <div class="login-status" id="loginStatus"></div>
-        </div>
+      <!-- Tela de Login -->
+      <div id="loginScreen">
+        <h2>Login</h2>
+        <form id="loginForm">
+          <input type="text" id="usuario" placeholder="Usuário" required />
+          <input type="password" id="pw" placeholder="Senha" required />
+          <button type="submit">Entrar</button>
+        </form>
+        <div class="login-status" id="loginStatus"></div>
+      </div>
 
-        <!-- Tela de Upload -->
-        <div id="uploadScreen">
-            <h1>Upload CSV para Azure</h1>
-            <button id="testConnectionBtn" type="button">Testar Conexão</button>
-            <span id="connectionStatus"></span>
-            <form id="csvForm">
-                <input type="file" id="csvFile" accept=".csv" required>
-                <button type="submit">Enviar</button>
-            </form>
-            <p class="status" id="status"></p>
-        </div>
+      <!-- Tela de Upload -->
+      <div id="uploadScreen">
+        <h1>Upload CSV para Azure</h1>
+        <div
+          id="userInfo"
+          style="
+            text-align: center;
+            margin-bottom: 1em;
+            color: #1976d2;
+            font-weight: bold;
+          "
+        ></div>
+        <button id="testConnectionBtn" type="button">Testar Conexão</button>
+        <span id="connectionStatus"></span>
+        <form id="csvForm">
+          <input type="file" id="csvFile" accept=".csv" required />
+          <button type="submit">Enviar</button>
+        </form>
+        <p class="status" id="status"></p>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="script.js"></script>
-</body>
+  </body>
 </html>
