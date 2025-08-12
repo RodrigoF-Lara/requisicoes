@@ -14,17 +14,7 @@ export default async function handler(req, res) {
         
         // CORREÇÃO: Adicionado o prefixo [dbo]. nas tabelas
         const result = await pool.request().query(`
-            SELECT 
-                H.ID_REQ, 
-                H.DT_REQUISICAO, 
-                H.STATUS,
-                H.PRIORIDADE,
-                H.SOLICITANTE,
-                (SELECT COUNT(*) FROM [dbo].[TB_REQ_ITEM] I WHERE I.ID_REQ = H.ID_REQ) AS TOTAL_ITENS
-            FROM 
-                [dbo].[TB_REQUISICOES] H
-            ORDER BY 
-                H.ID_REQ DESC;
+            SELECT * FROM [dbo].[TB_REQUISICOES]
         `);
         
         res.status(200).json(result.recordset);
