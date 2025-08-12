@@ -13,3 +13,78 @@ input, button {
     margin-top: 20px;
     font-weight: bold;
 }
+
+/* Estilos para o botão de teste de conexão */
+#testConnectionBtn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 0.8em;
+}
+
+/* Estilos para o formulário de nova requisição (tipo nota fiscal) */
+#novaRequisicaoContainer {
+    border: 1px solid #ccc;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+
+#novaRequisicaoForm label {
+    display: inline-block;
+    width: 150px;
+    text-align: right;
+    margin-right: 10px;
+}
+
+#novaRequisicaoForm input,
+#novaRequisicaoForm select {
+    padding: 8px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    width: 200px;
+}
+
+/* Estilo para alinhar data e prioridade na mesma linha */
+.form-row {
+    display: flex;
+    align-items: center; /* Alinha verticalmente os itens */
+    margin-bottom: 10px; /* Adiciona um pouco de espaço abaixo da linha */
+}
+
+.form-row label {
+    width: 150px; /* Garante que os labels tenham a mesma largura */
+    text-align: right;
+    margin-right: 10px;
+}
+
+.form-row input,
+.form-row select {
+    flex: 1; /* Permite que os campos preencham o espaço restante */
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    max-width: 200px; /* Define uma largura máxima para os campos */
+}
+
+/* Estilos para o container de upload CSV */
+#uploadCsvContainer {
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 5px;
+}
+
+/* Estilos para a animação de aguarde */
+#aguardeAnimacao {
+    display: none;
+    text-align: center;
+    margin-top: 10px;
+    font-style: italic;
+    color: #888;
+}
