@@ -62,7 +62,7 @@ document.getElementById('csvForm').addEventListener('submit', async function(e) 
                     const now = new Date();
                     const dataHora = now.toLocaleString('pt-BR');
                     statusElem.style.color = "green";
-                    statusElem.textContent = `${dataUpload.message} (Inserido em: ${dataHora})`;
+                    statusElem.textContent = `${dataUpload.message} (Requisição #${idReq} - Inserido em: ${dataHora})`;
 
                 } catch (error) {
                     clearInterval(animInterval);
