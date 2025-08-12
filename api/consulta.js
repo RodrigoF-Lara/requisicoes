@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function carregarRequisicoes() {
         try {
             // CORREÇÃO: Certifique-se de que a URL aponta para /api/requisicoes
-            const response = await fetch("/api/requisicoes"); 
+            const response = await fetch("/requisicoes"); 
             
             if (!response.ok) {
                 const errorData = await response.json();
