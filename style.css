@@ -36,6 +36,7 @@ input, button, select {
 
 /* Container principal */
 .container {
+    position: relative; /* Adicione esta linha se não existir */
     background: #fff;
     border-radius: 10px;
     box-shadow: 0 4px 20px rgba(25, 118, 210, 0.08);
@@ -189,4 +190,36 @@ input, button, select {
     margin-top: 15px;
     font-weight: bold;
     min-height: 24px;
+}
+/* ===================================== */
+/* ESTILOS PARA BOTÃO DE NAVEGAÇÃO VOLTAR */
+/* ===================================== */
+.btn-voltar {
+    position: absolute; /* Posição relativa ao container */
+    top: 25px;
+    left: 30px;
+    
+    display: inline-flex;
+    align-items: center;
+    gap: 8px; /* Espaço entre o ícone e o texto */
+    
+    background-color: #e3eafc;
+    color: #1976d2;
+    padding: 8px 15px;
+    
+    border: 1px solid #c8d4e8;
+    border-radius: 20px; /* Bordas arredondadas para um look moderno */
+    
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9em;
+    
+    transition: all 0.3s ease;
+}
+
+.btn-voltar:hover {
+    background-color: #1976d2;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+    transform: translateY(-2px);
 }
