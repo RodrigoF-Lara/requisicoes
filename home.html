@@ -3,58 +3,39 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Upload CSV para Azure</title>
+    <title>Requisições - Kardex</title>
     <link rel="stylesheet" href="style.css" />
-    <style>
-        /* Estilos para a tabela de resumo */
-        #resumoRequisicao {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        #resumoRequisicao th,
-        #resumoRequisicao td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-
-        #resumoRequisicao th {
-            background-color: #f2f2f2;
-        }
-    </style>
 </head>
 <body>
     <button id="testConnectionBtn" type="button">Testar Conexão</button>
     <div class="container">
-        <h1>Upload CSV para Azure</h1>
-        <div id="userInfo" style="text-align:center; margin-bottom:1em; color:#1976d2; font-weight:bold;"></div>
+        <h1>Requisições de Embalagens - Kardex</h1>
+        <div id="userInfo"></div>
         <span id="connectionStatus"></span>
 
         <div id="novaRequisicaoContainer">
             <h2>Nova Requisição</h2>
-            <form id="novaRequisicaoForm">
-                <div class="form-row">
-                    <label for="dtNecessidade">Data de Necessidade:</label>
-                    <input type="date" id="dtNecessidade" required />
-
-                    <label for="prioridade">Prioridade:</label>
-                    <select id="prioridade" required>
-                        <option value="">Selecione</option>
-                        <option value="BAIXA">Baixa</option>
-                        <option value="NORMAL">Normal</option>
-                        <option value="ALTA">Alta</option>
-                    </select>
-                </div>
-            </form>
-        </div>
-
-        <div id="uploadCsvContainer">
-            <h2>Upload CSV</h2>
             <form id="csvForm">
-                <input type="file" id="csvFile" accept=".csv" required />
-                <button type="submit">Gerar Requisição</button>
+                <div class="form-row destaque">
+                    <div class="form-group">
+                        <label for="dtNecessidade">Data de Necessidade:</label>
+                        <input type="date" id="dtNecessidade" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="prioridade">Prioridade:</label>
+                        <select id="prioridade" required>
+                            <option value="">Selecione</option>
+                            <option value="BAIXA">Baixa</option>
+                            <option value="NORMAL">Normal</option>
+                            <option value="ALTA">Alta</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="csvFile" class="file-label">Escolher Ficheiro:</label>
+                        <input type="file" id="csvFile" accept=".csv" required />
+                    </div>
+                    <button type="submit" class="btn-destaque">Gerar Requisição</button>
+                </div>
                 <div id="aguardeAnimacao">Aguarde...</div>
             </form>
             <p class="status" id="status"></p>
@@ -84,11 +65,10 @@
         if (userName) {
             document.getElementById('userInfo').textContent = "Bem-vindo, " + userName + "!";
         } else {
-            // Se não estiver logado, volta para login
             window.location.href = "index.html";
         }
 
-        // --- TESTAR CONEXÃO (exemplo básico) ---
+        // --- TESTAR CONEXÃO ---
         document.getElementById('testConnectionBtn').addEventListener('click', async function () {
             const connectionStatus = document.getElementById('connectionStatus');
             connectionStatus.textContent = "Testando...";

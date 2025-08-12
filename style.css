@@ -2,9 +2,10 @@ body {
     font-family: Arial, sans-serif;
     text-align: center;
     margin: 50px;
+    background: #f5f7fa;
 }
 
-input, button {
+input, button, select {
     padding: 10px;
     margin-top: 10px;
 }
@@ -14,77 +15,178 @@ input, button {
     font-weight: bold;
 }
 
-/* Estilos para o botão de teste de conexão */
+/* Botão de teste de conexão */
 #testConnectionBtn {
     position: absolute;
     top: 10px;
     right: 10px;
-    background-color: #f0f0f0;
-    border: 1px solid #ccc;
+    background-color: #e3eafc;
+    border: 1px solid #1976d2;
+    color: #1976d2;
     padding: 5px 10px;
     cursor: pointer;
     border-radius: 5px;
     font-size: 0.8em;
+    transition: background 0.2s;
+}
+#testConnectionBtn:hover {
+    background: #1976d2;
+    color: #fff;
 }
 
-/* Estilos para o formulário de nova requisição (tipo nota fiscal) */
+/* Container principal */
+.container {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(25, 118, 210, 0.08);
+    padding: 30px 40px;
+    max-width: 900px;
+    margin: 40px auto 0 auto;
+}
+
+/* Destaque do formulário principal */
 #novaRequisicaoContainer {
-    border: 1px solid #ccc;
-    padding: 20px;
-    margin-bottom: 20px;
-    border-radius: 5px;
+    border: 2px solid #1976d2;
+    background: linear-gradient(90deg, #e3eafc 0%, #f5f7fa 100%);
+    padding: 25px 20px 10px 20px;
+    margin-bottom: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.07);
 }
 
-#novaRequisicaoForm label {
-    display: inline-block;
-    width: 150px;
-    text-align: right;
-    margin-right: 10px;
-}
-
-#novaRequisicaoForm input,
-#novaRequisicaoForm select {
-    padding: 8px;
-    margin-bottom: 10px;
-    border-radius: 5px;
-    border: 1px solid #ddd;
-    width: 200px;
-}
-
-/* Estilo para alinhar data e prioridade na mesma linha */
-.form-row {
+/* Linha dos campos principais */
+.form-row.destaque {
     display: flex;
-    align-items: center; /* Alinha verticalmente os itens */
-    margin-bottom: 10px; /* Adiciona um pouco de espaço abaixo da linha */
+    align-items: flex-end;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
-.form-row label {
-    width: 150px; /* Garante que os labels tenham a mesma largura */
-    text-align: right;
-    margin-right: 10px;
+/* Grupo de campos */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 180px;
 }
 
-.form-row input,
-.form-row select {
-    flex: 1; /* Permite que os campos preencham o espaço restante */
-    padding: 8px;
-    border-radius: 5px;
+.form-group label {
+    font-weight: bold;
+    color: #1976d2;
+    margin-bottom: 3px;
+}
+
+.file-label {
+    margin-bottom: 0;
+}
+
+.btn-destaque {
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 25px;
+    font-size: 1em;
+    margin-top: 0;
+    margin-left: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-destaque:hover {
+    background: #145ea8;
+}
+
+/* Tabela de resumo */
+#resumoRequisicao {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+#resumoRequisicao th,
+#resumoRequisicao td {
     border: 1px solid #ddd;
-    max-width: 200px; /* Define uma largura máxima para os campos */
+    padding: 8px;
+    text-align: left;
 }
 
-/* Estilos para o container de upload CSV */
-#uploadCsvContainer {
-    border: 1px solid #ccc;
-    padding: 20px;
-    border-radius: 5px;
+#resumoRequisicao th {
+    background-color: #e3eafc;
+    color: #1976d2;
+    font-weight: bold;
 }
 
-/* Estilos para a animação de aguarde */
+/* Animação de aguarde */
 #aguardeAnimacao {
     display: none;
     text-align: center;
     margin-top: 10px;
     font-style: italic;
     color: #888;
+}
+
+/* LOGIN */
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(120deg, #1976d2 0%, #90caf9 100%);
+}
+
+.login-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(25, 118, 210, 0.18);
+    padding: 40px 35px 30px 35px;
+    min-width: 320px;
+    max-width: 350px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.login-card h2 {
+    color: #1976d2;
+    margin-bottom: 25px;
+    font-weight: bold;
+}
+
+.login-card input[type="text"],
+.login-card input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0 15px 0;
+    border: 1px solid #90caf9;
+    border-radius: 6px;
+    font-size: 1em;
+    background: #f5f7fa;
+    transition: border 0.2s;
+}
+.login-card input:focus {
+    border: 1.5px solid #1976d2;
+    outline: none;
+}
+
+.btn-login {
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 0;
+    width: 100%;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.2s;
+}
+.btn-login:hover {
+    background: #145ea8;
+}
+
+.login-status {
+    margin-top: 15px;
+    font-weight: bold;
+    min-height: 24px;
 }
