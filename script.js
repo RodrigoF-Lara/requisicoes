@@ -44,33 +44,3 @@ document.getElementById('csvForm').addEventListener('submit', function(e) {
         }
     });
 });
-
-// --- TESTE DE CONEXÃO ---
-document.getElementById('testConnectionBtn').addEventListener('click', function() {
-    const statusSpan = document.getElementById('connectionStatus');
-    statusSpan.style.color = "#222";
-    statusSpan.textContent = "Testando...";
-    fetch("https://requisicoes-five.vercel.app/api/upload", {
-        method: "GET"
-    })
-    .then(async res => {
-        let msg = `Status: ${res.status} ${res.statusText}`;
-        try {
-            const data = await res.json();
-            msg += data.message ? ` | Resposta: ${data.message}` : '';
-        } catch (e) {
-            // Não é JSON ou não tem mensagem
-        }
-        if (res.ok) {
-            statusSpan.style.color = "green";
-            statusSpan.textContent = "Conexão OK! " + msg;
-        } else {
-            statusSpan.style.color = "#c00";
-            statusSpan.textContent = "Falha na conexão! " + msg;
-        }
-    })
-    .catch(err => {
-        statusSpan.style.color = "#c00";
-        statusSpan.textContent = "Erro ao conectar! Detalhes: " + err;
-    });
-});

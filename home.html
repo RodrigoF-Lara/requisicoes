@@ -12,9 +12,27 @@
     <div id="userInfo" style="text-align:center; margin-bottom:1em; color:#1976d2; font-weight:bold;"></div>
     <button id="testConnectionBtn" type="button">Testar Conexão</button>
     <span id="connectionStatus"></span>
+
+    <h2>Nova Requisição</h2>
+    <form id="novaRequisicaoForm">
+      <label for="dtNecessidade">Data de Necessidade:</label>
+      <input type="date" id="dtNecessidade" required /><br><br>
+
+      <label for="prioridade">Prioridade:</label>
+      <select id="prioridade">
+        <option value="BAIXA">Baixa</option>
+        <option value="NORMAL">Normal</option>
+        <option value="ALTA">Alta</option>
+      </select><br><br>
+
+      <button type="submit">Gerar Requisição</button>
+    </form>
+    <div id="requisicaoStatus"></div>
+
+    <h2>Upload CSV</h2>
     <form id="csvForm">
       <input type="file" id="csvFile" accept=".csv" required />
-      <button type="submit">Enviar</button>
+      <button type="submit">Enviar CSV</button>
     </form>
     <p class="status" id="status"></p>
   </div>
@@ -29,6 +47,40 @@
       // Se não estiver logado, volta para login
       window.location.href = "index.html";
     }
+
+    // --- NOVA REQUISIÇÃO ---
+    document.getElementById('novaRequisicaoForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const dtNecessidade = document.getElementById('dtNecessidade').value;
+      const prioridade = document.getElementById('prioridade').value;
+      const requisicaoStatus = document.getElementById('requisicaoStatus');
+
+      try {
+        const response = await fetch("https://requisicoes-five.vercel.app/api/novaRequisicao", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            dtNecessidade: dtNecessidade,
+            prioridade: prioridade,
+            solicitante: userName // Pega o nome do localStorage
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          requisicaoStatus.textContent = `Requisição criada com ID: ${data.idReq}`;
+        } else {
+          requisicaoStatus.textContent = `Erro ao criar requisição: ${data.message}`;
+        }
+
+      } catch (error) {
+        requisicaoStatus.textContent = "Erro ao conectar com o servidor.";
+      }
+    });
   </script>
 </body>
 </html>
