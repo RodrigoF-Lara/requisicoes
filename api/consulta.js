@@ -5,8 +5,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function carregarRequisicoes() {
         try {
-            // A URL do fetch continua correta, pois aponta para /api/requisicoes.js
+            // CORREÇÃO: Certifique-se de que a URL aponta para /api/requisicoes
             const response = await fetch("/api/requisicoes"); 
+            
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Falha ao buscar dados.');
@@ -46,9 +47,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 tr.innerHTML = `
                     <td>${req.ID_REQ}</td>
                     <td>${dataFormatada}</td>
-                    <td>${req.SOLICITANTE}</td>
-                    <td><span class="status-tag prioridade-${req.PRIORIDADE.toLowerCase()}">${req.PRIORIDADE}</span></td>
-                    <td><span class="status-tag status-${req.STATUS.toLowerCase()}">${req.STATUS}</span></td>
+                    <td>${req.SOLICITANTE || 'N/A'}</td>
+                    <td><span class="status-tag prioridade-${(req.PRIORIDADE || 'normal').toLowerCase()}">${req.PRIORIDADE || 'Normal'}</span></td>
+                    <td><span class="status-tag status-${(req.STATUS || 'pendente').toLowerCase()}">${req.STATUS || 'Pendente'}</span></td>
                     <td>${req.TOTAL_ITENS}</td>
                     <td>
                         <button class="btn-detalhes" onclick="verDetalhes(${req.ID_REQ})">
@@ -63,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (error) {
             console.error(error);
-            container.innerHTML = `<p class="error-message">Não foi possível carregar as requisições. Tente novamente mais tarde.</p>`;
+            container.innerHTML = `<p class="error-message">Não foi possível carregar as requisições. Verifique o console (F12) para mais detalhes.</p>`;
         }
     }
 
