@@ -19,9 +19,9 @@ export default async function handler(req, res) {
                 H.STATUS,
                 H.PRIORIDADE,
                 H.SOLICITANTE,
-                (SELECT COUNT(*) FROM TB_REQ_ITEM I WHERE I.ID_REQ = H.ID_REQ) AS TOTAL_ITENS
+                (SELECT COUNT(*) FROM [dbo].[TB_REQ_ITEM] I WHERE I.ID_REQ = H.ID_REQ) AS TOTAL_ITENS
             FROM 
-                TB_REQUISICOES H
+                [dbo].[TB_REQUISICOES] H
             ORDER BY 
                 H.ID_REQ DESC;
         `);
