@@ -1,86 +1,171 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Upload CSV para Azure</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <div class="container">
-    <h1>Upload CSV para Azure</h1>
-    <div id="userInfo" style="text-align:center; margin-bottom:1em; color:#1976d2; font-weight:bold;"></div>
-    <button id="testConnectionBtn" type="button">Testar Conexão</button>
-    <span id="connectionStatus"></span>
-
-    <h2>Nova Requisição</h2>
-    <form id="novaRequisicaoForm">
-      <label for="dtNecessidade">Data de Necessidade:</label>
-      <input type="date" id="dtNecessidade" required /><br><br>
-
-      <label for="prioridade">Prioridade:</label>
-      <select id="prioridade">
-        <option value="BAIXA">Baixa</option>
-        <option value="NORMAL">Normal</option>
-        <option value="ALTA">Alta</option>
-      </select><br><br>
-
-      <button type="submit">Gerar Requisição</button>
-    </form>
-    <div id="requisicaoStatus"></div>
-
-    <h2>Upload CSV</h2>
-    <form id="csvForm">
-      <input type="file" id="csvFile" accept=".csv" required />
-      <button type="submit">Enviar CSV</button>
-    </form>
-    <p class="status" id="status"></p>
-  </div>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="script.js"></script>
-  <script>
-    // Mostra o nome do usuário salvo no localStorage
-    const userName = localStorage.getItem('userName');
-    if (userName) {
-      document.getElementById('userInfo').textContent = "Bem-vindo, " + userName + "!";
-    } else {
-      // Se não estiver logado, volta para login
-      window.location.href = "index.html";
-    }
-
-    // --- NOVA REQUISIÇÃO ---
-    document.getElementById('novaRequisicaoForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-
-      const dtNecessidade = document.getElementById('dtNecessidade').value;
-      const prioridade = document.getElementById('prioridade').value;
-      const requisicaoStatus = document.getElementById('requisicaoStatus');
-
-      try {
-        const response = await fetch("https://requisicoes-five.vercel.app/api/novaRequisicao", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            dtNecessidade: dtNecessidade,
-            prioridade: prioridade,
-            solicitante: userName // Pega o nome do localStorage
-          })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          requisicaoStatus.textContent = `Requisição criada com ID: ${data.idReq}`;
-        } else {
-          requisicaoStatus.textContent = `Erro ao criar requisição: ${data.message}`;
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload CSV para Azure</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        /* Estilos para o botão de teste de conexão */
+        #testConnectionBtn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 0.8em;
         }
 
-      } catch (error) {
-        requisicaoStatus.textContent = "Erro ao conectar com o servidor.";
-      }
-    });
-  </script>
+        /* Estilos para o formulário de nova requisição (tipo nota fiscal) */
+        #novaRequisicaoContainer {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        #novaRequisicaoForm label {
+            display: inline-block;
+            width: 150px;
+            text-align: right;
+            margin-right: 10px;
+        }
+
+        #novaRequisicaoForm input,
+        #novaRequisicaoForm select {
+            padding: 8px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            width: 200px;
+        }
+
+        /* Estilos para o container de upload CSV */
+        #uploadCsvContainer {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 5px;
+        }
+
+        /* Estilos para a animação de aguarde */
+        #aguardeAnimacao {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+            font-style: italic;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <button id="testConnectionBtn" type="button">Testar Conexão</button>
+    <div class="container">
+        <h1>Upload CSV para Azure</h1>
+        <div id="userInfo" style="text-align:center; margin-bottom:1em; color:#1976d2; font-weight:bold;"></div>
+        <span id="connectionStatus"></span>
+
+        <div id="novaRequisicaoContainer">
+            <h2>Nova Requisição</h2>
+            <form id="novaRequisicaoForm">
+                <label for="dtNecessidade">Data de Necessidade:</label>
+                <input type="date" id="dtNecessidade" required /><br><br>
+
+                <label for="prioridade">Prioridade:</label>
+                <select id="prioridade">
+                    <option value="BAIXA">Baixa</option>
+                    <option value="NORMAL">Normal</option>
+                    <option value="ALTA">Alta</option>
+                </select><br><br>
+
+                <button type="submit">Gerar Requisição</button>
+                <div id="aguardeAnimacao">Aguarde...</div>
+            </form>
+            <div id="requisicaoStatus"></div>
+        </div>
+
+        <div id="uploadCsvContainer">
+            <h2>Upload CSV</h2>
+            <form id="csvForm">
+                <input type="file" id="csvFile" accept=".csv" required />
+                <button type="submit">Enviar CSV</button>
+            </form>
+            <p class="status" id="status"></p>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="script.js"></script>
+    <script>
+        // Mostra o nome do usuário salvo no localStorage
+        const userName = localStorage.getItem('userName');
+        if (userName) {
+            document.getElementById('userInfo').textContent = "Bem-vindo, " + userName + "!";
+        } else {
+            // Se não estiver logado, volta para login
+            window.location.href = "index.html";
+        }
+
+        // --- NOVA REQUISIÇÃO ---
+        document.getElementById('novaRequisicaoForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const dtNecessidade = document.getElementById('dtNecessidade').value;
+            const prioridade = document.getElementById('prioridade').value;
+            const requisicaoStatus = document.getElementById('requisicaoStatus');
+            const aguardeAnimacao = document.getElementById('aguardeAnimacao');
+
+            // Mostra a animação de aguarde
+            aguardeAnimacao.style.display = "block";
+
+            try {
+                const response = await fetch("https://requisicoes-five.vercel.app/api/novaRequisicao", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        dtNecessidade: dtNecessidade,
+                        prioridade: prioridade,
+                        solicitante: userName // Pega o nome do localStorage
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    requisicaoStatus.textContent = `Requisição criada com ID: ${data.idReq}`;
+                } else {
+                    requisicaoStatus.textContent = `Erro ao criar requisição: ${data.message}`;
+                }
+
+            } catch (error) {
+                requisicaoStatus.textContent = "Erro ao conectar com o servidor.";
+            } finally {
+                // Esconde a animação de aguarde, independentemente do resultado
+                aguardeAnimacao.style.display = "none";
+            }
+        });
+
+        // --- TESTAR CONEXÃO (exemplo básico) ---
+        document.getElementById('testConnectionBtn').addEventListener('click', async function () {
+            const connectionStatus = document.getElementById('connectionStatus');
+            connectionStatus.textContent = "Testando...";
+            try {
+                const response = await fetch("https://requisicoes-five.vercel.app/api/upload", { method: "GET" });
+                if (response.ok) {
+                    connectionStatus.textContent = "Conexão OK!";
+                    connectionStatus.style.color = "green";
+                } else {
+                    connectionStatus.textContent = "Erro na conexão.";
+                    connectionStatus.style.color = "red";
+                }
+            } catch (error) {
+                connectionStatus.textContent = "Erro ao conectar.";
+                connectionStatus.style.color = "red";
+            }
+        });
+    </script>
 </body>
 </html>
