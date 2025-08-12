@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Upload CSV para Azure</title>
     <link rel="stylesheet" href="style.css" />
+    <style>
+        /* Estilos para a tabela de resumo */
+        #resumoRequisicao {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        #resumoRequisicao th,
+        #resumoRequisicao td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        #resumoRequisicao th {
+            background-color: #f2f2f2;
+        }
+    </style>
 </head>
 <body>
     <button id="testConnectionBtn" type="button">Testar Conexão</button>
@@ -40,6 +59,22 @@
             </form>
             <p class="status" id="status"></p>
         </div>
+
+        <!-- Tabela de Resumo da Requisição -->
+        <table id="resumoRequisicao">
+            <thead>
+                <tr>
+                    <th>ID Requisição</th>
+                    <th>Data de Necessidade</th>
+                    <th>Prioridade</th>
+                    <th>Código</th>
+                    <th>Quantidade</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Os dados serão inseridos aqui pelo JavaScript -->
+            </tbody>
+        </table>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="script.js"></script>

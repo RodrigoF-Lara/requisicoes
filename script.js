@@ -6,6 +6,7 @@ document.getElementById('csvForm').addEventListener('submit', async function(e) 
     const prioridade = document.getElementById('prioridade').value;
     const statusElem = document.getElementById('status');
     const aguardeAnimacao = document.getElementById('aguardeAnimacao');
+    const resumoRequisicaoTbody = document.querySelector('#resumoRequisicao tbody'); // Pega o tbody da tabela
 
     if (!fileInput.files.length || !dtNecessidade || !prioridade) {
         statusElem.style.color = "#c00";
@@ -40,6 +41,9 @@ document.getElementById('csvForm').addEventListener('submit', async function(e) 
 
         const idReq = dataNovaReq.idReq;
 
+        // Limpa a tabela de resumo antes de adicionar novos dados
+        resumoRequisicaoTbody.innerHTML = '';
+
         // Upload do CSV
         Papa.parse(fileInput.files[0], {
             header: true,
@@ -63,6 +67,19 @@ document.getElementById('csvForm').addEventListener('submit', async function(e) 
                     const dataHora = now.toLocaleString('pt-BR');
                     statusElem.style.color = "green";
                     statusElem.textContent = `${dataUpload.message} (Requisição #${idReq} - Inserido em: ${dataHora})`;
+
+                    // Adiciona os dados na tabela de resumo
+                    results.data.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${idReq}</td>
+                            <td>${dtNecessidade}</td>
+                            <td>${prioridade}</td>
+                            <td>${item.CODIGO}</td>
+                            <td>${item.QNT_REQ}</td>
+                        `;
+                        resumoRequisicaoTbody.appendChild(row);
+                    });
 
                 } catch (error) {
                     clearInterval(animInterval);
