@@ -1,4 +1,5 @@
 // filepath: api/requisicoes.js
+
 import { getConnection } from "./db.js";
 import sql from "mssql";
 
@@ -11,7 +12,7 @@ export default async function handler(req, res) {
     try {
         const pool = await getConnection();
         
-        // Query para buscar um resumo de cada requisição principal
+        // CORREÇÃO: Adicionado o prefixo [dbo]. nas tabelas
         const result = await pool.request().query(`
             SELECT 
                 H.ID_REQ, 
