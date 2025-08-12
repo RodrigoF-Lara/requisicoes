@@ -21,24 +21,22 @@
                     <input type="date" id="dtNecessidade" required />
 
                     <label for="prioridade">Prioridade:</label>
-                    <select id="prioridade">
+                    <select id="prioridade" required>
+                        <option value="">Selecione</option>
                         <option value="BAIXA">Baixa</option>
                         <option value="NORMAL">Normal</option>
                         <option value="ALTA">Alta</option>
                     </select>
                 </div>
-
-                <button type="submit">Gerar Requisição</button>
-                <div id="aguardeAnimacao">Aguarde...</div>
             </form>
-            <div id="requisicaoStatus"></div>
         </div>
 
         <div id="uploadCsvContainer">
             <h2>Upload CSV</h2>
             <form id="csvForm">
                 <input type="file" id="csvFile" accept=".csv" required />
-                <button type="submit">Enviar CSV</button>
+                <button type="submit">Gerar Requisição</button>
+                <div id="aguardeAnimacao">Aguarde...</div>
             </form>
             <p class="status" id="status"></p>
         </div>
@@ -54,47 +52,6 @@
             // Se não estiver logado, volta para login
             window.location.href = "index.html";
         }
-
-        // --- NOVA REQUISIÇÃO ---
-        document.getElementById('novaRequisicaoForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
-
-            const dtNecessidade = document.getElementById('dtNecessidade').value;
-            const prioridade = document.getElementById('prioridade').value;
-            const requisicaoStatus = document.getElementById('requisicaoStatus');
-            const aguardeAnimacao = document.getElementById('aguardeAnimacao');
-
-            // Mostra a animação de aguarde
-            aguardeAnimacao.style.display = "block";
-
-            try {
-                const response = await fetch("https://requisicoes-five.vercel.app/api/novaRequisicao", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        dtNecessidade: dtNecessidade,
-                        prioridade: prioridade,
-                        solicitante: userName // Pega o nome do localStorage
-                    })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    requisicaoStatus.textContent = `Requisição criada com ID: ${data.idReq}`;
-                } else {
-                    requisicaoStatus.textContent = `Erro ao criar requisição: ${data.message}`;
-                }
-
-            } catch (error) {
-                requisicaoStatus.textContent = "Erro ao conectar com o servidor.";
-            } finally {
-                // Esconde a animação de aguarde, independentemente do resultado
-                aguardeAnimacao.style.display = "none";
-            }
-        });
 
         // --- TESTAR CONEXÃO (exemplo básico) ---
         document.getElementById('testConnectionBtn').addEventListener('click', async function () {
