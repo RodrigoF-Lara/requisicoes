@@ -1,14 +1,6 @@
+// filepath: api/login.js
+import { getConnection, closeConnection } from "./db.js";
 import sql from "mssql";
-
-const config = {
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-    server: process.env.DB_SERVER,
-    pool: { max: 10, min: 0, idleTimeoutMillis: 30000 },
-    options: { encrypt: true, trustServerCertificate: false }
-};
-
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -19,7 +11,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: "Usuário e senha obrigatórios" });
     }
     try {
-        const pool = await sql.connect(config);
+        const pool = await getConnection();
         const result = await pool.request()
             .input('usuario', sql.NVarChar, usuario)
             .input('pw', sql.NVarChar, pw)
@@ -36,5 +28,7 @@ export default async function handler(req, res) {
         }
     } catch (err) {
         res.status(500).json({ message: "Erro no servidor", error: err.message });
+    } finally {
+        await closeConnection();
     }
 }

@@ -1,14 +1,6 @@
+// filepath: api/upload.js
+import { getConnection, closeConnection } from "./db.js";
 import sql from "mssql";
-
-// Configuração do Azure via variáveis de ambiente
-const config = {
-    user: process.env.AZURE_SQL_USER,
-    password: process.env.AZURE_SQL_PASSWORD,
-    database: process.env.AZURE_SQL_DATABASE,
-    server: process.env.AZURE_SQL_SERVER,
-    pool: { max: 10, min: 0, idleTimeoutMillis: 30000 },
-    options: { encrypt: true, trustServerCertificate: false }
-};
 
 export default async function handler(req, res) {
     if (req.method === "GET") {
@@ -25,7 +17,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const pool = await sql.connect(config);
+        const pool = await getConnection();
 
         for (let row of data) {
             await pool.request()
@@ -46,5 +38,7 @@ export default async function handler(req, res) {
     } catch (err) {
         console.error("Erro SQL:", err);
         res.status(500).json({ message: "Erro ao inserir no Azure", error: err.message });
+    } finally {
+        await closeConnection();
     }
 }
