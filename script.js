@@ -1,49 +1,35 @@
-// --- GERAR REQUISIÇÃO INDIVIDUAL ---
-document.getElementById('requisicaoForm').addEventListener('submit', async function(e) {
+// --- LOGIN ---
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-
-    const solicitante = document.getElementById('solicitante').value;
-    const dtNecessidade = document.getElementById('dtNecessidade').value;
-    const prioridade = document.getElementById('prioridade').value;
-    const reqStatus = document.getElementById('reqStatus');
-    const reqId = document.getElementById('reqId');
-
-    reqStatus.style.color = "#222";
-    reqStatus.textContent = "Gerando requisição...";
-    reqId.textContent = "";
-
-    // Data e hora do sistema
-    const now = new Date();
-    const dtRequisicao = now.toISOString().slice(0,10); // yyyy-mm-dd
-    const hrRequisicao = now.toTimeString().slice(0,5); // hh:mm
+    const usuario = document.getElementById('usuario').value;
+    const pw = document.getElementById('pw').value;
+    const status = document.getElementById('loginStatus');
+    status.style.color = "#222";
+    status.textContent = "Verificando...";
 
     try {
-        const res = await fetch("https://requisicoes-five.vercel.app/api/requisicao", {
+        const res = await fetch("https://requisicoes-five.vercel.app/api/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                solicitante,
-                dtRequisicao,
-                hrRequisicao,
-                status: "PENDENTE",
-                dtNecessidade,
-                prioridade
-            })
+            body: JSON.stringify({ usuario, pw })
         });
         const data = await res.json();
-        if (res.ok && data.id) {
-            reqStatus.style.color = "green";
-            reqStatus.textContent = "Requisição gerada com sucesso!";
-            reqId.textContent = "ID da Requisição: " + data.id;
+        if (res.ok && data.usuario) {
+            // Exibe nome do usuário na tela de upload
+            document.getElementById('userInfo').textContent = `Bem-vindo, ${data.usuario.F_NAME} ${data.usuario.L_NAME}!`;
+            // Troca de tela
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('uploadScreen').style.display = '';
         } else {
-            reqStatus.style.color = "#c00";
-            reqStatus.textContent = data.message || "Erro ao gerar requisição.";
+            status.style.color = "#c00";
+            status.textContent = data.message || "Usuário ou senha inválidos.";
         }
     } catch (err) {
-        reqStatus.style.color = "#c00";
-        reqStatus.textContent = "Erro ao conectar ao servidor.";
+        status.style.color = "#c00";
+        status.textContent = "Erro ao conectar ao servidor.";
     }
 });
+
 // --- UPLOAD CSV ---
 document.getElementById('csvForm').addEventListener('submit', function(e) {
     e.preventDefault();
