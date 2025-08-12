@@ -314,3 +314,24 @@ input, button, select {
     border: 1px solid #ffcdd2;
     color: #c62828;
 }
+/* Estilos para Tags de Status e Prioridade */
+.status-tag {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: bold;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+/* Status */
+.status-tag.status-pendente { background-color: #ff9800; } /* Laranja */
+.status-tag.status-aprovada { background-color: #4caf50; } /* Verde */
+.status-tag.status-reprovada { background-color: #f44336; } /* Vermelho */
+.status-tag.status-em-atendimento { background-color: #2196f3; } /* Azul */
+.status-tag.status-finalizada { background-color: #607d8b; } /* Cinza */
+
+/* Prioridade */
+.status-tag.prioridade-baixa { background-color: #009688; } /* Verde Água */
+.status-tag.prioridade-normal { background-color: #2196f3; } /* Azul */
+.status-tag.prioridade-alta { background-color: #e91e63; } /* Rosa */
