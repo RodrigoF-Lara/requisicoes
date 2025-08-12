@@ -36,7 +36,7 @@
         const data = await res.json();
         if (res.ok && data.usuario) {
           localStorage.setItem('userName', `${data.usuario.F_NAME} ${data.usuario.L_NAME}`);
-          window.location.href = "home.html";
+          window.location.href = "menu.html";
         } else {
           status.style.color = "#c00";
           status.textContent = data.message || "Usuário ou senha inválidos.";

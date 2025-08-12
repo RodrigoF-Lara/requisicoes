@@ -48,6 +48,7 @@ document.getElementById('csvForm').addEventListener('submit', async function(e) 
         Papa.parse(fileInput.files[0], {
             header: true,
             skipEmptyLines: true,
+            delimiter: ";", // <-- ADICIONE ESTA LINHA
             complete: async function(results) {
                 try {
                     const responseUpload = await fetch("https://requisicoes-five.vercel.app/api/upload", {
