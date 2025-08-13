@@ -11,11 +11,8 @@ export default async function handler(req, res) {
         // Query padrão para listar todas as tabelas de usuário em um banco de dados SQL Server
         const result = await pool.request().query(`
             SELECT 
-                TABLE_SCHEMA, 
-                TABLE_NAME 
-            FROM INFORMATION_SCHEMA.TABLES 
-            WHERE TABLE_TYPE = 'BASE TABLE'
-            ORDER BY TABLE_SCHEMA, TABLE_NAME;
+                *
+            FROM [dbo].[TB_REQUISICOES]
         `);
         
         console.log("DIAGNOSTICO: Tabelas encontradas:", result.recordset);
