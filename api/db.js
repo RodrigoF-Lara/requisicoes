@@ -1,7 +1,7 @@
 // filepath: api/db.js
 import sql from "mssql";
 
-// A configuração permanece a mesma
+// Configuração da conexão com o banco de dados
 const config = {
     user: process.env.AZURE_SQL_USER || process.env.DB_USER,
     password: process.env.AZURE_SQL_PASSWORD || process.env.DB_PASS,
@@ -11,14 +11,20 @@ const config = {
     options: { encrypt: true, trustServerCertificate: false }
 };
 
-// Função simplificada para obter uma nova conexão
+let pool;
+
+// Função para obter uma conexão do pool compartilhado
 export async function getConnection() {
     try {
-        const pool = await sql.connect(config);
+        if (!pool) {
+            console.log('POOL INEXISTENTE: Criando novo pool de conexões.');
+            pool = await sql.connect(config);
+        }
         return pool;
     } catch (err) {
-        console.error("ERRO CRÍTICO AO TENTAR CONECTAR AO BANCO DE DADOS:", err);
-        // Lança o erro para que a função que chamou saiba que a conexão falhou
+        console.error("Erro CRÍTICO ao conectar ao banco de dados:", err);
+        // Se a conexão falhar, limpa o pool para forçar uma nova tentativa na próxima vez
+        pool = null; 
         throw err;
     }
 }
