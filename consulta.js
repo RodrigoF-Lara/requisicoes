@@ -67,5 +67,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function verDetalhes(idReq) {
-    alert(`Funcionalidade "Ver Detalhes" para a Requisição ${idReq} ainda não implementada.`);
+    // Redireciona para a página de detalhes, passando o ID na URL
+    window.location.href = `detalhes.html?id=${idReq}`;
 }
