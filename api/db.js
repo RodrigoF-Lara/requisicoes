@@ -1,7 +1,7 @@
 // filepath: api/db.js
 import sql from "mssql";
 
-// Configuração da conexão com o banco de dados
+// A configuração permanece a mesma
 const config = {
     user: process.env.AZURE_SQL_USER || process.env.DB_USER,
     password: process.env.AZURE_SQL_PASSWORD || process.env.DB_PASS,
@@ -11,40 +11,14 @@ const config = {
     options: { encrypt: true, trustServerCertificate: false }
 };
 
-let pool;
-
-// Função para obter uma conexão do pool
+// Função simplificada para obter uma nova conexão
 export async function getConnection() {
     try {
-        if (!pool) {
-            pool = await sql.connect(config);
-            console.log('Nova conexão com o banco de dados estabelecida.');
-        } else {
-            // Testar a conexão existente antes de reutilizar
-            try {
-                await pool.request().query('SELECT 1'); // Uma query simples para testar a conexão
-            } catch (err) {
-                console.warn('Conexão existente falhou, reconectando...', err);
-                pool = await sql.connect(config); // Reconectar se a conexão falhou
-                console.log('Reconexão com o banco de dados estabelecida.');
-            }
-        }
+        const pool = await sql.connect(config);
         return pool;
     } catch (err) {
-        console.error("Erro ao conectar ao banco de dados:", err);
+        console.error("ERRO CRÍTICO AO TENTAR CONECTAR AO BANCO DE DADOS:", err);
+        // Lança o erro para que a função que chamou saiba que a conexão falhou
         throw err;
-    }
-}
-
-// Função para fechar o pool de conexões (se necessário)
-export async function closeConnection() {
-    try {
-        if (pool) {
-            await pool.close();
-            pool = null;
-            console.log('Conexão com o banco de dados fechada.');
-        }
-    } catch (err) {
-        console.error("Erro ao fechar a conexão com o banco de dados:", err);
     }
 }
