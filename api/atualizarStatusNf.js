@@ -3,6 +3,10 @@ import { getConnection, closeConnection } from "./db.js";
 import sql from "mssql";
 
 export default async function handler(req, res) {
+    // --- DIAGNÓSTICO ---
+    // Se esta mensagem aparecer nos logs da Vercel, o roteamento está funcionando.
+    console.log(`DIAGNÓSTICO: Endpoint /api/atualizarStatusNF foi chamado com o método ${req.method}`);
+
     if (req.method !== "POST") {
         return res.status(405).json({ message: "Método não permitido" });
     }
@@ -16,7 +20,6 @@ export default async function handler(req, res) {
     try {
         const pool = await getConnection();
         
-        // Formata a hora atual para o padrão 'hh:mm:ss' antes de inserir no banco
         const horaAtual = new Date().toLocaleTimeString('pt-BR', { 
             hour: '2-digit', 
             minute: '2-digit', 
@@ -24,13 +27,12 @@ export default async function handler(req, res) {
             hour12: false 
         });
 
-        // Insere um novo registro de log com os dados recebidos e a data/hora atual.
         await pool.request()
             .input('NF', sql.NVarChar, nf)
             .input('CODIGO', sql.NVarChar, codigo)
             .input('USUARIO', sql.NVarChar, usuario)
             .input('DT', sql.Date, new Date())
-            .input('HH', sql.NVarChar, horaAtual) // Usa a hora formatada
+            .input('HH', sql.NVarChar, horaAtual)
             .input('PROCESSO', sql.NVarChar, processo)
             .query(`
                 INSERT INTO [dbo].[TB_LOG_NF] 
