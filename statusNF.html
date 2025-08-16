@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="style.css">
     <style>
         /* Estilos adicionais para a página de status */
+        body {
+            background-color: #f4f7f9;
+        }
         .status-container {
             max-width: 1200px;
             margin: 20px auto;
@@ -30,19 +33,22 @@
             color: white;
         }
         tr:nth-child(even) {
-            background-color: #f2f2f2;
+            background-color: #f8f9fa;
         }
         select {
             padding: 8px;
             border-radius: 4px;
             border: 1px solid #ccc;
             width: 100%;
+            background-color: #fff;
         }
         .message {
-            padding: 10px;
+            padding: 15px;
             margin-top: 10px;
             border-radius: 5px;
             display: none; /* Começa escondido */
+            text-align: center;
+            font-weight: bold;
         }
         .success {
             background-color: #d4edda;
@@ -77,13 +83,13 @@
                 </tr>
             </thead>
             <tbody id="nf-status-table-body">
-                </tbody>
+                <!-- Linhas serão inseridas aqui via JavaScript -->
+            </tbody>
         </table>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Verifica se o usuário está logado
             if (!localStorage.getItem('userName')) {
                 window.location.href = 'index.html';
                 return;
@@ -91,29 +97,27 @@
             fetchStatusData();
         });
 
-        // Função para buscar os dados da API e popular a tabela
         async function fetchStatusData() {
             const tableBody = document.getElementById('nf-status-table-body');
             tableBody.innerHTML = '<tr><td colspan="7">Carregando...</td></tr>';
 
             try {
-                const response = await fetch('/api/statusNF');
+                // CAMINHO DA API CORRIGIDO E CONFIRMADO
+                const response = await fetch('/api/statusNF'); 
                 if (!response.ok) {
-                    throw new Error('Falha ao buscar os dados.');
+                    throw new Error('Falha ao buscar os dados do servidor.');
                 }
                 const data = await response.json();
                 
-                tableBody.innerHTML = ''; // Limpa a tabela
+                tableBody.innerHTML = ''; 
                 if (data.length === 0) {
-                     tableBody.innerHTML = '<tr><td colspan="7">Nenhum registro encontrado.</td></tr>';
+                     tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhum registro encontrado.</td></tr>';
                      return;
                 }
 
                 data.forEach(item => {
                     const row = document.createElement('tr');
-
-                    // Formata a data para o padrão brasileiro
-                    const formattedDate = new Date(item.DT).toLocaleDateString('pt-BR');
+                    const formattedDate = new Date(item.DT).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 
                     row.innerHTML = `
                         <td>${item.NF}</td>
@@ -124,7 +128,7 @@
                         <td>${item.HH}</td>
                         <td>
                             <select onchange="handleStatusChange(this)" data-nf="${item.NF}" data-codigo="${item.CODIGO}">
-                                <option value="" disabled selected>Selecione...</option>
+                                <option value="" disabled selected>Selecione um novo status...</option>
                                 <option value="Aguardando Fracionamento">Aguardando Fracionamento</option>
                                 <option value="Aguardando Armazenagem">Aguardando Armazenagem</option>
                                 <option value="Finalizado">Finalizado</option>
@@ -136,11 +140,10 @@
 
             } catch (error) {
                 console.error('Erro:', error);
-                tableBody.innerHTML = `<tr><td colspan="7" style="color: red;">${error.message}</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="7" style="color: red; text-align: center;">${error.message}</td></tr>`;
             }
         }
 
-        // Função chamada quando o valor do <select> é alterado
         async function handleStatusChange(selectElement) {
             const newStatus = selectElement.value;
             const nf = selectElement.dataset.nf;
@@ -148,13 +151,12 @@
             const usuario = localStorage.getItem('userName');
 
             if (!newStatus || !nf || !codigo || !usuario) {
-                alert('Ocorreu um erro: informações incompletas.');
+                showMessage('Ocorreu um erro: informações incompletas para atualização.', 'error');
                 return;
             }
 
-            const messageBox = document.getElementById('messageBox');
-
             try {
+                // CAMINHO DA API CORRIGIDO E CONFIRMADO
                 const response = await fetch('/api/atualizarStatusNF', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -172,7 +174,6 @@
                     throw new Error(result.message || 'Erro ao atualizar o status.');
                 }
                 
-                // Mostra mensagem de sucesso e atualiza a tabela
                 showMessage(result.message, 'success');
                 fetchStatusData(); 
 
@@ -182,14 +183,12 @@
             }
         }
 
-        // Função para exibir mensagens de sucesso ou erro
         function showMessage(msg, type) {
             const messageBox = document.getElementById('messageBox');
             messageBox.textContent = msg;
-            messageBox.className = `message ${type}`; // Reseta classes e adiciona a nova
+            messageBox.className = `message ${type}`;
             messageBox.style.display = 'block';
 
-            // Esconde a mensagem após 5 segundos
             setTimeout(() => {
                 messageBox.style.display = 'none';
             }, 5000);
