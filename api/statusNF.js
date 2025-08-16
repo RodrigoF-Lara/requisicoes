@@ -1,4 +1,4 @@
-// filepath: /api/statusNF.js
+// filepath: api/statusNF.js
 import { getConnection, closeConnection } from "./db.js";
 import sql from "mssql";
 
@@ -10,9 +10,8 @@ export default async function handler(req, res) {
     try {
         const pool = await getConnection();
         
-        // Esta query usa uma Common Table Expression (CTE) com ROW_NUMBER()
-        // para encontrar o último registro de cada combinação de NF e CODIGO,
-        // ordenando pela data e hora de forma decrescente.
+        // A query foi atualizada para formatar a coluna de hora (HH) diretamente no banco de dados.
+        // Isso evita problemas de formatação de data/hora no JavaScript.
         const result = await pool.request().query(`
             WITH RankedLogs AS (
                 SELECT 
@@ -31,7 +30,7 @@ export default async function handler(req, res) {
                 CODIGO,
                 USUARIO,
                 DT,
-                HH,
+                CONVERT(varchar(8), HH, 108) as HH, -- Converte a hora para o formato 'hh:mm:ss'
                 PROCESSO
             FROM 
                 RankedLogs
@@ -47,7 +46,6 @@ export default async function handler(req, res) {
         console.error("ERRO NO ENDPOINT /api/statusNF:", err);
         res.status(500).json({ message: "Erro no servidor ao buscar status da NF", error: err.message });
     } finally {
-        // Embora não seja estritamente necessário em ambientes serverless, é uma boa prática.
         await closeConnection();
     }
 }
