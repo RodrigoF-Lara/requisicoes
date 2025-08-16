@@ -1,4 +1,4 @@
-// filepath: /api/atualizarStatusNF.js
+// filepath: api/atualizarStatusNF.js
 import { getConnection, closeConnection } from "./db.js";
 import sql from "mssql";
 
@@ -16,13 +16,21 @@ export default async function handler(req, res) {
     try {
         const pool = await getConnection();
         
+        // Formata a hora atual para o padrão 'hh:mm:ss' antes de inserir no banco
+        const horaAtual = new Date().toLocaleTimeString('pt-BR', { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit', 
+            hour12: false 
+        });
+
         // Insere um novo registro de log com os dados recebidos e a data/hora atual.
         await pool.request()
             .input('NF', sql.NVarChar, nf)
             .input('CODIGO', sql.NVarChar, codigo)
             .input('USUARIO', sql.NVarChar, usuario)
             .input('DT', sql.Date, new Date())
-            .input('HH', sql.NVarChar, new Date().toLocaleTimeString('pt-BR', { hour12: false }))
+            .input('HH', sql.NVarChar, horaAtual) // Usa a hora formatada
             .input('PROCESSO', sql.NVarChar, processo)
             .query(`
                 INSERT INTO [dbo].[TB_LOG_NF] 
