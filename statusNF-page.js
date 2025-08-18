@@ -1,82 +1,69 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const container = document.getElementById('status-container');
-    const summaryContainer = document.getElementById('summary-container'); // NOVO
-    let allData = [];
+    // ... (outras constantes do topo do arquivo)
 
-    // --- Elementos de Filtro e Modais (sem alteração) ---
+    // --- NOVA FUNÇÃO HELPER ---
+    /**
+     * Formata uma data ISO (ex: "2025-08-18T00:00:00.000Z") para o formato "dd/mm/yyyy".
+     * Trata a data como UTC para evitar problemas de fuso horário que fazem a data "voltar" um dia.
+     * @param {string} dateString A data no formato ISO.
+     * @returns {string} A data formatada.
+     */
+    function formatarDataUTC(dateString) {
+        if (!dateString) return 'N/A';
+        // O construtor new Date() com a string ISO pode ajustar para o fuso local.
+        // Ao adicionar 'T00:00:00', garantimos que estamos lidando com o início do dia.
+        // O timeZone: 'UTC' força a formatação sem conversão de fuso.
+        const data = new Date(dateString);
+        return data.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+    }
+
     // ...
 
-    // NOVO: Função para renderizar os totalizadores
-    function renderSummary(data) {
-        // Calcula a contagem de cada status
-        const statusCounts = data.reduce((acc, item) => {
-            const status = item.PROCESSO || 'Indefinido';
-            acc[status] = (acc[status] || 0) + 1;
-            return acc;
-        }, {});
-
-        summaryContainer.innerHTML = ''; // Limpa o container
-
-        // Cria um card para cada status
-        for (const status in statusCounts) {
-            const count = statusCounts[status];
-            // Cria uma classe CSS amigável a partir do nome do status
-            const statusClass = 'status-' + status.toLowerCase()
-                .replace(/\s+/g, '-') // substitui espaços por hífens
-                .replace(/[^\w-]+/g, ''); // remove caracteres não alfanuméricos
-
-            const card = document.createElement('div');
-            card.className = `summary-card ${statusClass}`;
-            card.innerHTML = `
-                <h3>${status}</h3>
-                <p>${count}</p>
-            `;
-            summaryContainer.appendChild(card);
-        }
-    }
-
-    // Busca os dados da API e renderiza a tabela e o resumo
-    async function fetchDataAndRender() {
-        try {
-            container.innerHTML = `<div class="loader-container">...</div>`;
-            const response = await fetch("/api/statusNF");
-            if (!response.ok) throw new Error((await response.json()).message || 'Falha ao buscar dados.');
-            
-            allData = await response.json();
-            populateStatusFilter(allData);
-            renderTable(allData);
-            renderSummary(allData); // ATUALIZADO: Renderiza o resumo com todos os dados
-        } catch (error) {
-            console.error("Erro ao carregar dados:", error);
-            container.innerHTML = `<p class="error-message">Não foi possível carregar os dados.</p>`;
-            summaryContainer.innerHTML = ''; // Limpa o resumo em caso de erro
-        }
-    }
-
-    // Renderiza a tabela (sem alteração na lógica interna)
+    // Função renderTable ATUALIZADA
     function renderTable(data) {
-        container.innerHTML = '';
-        if (data.length === 0) {
-            container.innerHTML = '<p class="info-message">Nenhum registro encontrado.</p>';
-            return;
-        }
-        // ... (todo o código para criar a tabela continua o mesmo)
-    }
-
-    // Aplica os filtros e atualiza a tabela E o resumo
-    function applyFilters() {
-        // ... (lógica de filtragem continua a mesma)
-        
-        const filteredData = allData.filter(item => {
-            // ... (condições do filtro)
+        // ... (início da função)
+        data.forEach(item => {
+            // AQUI ESTÁ A MUDANÇA
+            const dataFormatada = formatarDataUTC(item.DT);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.NF}</td><td>${item.CODIGO}</td><td>${item.USUARIO}</td>
+                <td>${dataFormatada}</td><td>${item.HH}</td><td>${item.PROCESSO}</td>
+                <td class="actions-cell">
+                    </td>`;
+            tbody.appendChild(tr);
         });
-
-        renderTable(filteredData);
-        renderSummary(filteredData); // ATUALIZADO: Renderiza o resumo com os dados filtrados
+        container.appendChild(table);
     }
     
-    // ... (restante do seu código JavaScript, como funções de modal, listeners, etc., continua igual)
+    // ...
+    
+    // Função fetchAndDisplayLog ATUALIZADA
+    async function fetchAndDisplayLog(nf, codigo) {
+        logContent.innerHTML = `<div class="loader"></div>`;
+        try {
+            // ... (fetch)
+            const logData = await response.json();
+            // ... (verificação de logData.length)
+            
+            logContent.innerHTML = `
+                <table id="logTable">
+                    <thead><tr><th>Data</th><th>Hora</th><th>Usuário</th><th>Processo</th></tr></thead>
+                    <tbody>
+                        ${logData.map(entry => `
+                            <tr>
+                                <td>${formatarDataUTC(entry.DT)}</td>
+                                <td>${entry.HH}</td>
+                                <td>${entry.USUARIO}</td>
+                                <td>${entry.PROCESSO}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+        } catch (error) {
+            logContent.innerHTML = `<p class="error-message">Erro ao carregar histórico: ${error.message}</p>`;
+        }
+    }
 
-    // --- Carga Inicial ---
-    fetchDataAndRender();
+    // ... (Restante do seu código JavaScript)
 });

@@ -3,8 +3,6 @@ import { getConnection, closeConnection } from "./db.js";
 import sql from "mssql";
 
 export default async function handler(req, res) {
-    console.log(`DIAGNÓSTICO: Endpoint /api/atualizarStatusNF foi chamado com o método ${req.method}`);
-
     if (req.method !== "POST") {
         return res.status(405).json({ message: "Método não permitido" });
     }
@@ -18,18 +16,16 @@ export default async function handler(req, res) {
     try {
         const pool = await getConnection();
         
-        // --- ALTERAÇÃO APLICADA AQUI ---
-        // Adicionamos a opção 'timeZone' para forçar o fuso horário de Brasília (UTC-3)
         const horaAtual = new Date().toLocaleTimeString('pt-BR', { 
             hour: '2-digit', 
             minute: '2-digit', 
             second: '2-digit', 
             hour12: false,
-            timeZone: 'America/Sao_Paulo' // <-- Linha adicionada para corrigir o fuso
+            timeZone: 'America/Sao_Paulo'
         });
 
-        // O objeto "new Date()" para a coluna DT é interpretado corretamente pelo driver do SQL Server,
-        // mas a formatação da string de hora precisava do ajuste explícito de fuso.
+        // --- ALTERAÇÃO APLICADA AQUI ---
+        // Adicionamos a coluna [APP] no INSERT e o parâmetro @APP com o valor 'SITE'.
         await pool.request()
             .input('NF', sql.NVarChar, nf)
             .input('CODIGO', sql.NVarChar, codigo)
@@ -37,11 +33,12 @@ export default async function handler(req, res) {
             .input('DT', sql.Date, new Date())
             .input('HH', sql.NVarChar, horaAtual)
             .input('PROCESSO', sql.NVarChar, processo)
+            .input('APP', sql.NVarChar, 'SITE') // <-- Novo input para o campo APP
             .query(`
                 INSERT INTO [dbo].[TB_LOG_NF] 
-                ([NF], [CODIGO], [USUARIO], [DT], [HH], [PROCESSO])
+                ([NF], [CODIGO], [USUARIO], [DT], [HH], [PROCESSO], [APP])
                 VALUES 
-                (@NF, @CODIGO, @USUARIO, @DT, @HH, @PROCESSO);
+                (@NF, @CODIGO, @USUARIO, @DT, @HH, @PROCESSO, @APP);
             `);
 
         res.status(200).json({ message: `Status da NF ${nf} / Produto ${codigo} atualizado para "${processo}" com sucesso!` });
@@ -49,7 +46,5 @@ export default async function handler(req, res) {
     } catch (err) {
         console.error("ERRO NO ENDPOINT /api/atualizarStatusNF:", err);
         res.status(500).json({ message: "Erro ao inserir novo log de NF", error: err.message });
-    } finally {
-        await closeConnection();
     }
 }
