@@ -90,7 +90,12 @@
         <a href="menu.html" class="btn-voltar"><i class="fa-solid fa-arrow-left"></i> Voltar ao Menu</a>
         <h1>Status de Processamento de NF</h1>
         <div id="summary-container"></div>
+
         <div class="filter-container">
+            <select id="filterTipoProduto">
+                <option value="EMBALAGEM" selected>Embalagens</option>
+                <option value="OUTROS">Outros</option>
+            </select>
             <input type="text" id="filterNF" placeholder="Filtrar por NF...">
             <input type="text" id="filterCodigo" placeholder="Filtrar por Código...">
             <input type="text" id="filterDescricao" placeholder="Filtrar por Descrição...">
@@ -98,37 +103,12 @@
             <input type="date" id="filterData">
             <select id="filterProcesso"><option value="">Todos os Status</option></select>
         </div>
+        
         <div id="status-container">
             <div class="loader-container"><div class="loader"></div><p>Buscando dados...</p></div>
         </div>
     </div>
 
-    <div id="updateModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Alterar Processo</h2><span class="close-btn" data-modal-id="updateModal">&times;</span>
-            </div>
-            <form id="updateForm">
-                <p><strong>NF:</strong> <span id="modalNF"></span></p>
-                <p><strong>Código:</strong> <span id="modalCodigo"></span></p>
-                <div class="form-group">
-                    <label for="novoProcesso">Novo Processo:</label>
-                    <select id="novoProcesso" required><option value="">Selecione...</option><option value="Realizado Fracionamento">Realizado Fracionamento</option><option value="Armazenado">Armazenado</option></select>
-                </div>
-                <button type="submit" class="btn-destaque">Salvar Alteração</button>
-                <div id="modalStatus" class="status" style="margin-top: 15px;"></div>
-            </form>
-        </div>
-    </div>
-    <div id="logModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Histórico do Item</h2><span class="close-btn" data-modal-id="logModal">&times;</span>
-            </div>
-            <p><strong>NF:</strong> <span id="logModalNF"></span> | <strong>Código:</strong> <span id="logModalCodigo"></span></p>
-            <div id="logContent"></div>
-        </div>
-    </div>
     <script src="statusNF-page.js"></script>
 </body>
 </html>
