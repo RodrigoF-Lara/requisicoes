@@ -9,6 +9,7 @@ export default async function handler(req, res) {
     try {
         const pool = await getConnection();
         
+        // ESTA QUERY FAZ O INNER JOIN PARA BUSCAR A DESCRIÇÃO
         const result = await pool.request().query(`
             WITH RankedLogs AS (
                 SELECT 
@@ -18,8 +19,8 @@ export default async function handler(req, res) {
                     log.[DT],
                     log.[HH],
                     log.[PROCESSO],
-                    log.[ID_NF],      -- <<< ADICIONADO
-                    log.[ID_NF_PROD], -- <<< ADICIONADO
+                    log.[ID_NF],
+                    log.[ID_NF_PROD],
                     ROW_NUMBER() OVER(PARTITION BY log.[NF], log.[CODIGO] ORDER BY log.[DT] DESC, log.[HH] DESC) as rn
                 FROM 
                     [dbo].[TB_LOG_NF] log
@@ -27,17 +28,17 @@ export default async function handler(req, res) {
             SELECT 
                 rl.NF,
                 rl.CODIGO,
-                cp.DESCRICAO,
+                cp.DESCRICAO, -- Campo da tabela CAD_PROD
                 rl.USUARIO,
                 rl.DT,
                 CONVERT(varchar(8), rl.HH, 108) as HH,
                 rl.PROCESSO,
-                rl.ID_NF,      -- <<< ADICIONADO
-                rl.ID_NF_PROD  -- <<< ADICIONADO
+                rl.ID_NF,
+                rl.ID_NF_PROD
             FROM 
                 RankedLogs rl
             INNER JOIN 
-                [dbo].[CAD_PROD] cp ON rl.CODIGO = cp.CODIGO
+                [dbo].[CAD_PROD] cp ON rl.CODIGO = cp.CODIGO -- Junção das tabelas
             WHERE 
                 rl.rn = 1
             ORDER BY
