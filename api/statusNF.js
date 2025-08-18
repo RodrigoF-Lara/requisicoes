@@ -1,6 +1,5 @@
 // filepath: api/statusNF.js
-import { getConnection, closeConnection } from "./db.js";
-import sql from "mssql";
+import { getConnection } from "./db.js";
 
 export default async function handler(req, res) {
     if (req.method !== "GET") {
@@ -10,42 +9,45 @@ export default async function handler(req, res) {
     try {
         const pool = await getConnection();
         
-        // A query foi atualizada para formatar a coluna de hora (HH) diretamente no banco de dados.
-        // Isso evita problemas de formatação de data/hora no JavaScript.
         const result = await pool.request().query(`
             WITH RankedLogs AS (
                 SELECT 
-                    [NF],
-                    [CODIGO],
-                    [USUARIO],
-                    [DT],
-                    [HH],
-                    [PROCESSO],
-                    ROW_NUMBER() OVER(PARTITION BY [NF], [CODIGO] ORDER BY [DT] DESC, [HH] DESC) as rn
+                    log.[NF],
+                    log.[CODIGO],
+                    log.[USUARIO],
+                    log.[DT],
+                    log.[HH],
+                    log.[PROCESSO],
+                    log.[ID_NF],      -- <<< ADICIONADO
+                    log.[ID_NF_PROD], -- <<< ADICIONADO
+                    ROW_NUMBER() OVER(PARTITION BY log.[NF], log.[CODIGO] ORDER BY log.[DT] DESC, log.[HH] DESC) as rn
                 FROM 
-                    [dbo].[TB_LOG_NF]
+                    [dbo].[TB_LOG_NF] log
             )
             SELECT 
-                NF,
-                CODIGO,
-                USUARIO,
-                DT,
-                CONVERT(varchar(8), HH, 108) as HH, -- Converte a hora para o formato 'hh:mm:ss'
-                PROCESSO
+                rl.NF,
+                rl.CODIGO,
+                cp.DESCRICAO,
+                rl.USUARIO,
+                rl.DT,
+                CONVERT(varchar(8), rl.HH, 108) as HH,
+                rl.PROCESSO,
+                rl.ID_NF,      -- <<< ADICIONADO
+                rl.ID_NF_PROD  -- <<< ADICIONADO
             FROM 
-                RankedLogs
+                RankedLogs rl
+            INNER JOIN 
+                [dbo].[CAD_PROD] cp ON rl.CODIGO = cp.CODIGO
             WHERE 
-                rn = 1
+                rl.rn = 1
             ORDER BY
-                DT DESC, HH DESC;
+                rl.DT DESC, rl.HH DESC;
         `);
         
         res.status(200).json(result.recordset);
 
     } catch (err) {
         console.error("ERRO NO ENDPOINT /api/statusNF:", err);
-        res.status(500).json({ message: "Erro no servidor ao buscar status da NF", error: err.message });
-    } finally {
-        await closeConnection();
+        res.status(500).json({ message: "Erro interno do servidor ao buscar status.", error: err.message });
     }
 }
