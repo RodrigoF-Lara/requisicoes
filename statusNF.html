@@ -1,198 +1,127 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Status de Notas Fiscais</title>
-    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Status de Processamento de NF - Kardex</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     <style>
-        /* Estilos adicionais para a página de status */
-        body {
-            background-color: #f4f7f9;
-        }
-        .status-container {
-            max-width: 1200px;
-            margin: 20px auto;
+        /* Estilos para filtros e modal */
+        .filter-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
             padding: 20px;
-            background: #fff;
+            background-color: #f9f9f9;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
-        table {
+
+        .filter-container input {
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-        th {
-            background-color: #1976d2;
-            color: white;
-        }
-        tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-        select {
-            padding: 8px;
-            border-radius: 4px;
+            padding: 10px;
             border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
             width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
             background-color: #fff;
+            margin: 15% auto;
+            padding: 30px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
-        .message {
-            padding: 15px;
-            margin-top: 10px;
-            border-radius: 5px;
-            display: none; /* Começa escondido */
-            text-align: center;
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #1976d2;
+        }
+
+        .close-btn {
+            color: #aaa;
+            font-size: 28px;
             font-weight: bold;
+            cursor: pointer;
         }
-        .success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+
+        .close-btn:hover,
+        .close-btn:focus {
+            color: black;
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <a href="menu.html" class="btn-voltar">
+            <i class="fa-solid fa-arrow-left"></i> Voltar ao Menu
+        </a>
 
-    <div class="status-container">
         <h1>Status de Processamento de NF</h1>
-        <p>Acompanhe e atualize o status dos produtos de cada Nota Fiscal.</p>
 
-        <div id="messageBox" class="message"></div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>NF</th>
-                    <th>Código Produto</th>
-                    <th>Último Status</th>
-                    <th>Usuário</th>
-                    <th>Data</th>
-                    <th>Hora</th>
-                    <th>Alterar Processo</th>
-                </tr>
-            </thead>
-            <tbody id="nf-status-table-body">
-                <!-- Linhas serão inseridas aqui via JavaScript -->
-            </tbody>
-        </table>
+        <div class="filter-container">
+            <input type="text" id="filterNF" placeholder="Filtrar por NF...">
+            <input type="text" id="filterCodigo" placeholder="Filtrar por Código...">
+            <input type="text" id="filterUsuario" placeholder="Filtrar por Usuário...">
+            <input type="date" id="filterData">
+            <input type="text" id="filterProcesso" placeholder="Filtrar por Último Status...">
+        </div>
+        
+        <div id="status-container">
+            <div class="loader-container">
+                <div class="loader"></div>
+                <p>Buscando dados...</p>
+            </div>
+        </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (!localStorage.getItem('userName')) {
-                window.location.href = 'index.html';
-                return;
-            }
-            fetchStatusData();
-        });
+    <div id="updateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Alterar Processo</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <form id="updateForm">
+                <p><strong>NF:</strong> <span id="modalNF"></span></p>
+                <p><strong>Código:</strong> <span id="modalCodigo"></span></p>
+                <div class="form-group">
+                    <label for="novoProcesso">Novo Processo:</label>
+                    <select id="novoProcesso" required>
+                        <option value="">Selecione...</option>
+                        <option value="Realizado Fracionamento">Realizado Fracionamento</option>
+                        <option value="Armazenado">Armazenado</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-destaque">Salvar Alteração</button>
+                <div id="modalStatus" class="status" style="margin-top: 15px;"></div>
+            </form>
+        </div>
+    </div>
 
-        async function fetchStatusData() {
-            const tableBody = document.getElementById('nf-status-table-body');
-            tableBody.innerHTML = '<tr><td colspan="7">Carregando...</td></tr>';
-
-            try {
-                // CAMINHO DA API CORRIGIDO E CONFIRMADO
-                const response = await fetch('/api/statusNF'); 
-                if (!response.ok) {
-                    throw new Error('Falha ao buscar os dados do servidor.');
-                }
-                const data = await response.json();
-                
-                tableBody.innerHTML = ''; 
-                if (data.length === 0) {
-                     tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhum registro encontrado.</td></tr>';
-                     return;
-                }
-
-                data.forEach(item => {
-                    const row = document.createElement('tr');
-                    const formattedDate = new Date(item.DT).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-
-                    row.innerHTML = `
-                        <td>${item.NF}</td>
-                        <td>${item.CODIGO}</td>
-                        <td>${item.PROCESSO}</td>
-                        <td>${item.USUARIO}</td>
-                        <td>${formattedDate}</td>
-                        <td>${item.HH}</td>
-                        <td>
-                            <select onchange="handleStatusChange(this)" data-nf="${item.NF}" data-codigo="${item.CODIGO}">
-                                <option value="" disabled selected>Selecione um novo status...</option>
-                                <option value="Aguardando Fracionamento">Aguardando Fracionamento</option>
-                                <option value="Aguardando Armazenagem">Aguardando Armazenagem</option>
-                                <option value="Finalizado">Finalizado</option>
-                            </select>
-                        </td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-
-            } catch (error) {
-                console.error('Erro:', error);
-                tableBody.innerHTML = `<tr><td colspan="7" style="color: red; text-align: center;">${error.message}</td></tr>`;
-            }
-        }
-
-        async function handleStatusChange(selectElement) {
-            const newStatus = selectElement.value;
-            const nf = selectElement.dataset.nf;
-            const codigo = selectElement.dataset.codigo;
-            const usuario = localStorage.getItem('userName');
-
-            if (!newStatus || !nf || !codigo || !usuario) {
-                showMessage('Ocorreu um erro: informações incompletas para atualização.', 'error');
-                return;
-            }
-
-            try {
-                // CAMINHO DA API CORRIGIDO E CONFIRMADO
-                const response = await fetch('/api/atualizarStatusNF', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        nf: nf,
-                        codigo: codigo,
-                        processo: newStatus,
-                        usuario: usuario
-                    })
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.message || 'Erro ao atualizar o status.');
-                }
-                
-                showMessage(result.message, 'success');
-                fetchStatusData(); 
-
-            } catch (error) {
-                console.error('Erro na atualização:', error);
-                showMessage(error.message, 'error');
-            }
-        }
-
-        function showMessage(msg, type) {
-            const messageBox = document.getElementById('messageBox');
-            messageBox.textContent = msg;
-            messageBox.className = `message ${type}`;
-            messageBox.style.display = 'block';
-
-            setTimeout(() => {
-                messageBox.style.display = 'none';
-            }, 5000);
-        }
-    </script>
+    <script src="statusNF-page.js"></script>
 </body>
 </html>
