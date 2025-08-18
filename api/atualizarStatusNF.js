@@ -3,8 +3,6 @@ import { getConnection, closeConnection } from "./db.js";
 import sql from "mssql";
 
 export default async function handler(req, res) {
-    // --- DIAGNÓSTICO ---
-    // Se esta mensagem aparecer nos logs da Vercel, o roteamento está funcionando.
     console.log(`DIAGNÓSTICO: Endpoint /api/atualizarStatusNF foi chamado com o método ${req.method}`);
 
     if (req.method !== "POST") {
@@ -20,13 +18,18 @@ export default async function handler(req, res) {
     try {
         const pool = await getConnection();
         
+        // --- ALTERAÇÃO APLICADA AQUI ---
+        // Adicionamos a opção 'timeZone' para forçar o fuso horário de Brasília (UTC-3)
         const horaAtual = new Date().toLocaleTimeString('pt-BR', { 
             hour: '2-digit', 
             minute: '2-digit', 
             second: '2-digit', 
-            hour12: false 
+            hour12: false,
+            timeZone: 'America/Sao_Paulo' // <-- Linha adicionada para corrigir o fuso
         });
 
+        // O objeto "new Date()" para a coluna DT é interpretado corretamente pelo driver do SQL Server,
+        // mas a formatação da string de hora precisava do ajuste explícito de fuso.
         await pool.request()
             .input('NF', sql.NVarChar, nf)
             .input('CODIGO', sql.NVarChar, codigo)
