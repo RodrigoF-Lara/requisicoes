@@ -23,9 +23,9 @@ export default async function handler(req, res) {
                 H.ID_REQ DESC;
         `);
         
-        // --- ESTA É A CORREÇÃO IMPORTANTE ---
+        // --- ESTA É A CORREÇÃO DEFINITIVA ---
         // Mapeia os resultados para garantir que STATUS e PRIORIDADE tenham um valor padrão
-        // caso sejam nulos no banco de dados.
+        // caso sejam nulos no banco de dados, evitando o erro no servidor.
         const safeResults = result.recordset.map(req => ({
             ...req,
             STATUS: req.STATUS || 'PENDENTE',
