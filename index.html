@@ -35,6 +35,9 @@
         });
         const data = await res.json();
         if (res.ok && data.usuario) {
+          // --- LINHAS ATUALIZADAS AQUI ---
+          const loginTime = new Date().toLocaleString('pt-BR');
+          localStorage.setItem('loginTime', loginTime); // Salva a data/hora do login
           localStorage.setItem('userName', `${data.usuario.F_NAME} ${data.usuario.L_NAME}`);
           window.location.href = "menu.html";
         } else {
@@ -43,9 +46,9 @@
         }
       } catch (err) {
         status.style.color = "#c00";
-        status.textContent = "Erro ao conectar ao servidor.";
+        status.textContent = "Erro de conexão. Tente novamente.";
       }
     });
-  </script>
+</script>
 </body>
 </html>

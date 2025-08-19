@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 </head>
 <body>
+    <div id="userInfoBar"></div>
     <div class="container">
         <a href="consulta.html" class="btn-voltar">
             <i class="fa-solid fa-arrow-left"></i> Voltar para a Consulta
@@ -27,7 +28,46 @@
         <div id="detalhe-itens-container">
             </div>
     </div>
+    <style>
+    .container {
+        max-width: 1600px;
+    }
+    
+    /* Estilos para a barra de informações do usuário */
+    #userInfoBar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background-color: #1976d2; /* Cor principal */
+        color: white;
+        padding: 8px 20px;
+        font-size: 14px;
+        z-index: 1001; /* Garante que fique acima de outros elementos */
+        text-align: right;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    /* Ajusta o corpo da página para não ficar escondido atrás da barra */
+    body {
+        padding-top: 40px; /* Altura aproximada da barra */
+    }
+</style>
 
     <script src="detalhes.js"></script>
+    <script>
+    // Script para exibir informações do usuário na barra superior
+    document.addEventListener('DOMContentLoaded', function() {
+        const userName = localStorage.getItem('userName');
+        const loginTime = localStorage.getItem('loginTime');
+        
+        if (userName && loginTime) {
+            const userInfoBar = document.getElementById('userInfoBar');
+            userInfoBar.innerHTML = `<strong>Usuário:</strong> ${userName} | <strong>Login:</strong> ${loginTime}`;
+        } else {
+            // Se não encontrar os dados, redireciona para o login por segurança
+            window.location.href = "index.html";
+        }
+    });
+</script>
 </body>
 </html>

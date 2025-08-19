@@ -9,9 +9,36 @@
     <style>
         /* Seus estilos CSS, incluindo o de responsividade, permanecem os mesmos. */
         .filter-container{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:15px;margin-bottom:25px;padding:20px;background-color:#f9f9f9;border-radius:8px}.filter-container input,.filter-container select{width:100%;padding:10px;border:1px solid #ccc;border-radius:4px}#summary-container{display:flex;flex-wrap:wrap;gap:15px;margin-bottom:25px}.summary-card{flex:1 1 150px;background-color:#fff;padding:20px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.08);text-align:center;border-left:5px solid #1976d2}.summary-card h3{margin:0 0 10px;font-size:16px;color:#555;text-transform:uppercase}.summary-card p{margin:0;font-size:28px;font-weight:700;color:#1976d2}.actions-cell button{margin-right:8px}.modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,.5)}.modal-content{background-color:#fff;margin:10% auto;padding:30px;border:1px solid #888;width:90%;max-width:600px;border-radius:10px;box-shadow:0 5px 15px rgba(0,0,0,.3)}.modal-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee;padding-bottom:15px;margin-bottom:20px}.modal-header h2{margin:0;color:#1976d2}.close-btn{color:#aaa;font-size:28px;font-weight:700;cursor:pointer}.close-btn:focus,.close-btn:hover{color:#000}#logTable{width:100%;border-collapse:collapse;margin-top:15px}#logTable td,#logTable th{border:1px solid #ddd;padding:8px;text-align:left}#logTable th{background-color:#f2f2f2}@media screen and (max-width:768px){.container{padding:15px}h1{font-size:24px}.consulta-table thead{display:none}.consulta-table,.consulta-table tbody,.consulta-table td,.consulta-table tr{display:block;width:100%}.consulta-table tr{margin-bottom:20px;border:1px solid #ddd;border-radius:8px;padding:10px;box-shadow:0 2px 4px rgba(0,0,0,.05)}.consulta-table td{text-align:right;padding-left:50%;position:relative;border-bottom:1px solid #f0f0f0;padding-top:8px;padding-bottom:8px}.consulta-table tr td:last-child{border-bottom:none}.consulta-table td:before{content:attr(data-label);position:absolute;left:10px;width:45%;padding-right:10px;font-weight:700;text-align:left}.consulta-table .actions-cell{text-align:center;padding-left:0}.consulta-table .actions-cell:before{content:\"\"}.modal-content{width:95%;margin:5% auto}}
+        /* Aumenta a largura máxima do container em telas grandes */
+    .container {
+        max-width: 1600px; /* Você pode ajustar este valor se quiser mais ou menos largo */
+    }
+    .container {
+        max-width: 1600px;
+    }
+    
+    /* Estilos para a barra de informações do usuário */
+    #userInfoBar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background-color: #1976d2; /* Cor principal */
+        color: white;
+        padding: 8px 20px;
+        font-size: 14px;
+        z-index: 1001; /* Garante que fique acima de outros elementos */
+        text-align: right;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    /* Ajusta o corpo da página para não ficar escondido atrás da barra */
+    body {
+        padding-top: 40px; /* Altura aproximada da barra */
+    }
     </style>
 </head>
 <body>
+    <div id="userInfoBar"></div>
     <div class="container">
         <a href="menu.html" class="btn-voltar"><i class="fa-solid fa-arrow-left"></i> Voltar ao Menu</a>
         <h1>Status de Processamento de NF</h1>
@@ -63,5 +90,20 @@
     </div>
 
     <script src="statusNF-page.js"></script>
+    <script>
+    // Script para exibir informações do usuário na barra superior
+    document.addEventListener('DOMContentLoaded', function() {
+        const userName = localStorage.getItem('userName');
+        const loginTime = localStorage.getItem('loginTime');
+        
+        if (userName && loginTime) {
+            const userInfoBar = document.getElementById('userInfoBar');
+            userInfoBar.innerHTML = `<strong>Usuário:</strong> ${userName} | <strong>Login:</strong> ${loginTime}`;
+        } else {
+            // Se não encontrar os dados, redireciona para o login por segurança
+            window.location.href = "index.html";
+        }
+    });
+</script>
 </body>
 </html>
