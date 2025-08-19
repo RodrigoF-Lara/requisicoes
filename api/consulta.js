@@ -39,3 +39,4 @@ export default async function handler(req, res) {
         res.status(500).json({ message: "Erro no servidor ao consultar requisições.", error: err.message });
     }
 }
+'alteração para subir pro vercel'
