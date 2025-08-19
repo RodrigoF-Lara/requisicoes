@@ -116,3 +116,46 @@ function renderItems(items, idReq) {
             ${items.map(item => `
                 <tr>
                     <td data-label="Item">${item.ID_REQ_ITEM}</td>
+                    <td data-label="Código">${item.CODIGO}</td>
+                    <td data-label="Qtd. Req.">${item.QNT_REQ}</td>
+                    <td data-label="Qtd. Atend.">${item.QNT_PAGA}</td>
+                    <td data-label="Saldo">${item.SALDO}</td>
+                    <td data-label="Status"><span class="status-tag status-${(item.STATUS_ITEM || 'pendente').toLowerCase()}">${item.STATUS_ITEM}</span></td>
+                    <td data-label="Ações">
+                        ${item.STATUS_ITEM !== 'PAGO' ? `
+                        <button class="btn-detalhes btn-atender" 
+                                data-id-req-item="${item.ID_REQ_ITEM}" 
+                                data-id-req="${idReq}"
+                                data-codigo="${item.CODIGO}"
+                                data-qnt-req="${item.QNT_REQ}"
+                                data-saldo="${item.SALDO}">
+                            <i class="fa-solid fa-dolly"></i> Atender
+                        </button>
+                        ` : '<span class="info-message">Concluído</span>'}
+                    </td>
+                </tr>
+            `).join('')}
+        </tbody>
+    `;
+    itemsContainer.appendChild(table);
+
+    // Adiciona o event listener para os novos botões "Atender"
+    itemsContainer.querySelectorAll('.btn-atender').forEach(button => {
+        button.addEventListener('click', function() {
+            const { idReqItem, idReq, codigo, qntReq, saldo } = this.dataset;
+            
+            const atenderModal = document.getElementById('atenderModal');
+            document.getElementById('modalCodigo').textContent = codigo;
+            document.getElementById('modalQntReq').textContent = qntReq;
+            document.getElementById('modalSaldo').textContent = saldo;
+            document.getElementById('quantidadeAtendida').value = saldo;
+            document.getElementById('modalStatus').textContent = '';
+
+            const atenderForm = document.getElementById('atenderForm');
+            atenderForm.dataset.idReqItem = idReqItem;
+            atenderForm.dataset.idReq = idReq;
+
+            atenderModal.style.display = 'block';
+        });
+    });
+}
