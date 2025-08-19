@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
         table.innerHTML = `
             <thead>
                 <tr>
-                    <th>NF</th><th>Código</th><th>Descrição</th><th>Usuário</th><th>Data</th><th>Hora</th><th>Último Status</th><th>Ações</th>
+                    <th>NF</th><th>Código</th><th>Descrição</th><th>Quantidade</th><th>Usuário</th><th>Data</th><th>Hora</th><th>Último Status</th><th>Ações</th>
                 </tr>
             </thead>
             <tbody></tbody>`;
@@ -115,6 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td data-label="NF">${item.NF}</td>
                 <td data-label="Código">${item.CODIGO}</td>
                 <td data-label="Descrição">${item.DESCRICAO || 'N/A'}</td>
+                <td data-label="Quantidade">${item.QNT || 0}</td>
                 <td data-label="Usuário">${item.USUARIO}</td>
                 <td data-label="Data">${dataFormatada}</td>
                 <td data-label="Hora">${item.HH}</td>
