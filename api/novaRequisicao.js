@@ -35,6 +35,6 @@ export default async function handler(req, res) {
         console.error("Erro SQL:", err);
         res.status(500).json({ message: "Erro ao criar requisição", error: err.message });
     } finally {
-        await closeConnection();
+       
     }
 }
