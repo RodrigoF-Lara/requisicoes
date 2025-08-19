@@ -5,38 +5,37 @@ document.addEventListener('DOMContentLoaded', async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const idReq = urlParams.get('id');
 
-    // --- Elementos do Modal ---
     const atenderModal = document.getElementById('atenderModal');
     const atenderForm = document.getElementById('atenderForm');
     const modalStatus = document.getElementById('modalStatus');
     const closeBtn = document.querySelector('.close-btn');
 
     if (!idReq) {
-        headerContainer.innerHTML = "<p class='error-message'>ID da requisição não encontrado.</p>";
+        headerContainer.innerHTML = "<p class='error-message'>ID da requisição não encontrado na URL.</p>";
         return;
     }
 
-    // Função principal para carregar os dados
     async function carregarDetalhes() {
         try {
             headerContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
             itemsContainer.innerHTML = '';
 
             const response = await fetch(`/api/detalhes?id=${idReq}`);
+            const responseData = await response.json(); // Pega os dados da resposta
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Falha ao buscar detalhes da requisição.');
+                // Agora, a mensagem de erro virá do JSON que o servidor enviou
+                throw new Error(responseData.message || 'Falha ao buscar detalhes da requisição.');
             }
-            const data = await response.json();
-            renderHeader(data.header);
-            renderItems(data.items, idReq);
+            
+            renderHeader(responseData.header);
+            renderItems(responseData.items, idReq);
         } catch (error) {
             console.error("Erro ao carregar detalhes:", error);
             headerContainer.innerHTML = `<p class='error-message'>${error.message}</p>`;
         }
     }
 
-    // Event listener para o formulário do modal
     atenderForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         const idReqItem = this.dataset.idReqItem;
@@ -61,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             setTimeout(() => {
                 atenderModal.style.display = 'none';
-                carregarDetalhes(); // Recarrega os dados para refletir a mudança
+                carregarDetalhes();
             }, 1500);
 
         } catch (error) {
@@ -70,7 +69,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     });
     
-    // Event listeners para fechar o modal
     closeBtn.addEventListener('click', () => atenderModal.style.display = 'none');
     window.addEventListener('click', (e) => {
         if (e.target == atenderModal) {
@@ -78,7 +76,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     });
 
-    // Carrega os dados iniciais ao abrir a página
     carregarDetalhes();
 });
 
@@ -139,7 +136,6 @@ function renderItems(items, idReq) {
     `;
     itemsContainer.appendChild(table);
 
-    // Adiciona o event listener para os novos botões "Atender"
     itemsContainer.querySelectorAll('.btn-atender').forEach(button => {
         button.addEventListener('click', function() {
             const { idReqItem, idReq, codigo, qntReq, saldo } = this.dataset;

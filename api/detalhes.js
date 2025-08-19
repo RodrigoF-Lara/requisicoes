@@ -7,7 +7,6 @@ export default async function handler(req, res) {
         return res.status(405).json({ message: "Método não permitido" });
     }
 
-    // Pega o ID da requisição que vem na URL (ex: /api/detalhes?id=123)
     const { id } = req.query;
 
     if (!id) {
@@ -30,10 +29,21 @@ export default async function handler(req, res) {
         const itemsResult = await pool.request()
             .input('idReq', sql.Int, id)
             .query("SELECT * FROM [dbo].[TB_REQ_ITEM] WHERE ID_REQ = @idReq ORDER BY ID_REQ_ITEM");
+        
+        const headerData = headerResult.recordset[0];
 
-        // Monta um objeto de resposta com o cabeçalho e os itens
+        // --- CORREÇÃO APLICADA AQUI ---
+        // Garante que STATUS e PRIORIDADE tenham um valor padrão caso sejam nulos no banco.
+        // Isso evita o erro '.toLowerCase() of undefined' no servidor.
+        const safeHeader = {
+            ...headerData,
+            STATUS: headerData.STATUS || 'PENDENTE',
+            PRIORIDADE: headerData.PRIORIDADE || 'NORMAL'
+        };
+
+        // Monta um objeto de resposta com os dados seguros
         const responseData = {
-            header: headerResult.recordset[0],
+            header: safeHeader,
             items: itemsResult.recordset
         };
         
@@ -41,6 +51,6 @@ export default async function handler(req, res) {
 
     } catch (err) {
         console.error("ERRO NO ENDPOINT /api/detalhes:", err);
-        res.status(500).json({ message: "Erro no servidor", error: err.message });
+        res.status(500).json({ message: "Erro no servidor ao buscar detalhes da requisição.", error: err.message });
     }
 }
