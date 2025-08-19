@@ -1,5 +1,5 @@
 // filepath: api/statusNF.js
-import { getConnection } from "./db.js";
+import { getConnection } from "./db.js"; // <<< MUDANÇA AQUI
 import sql from "mssql";
 
 export default async function handler(req, res) {
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
                     SELECT 
                         log.[NF], log.[CODIGO], log.[USUARIO], log.[DT],
                         log.[HH], log.[PROCESSO], log.[ID_NF], log.[ID_NF_PROD],
-                        log.[QNT], -- <<< CAMPO ADICIONADO AQUI
+                        log.[QNT],
                         ROW_NUMBER() OVER(PARTITION BY log.[NF], log.[CODIGO] ORDER BY log.[DT] DESC, log.[HH] DESC) as rn
                     FROM [dbo].[TB_LOG_NF] log
                 )
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
                     rl.NF, rl.CODIGO, cp.DESCRICAO, rl.USUARIO, rl.DT,
                     CONVERT(varchar(8), rl.HH, 108) as HH,
                     rl.PROCESSO, rl.ID_NF, rl.ID_NF_PROD,
-                    rl.QNT -- <<< CAMPO ADICIONADO AQUI
+                    rl.QNT
                 FROM RankedLogs rl
                 INNER JOIN [dbo].[CAD_PROD] cp ON rl.CODIGO = cp.CODIGO
                 WHERE rl.rn = 1 AND (${tipoWhereCondition})
