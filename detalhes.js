@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function renderHeader(header) {
         const dataNecessidade = formatarData(header.DT_NECESSIDADE);
-        const dataRequisicao = formatarData(header.DT_REQUISICOES);
+        const dataRequisicao = formatarData(header.DT_REQUISICOES); // Corrigido de DT_REQUISICAO para DT_REQUISICOES se for o caso no seu DB
         headerContainer.innerHTML = `
             <div class="detalhe-header">
                 <div><strong>Nº Requisição:</strong> ${header.ID_REQ}</div>
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>`;
     }
 
-    // NOVA FUNÇÃO RENDERITEMS COM DROPDOWN E SEM A COLUNA "ATENDER"
+    // FUNÇÃO RENDERITEMS COM A CORREÇÃO
     function renderItems(items, idReq) {
         itemsContainer.innerHTML = '';
         const table = document.createElement('table');
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         <select class="status-select" 
                                 data-id-req-item="${item.ID_REQ_ITEM}" 
                                 data-id-req="${idReq}"
-                                ${statusLimpo === 'Finalizado' ? 'disabled' : ''}>
+                                data-original-status="${statusLimpo}" ${statusLimpo === 'Finalizado' ? 'disabled' : ''}>
                             ${optionsHTML}
                         </select>
                     </td>
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // --- GERENCIADOR DE EVENTOS ATUALIZADO PARA O DROPDOWN ---
+    // --- GERENCIADOR DE EVENTOS CORRIGIDO ---
     itemsContainer.addEventListener('change', async function(event) {
         const select = event.target;
         if (!select.classList.contains('status-select')) return;
@@ -99,11 +99,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         const idReq = select.dataset.idReq;
         const novoStatus = select.value;
         const usuario = localStorage.getItem('userName');
+        
+        // CORREÇÃO APLICADA AQUI: Busca o status original de forma segura
+        const statusAntigo = select.dataset.originalStatus;
 
         if (!usuario) { return alert('Erro: Usuário não identificado.'); }
-
-        // Pega o status antigo para poder reverter em caso de cancelamento ou erro
-        const statusAntigo = Array.from(select.options).find(opt => opt.defaultSelected).value;
 
         if (confirm(`Tem certeza que deseja alterar o status para "${novoStatus}"?`)) {
             try {
@@ -116,13 +116,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message);
                 
-                // Sucesso, recarrega a página para mostrar todas as atualizações (inclusive no header)
-                carregarDetalhes();
-
+                carregarDetalhes(); // Recarrega para mostrar as atualizações
             } catch (error) {
                 console.error('Erro ao mudar status:', error);
                 alert(`Falha ao mudar o status: ${error.message}`);
-                select.value = statusAntigo; // Reverte a seleção no dropdown em caso de erro
+                select.value = statusAntigo; 
                 select.disabled = false;
             }
         } else {
