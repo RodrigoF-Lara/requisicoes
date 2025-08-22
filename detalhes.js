@@ -2,10 +2,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     // --- ELEMENTOS GLOBAIS ---
     const headerContainer = document.getElementById('detalhe-header-container');
     const itemsContainer = document.getElementById('detalhe-itens-container');
-    const atenderModal = document.getElementById('atenderModal');
-    const atenderForm = document.getElementById('atenderForm');
-    const modalStatus = document.getElementById('modalStatus');
-
     const urlParams = new URLSearchParams(window.location.search);
     const idReq = urlParams.get('id');
 
@@ -23,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function renderHeader(header) {
         const dataNecessidade = formatarData(header.DT_NECESSIDADE);
-        const dataRequisicao = formatarData(header.DT_REQUISICAO);
+        const dataRequisicao = formatarData(header.DT_REQUISICOES);
         headerContainer.innerHTML = `
             <div class="detalhe-header">
                 <div><strong>Nº Requisição:</strong> ${header.ID_REQ}</div>
@@ -35,11 +31,19 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>`;
     }
 
+    // NOVA FUNÇÃO RENDERITEMS COM DROPDOWN E SEM A COLUNA "ATENDER"
     function renderItems(items, idReq) {
         itemsContainer.innerHTML = '';
         const table = document.createElement('table');
+        const statusOptions = ['Pendente', 'Em separação', 'Separado', 'Aguarda coleta', 'Finalizado'];
+
         const tableRowsHTML = items.map(item => {
-            const statusLimpo = item.STATUS_ITEM ? item.STATUS_ITEM.trim() : 'PENDENTE';
+            const statusLimpo = item.STATUS_ITEM ? item.STATUS_ITEM.trim() : 'Pendente';
+            
+            const optionsHTML = statusOptions.map(opt => 
+                `<option value="${opt}" ${statusLimpo === opt ? 'selected' : ''}>${opt}</option>`
+            ).join('');
+
             return `
                 <tr>
                     <td>${item.ID_REQ_ITEM}</td>
@@ -48,13 +52,14 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <td>${item.QNT_REQ}</td>
                     <td>${item.QNT_PAGA}</td>
                     <td>${item.SALDO}</td>
-                    <td><span class="status-badge status-${(statusLimpo || 'pendente').toLowerCase()}">${statusLimpo}</span></td>
-                    <td>${statusLimpo !== 'PAGO' ? `<button class="btn-atender" data-id-req-item="${item.ID_REQ_ITEM}" data-id-req="${idReq}" data-codigo="${item.CODIGO}" data-qnt-req="${item.QNT_REQ}" data-saldo="${item.SALDO}"><i class="fa-solid fa-dolly"></i> Atender</button>` : '<span class="info-message">Concluído</span>'}</td>
+                    <td><span class="status-badge status-${(statusLimpo || 'pendente').replace(/\s/g, '-').toLowerCase()}">${statusLimpo}</span></td>
                     <td>
-                        <div class="acoes-container">
-                            ${statusLimpo !== 'PAGO' ? `<button class="btn-acao btn-pagar" title="Marcar como Pago" data-id-req-item="${item.ID_REQ_ITEM}" data-id-req="${idReq}"><i class="fa-solid fa-check"></i> Pagar</button>` : ''}
-                            ${statusLimpo === 'PAGO' ? `<button class="btn-acao btn-estornar" title="Marcar como Pendente" data-id-req-item="${item.ID_REQ_ITEM}" data-id-req="${idReq}"><i class="fa-solid fa-undo"></i> Estornar</button>` : ''}
-                        </div>
+                        <select class="status-select" 
+                                data-id-req-item="${item.ID_REQ_ITEM}" 
+                                data-id-req="${idReq}"
+                                ${statusLimpo === 'Finalizado' ? 'disabled' : ''}>
+                            ${optionsHTML}
+                        </select>
                     </td>
                 </tr>`;
         }).join('');
@@ -62,7 +67,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         table.innerHTML = `
             <thead>
                 <tr>
-                    <th>Item</th><th>Código</th><th>Descrição</th><th>QNT REQ</th><th>QNT PAGA</th><th>Saldo</th><th>Status</th><th>Atender Item</th><th>Ações</th>
+                    <th>Item</th><th>Código</th><th>Descrição</th><th>QNT REQ</th><th>QNT PAGA</th><th>Saldo</th><th>Status</th><th>Ações</th>
                 </tr>
             </thead>
             <tbody>${tableRowsHTML}</tbody>`;
@@ -85,35 +90,24 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // --- GERENCIADORES DE EVENTOS (EVENT LISTENERS) ---
-    itemsContainer.addEventListener('click', async function(event) {
-        const btnAtender = event.target.closest('.btn-atender');
-        const btnAcao = event.target.closest('.btn-acao');
+    // --- GERENCIADOR DE EVENTOS ATUALIZADO PARA O DROPDOWN ---
+    itemsContainer.addEventListener('change', async function(event) {
+        const select = event.target;
+        if (!select.classList.contains('status-select')) return;
 
-        if (btnAtender) {
-            const { idReqItem, idReq, codigo, qntReq, saldo } = btnAtender.dataset;
-            document.getElementById('modalCodigo').textContent = codigo;
-            document.getElementById('modalQntReq').textContent = qntReq;
-            document.getElementById('modalSaldo').textContent = saldo;
-            document.getElementById('quantidadeAtendida').value = saldo;
-            document.getElementById('modalStatus').textContent = '';
-            atenderForm.dataset.idReqItem = idReqItem;
-            atenderForm.dataset.idReq = idReq;
-            atenderModal.style.display = 'block';
-        }
+        const idReqItem = select.dataset.idReqItem;
+        const idReq = select.dataset.idReq;
+        const novoStatus = select.value;
+        const usuario = localStorage.getItem('userName');
 
-        if (btnAcao) {
-            const { idReqItem, idReq } = btnAcao.dataset;
-            const usuario = localStorage.getItem('userName');
-            const novoStatus = btnAcao.classList.contains('btn-pagar') ? 'PAGO' : 'PENDENTE';
-            const acao = novoStatus === 'PAGO' ? 'PAGO' : 'PENDENTE (ESTORNADO)';
-            
-            if (!usuario) { return alert('Erro: Usuário não identificado.'); }
-            if (!confirm(`Tem certeza que deseja marcar este item como ${acao}?`)) { return; }
+        if (!usuario) { return alert('Erro: Usuário não identificado.'); }
 
+        // Pega o status antigo para poder reverter em caso de cancelamento ou erro
+        const statusAntigo = Array.from(select.options).find(opt => opt.defaultSelected).value;
+
+        if (confirm(`Tem certeza que deseja alterar o status para "${novoStatus}"?`)) {
             try {
-                btnAcao.disabled = true;
-                btnAcao.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                select.disabled = true;
                 const response = await fetch('/api/atualizarStatusItem', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -121,45 +115,20 @@ document.addEventListener('DOMContentLoaded', async function() {
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message);
-                alert(result.message);
+                
+                // Sucesso, recarrega a página para mostrar todas as atualizações (inclusive no header)
                 carregarDetalhes();
+
             } catch (error) {
                 console.error('Erro ao mudar status:', error);
                 alert(`Falha ao mudar o status: ${error.message}`);
-                carregarDetalhes();
+                select.value = statusAntigo; // Reverte a seleção no dropdown em caso de erro
+                select.disabled = false;
             }
+        } else {
+            select.value = statusAntigo; // Usuário cancelou, reverte a seleção
         }
     });
-
-    atenderForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const { idReqItem, idReq } = this.dataset;
-        const quantidadeAtendida = document.getElementById('quantidadeAtendida').value;
-        const usuario = localStorage.getItem('userName');
-        modalStatus.textContent = "Salvando...";
-
-        try {
-            const response = await fetch('/api/atenderRequisicao', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idReqItem, idReq, quantidadeAtendida, usuario })
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.message);
-            modalStatus.style.color = 'green';
-            modalStatus.textContent = result.message;
-            setTimeout(() => {
-                atenderModal.style.display = 'none';
-                carregarDetalhes();
-            }, 1000);
-        } catch (error) {
-            modalStatus.style.color = 'red';
-            modalStatus.textContent = `Erro: ${error.message}`;
-        }
-    });
-
-    document.querySelector('.close-btn').addEventListener('click', () => { atenderModal.style.display = 'none'; });
-    window.addEventListener('click', (event) => { if (event.target == atenderModal) { atenderModal.style.display = 'none'; } });
 
     carregarDetalhes();
 });
