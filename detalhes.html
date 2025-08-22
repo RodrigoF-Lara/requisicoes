@@ -7,62 +7,63 @@
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     <style>
-        .container {
-            max-width: 1600px;
-        }
-        #userInfoBar {
-            position: fixed; top: 0; left: 0; width: 100%;
-            background-color: #1976d2; color: white; padding: 8px 20px;
-            font-size: 14px; z-index: 1001; text-align: right;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        body {
-            padding-top: 40px;
-        }
+        .container { max-width: 1600px; }
+        #userInfoBar { position: fixed; top: 0; left: 0; width: 100%; background-color: #1976d2; color: white; padding: 8px 20px; font-size: 14px; z-index: 1001; text-align: right; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        body { padding-top: 40px; }
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: #fff; margin: 15% auto; padding: 30px; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
         .modal-header h2 { margin: 0; color: #1976d2; }
         .close-btn { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
-
-        .acoes-container {
-        display: flex;
-        gap: 5px;
-    }
-    .btn-acao {
-        padding: 6px 10px;
-        font-size: 12px;
-        border-radius: 4px;
-        cursor: pointer;
-        border: none;
-        color: white;
-    }
-    .btn-pagar {
-        background-color: #28a745; /* Verde */
-    }
-    .btn-pagar:hover {
-        background-color: #218838;
-    }
-    .btn-estornar {
-        background-color: #ffc107; /* Amarelo */
-        color: #212529;
-    }
-    .btn-estornar:hover {
-        background-color: #e0a800;
-    }
+        .acoes-container { display: flex; gap: 5px; }
+        .btn-acao { padding: 6px 10px; font-size: 12px; border-radius: 4px; cursor: pointer; border: none; color: white; }
+        .btn-pagar { background-color: #28a745; } .btn-pagar:hover { background-color: #218838; }
+        .btn-estornar { background-color: #ffc107; color: #212529; } .btn-estornar:hover { background-color: #e0a800; }
     </style>
 </head>
 <body>
     <div id="userInfoBar"></div>
     <div class="container">
-        <a href="consulta.html" class="btn-voltar"><i class="fa-solid fa-arrow-left"></i> Voltar para a Consulta</a>
+        <a href="consulta.html" class="btn-voltar">
+            <i class="fa-solid fa-arrow-left"></i> Voltar
+        </a>
         <h1>Detalhes da Requisição</h1>
-        <div id="detalhe-header-container">
-            <div class="loader-container"><div class="loader"></div></div>
-        </div>
-        <hr class="divisor">
-        <h2>Itens da Requisição</h2>
+        <div id="detalhe-header-container"></div>
         <div id="detalhe-itens-container"></div>
     </div>
 
-    <div id="atenderModal
+    <div id="atenderModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Atender Item</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <p><strong>Código:</strong> <span id="modalCodigo"></span></p>
+            <p><strong>QNT Solicitada:</strong> <span id="modalQntReq"></span></p>
+            <p><strong>Saldo Atual:</strong> <span id="modalSaldo"></span></p>
+            <form id="atenderForm">
+                <div class="form-group">
+                    <label for="quantidadeAtendida">Quantidade a Atender:</label>
+                    <input type="number" id="quantidadeAtendida" step="any" required>
+                </div>
+                <button type="submit" class="btn-destaque">Salvar Atendimento</button>
+                <div id="modalStatus" class="status" style="margin-top: 15px;"></div>
+            </form>
+        </div>
+    </div>
+
+    <script src="detalhes.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const userName = localStorage.getItem('userName');
+            const loginTime = localStorage.getItem('loginTime');
+            if (userName && loginTime) {
+                const userInfoBar = document.getElementById('userInfoBar');
+                userInfoBar.innerHTML = `<strong>Usuário:</strong> ${userName} | <strong>Login:</strong> ${loginTime}`;
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+    </script>
+</body>
+</html>
