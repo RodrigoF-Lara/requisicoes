@@ -1,4 +1,4 @@
-import { getConnection, closeConnection } from "./db.js";
+import { getConnection } from "./db.js";
 import sql from "mssql";
 
 export default async function handler(req, res) {
@@ -32,11 +32,10 @@ export default async function handler(req, res) {
         res.status(200).json({ message: "Requisição criada com sucesso!", idReq: idReq });
 
     } catch (err) {
-        console.error("Erro SQL:", err);
-        res.status(500).json({ message: "Erro ao criar requisição", error: err.message });
-    } finally {
-       
-    }
+    console.error("Erro ao criar requisição:", err);
+    res.status(500).json({ message: "Erro interno do servidor" });
+}
+// O bloco finally não existe mais aqui
 }
 
 //forçar committtt

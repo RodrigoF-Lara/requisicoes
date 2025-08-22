@@ -1,4 +1,4 @@
-import { getConnection, closeConnection } from "./db.js";
+import { getConnection } from "./db.js";
 import sql from "mssql";
 
 export default async function handler(req, res) {
@@ -45,7 +45,5 @@ export default async function handler(req, res) {
     } catch (err) {
         console.error("Erro SQL:", err);
         res.status(500).json({ message: "Erro ao inserir na TB_REQ_ITEM", error: err.message });
-    } finally {
-        await closeConnection();
-    }
+    
 }
