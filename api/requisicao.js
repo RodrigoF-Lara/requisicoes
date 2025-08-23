@@ -26,79 +26,54 @@ export default async function handler(req, res) {
     }
 }
 
-// --- LÓGICA PARA REQUISIÇÕES GET (BUSCAR DADOS) ---
+// --- LÓGICA GET (sem alterações) ---
 async function handleGet(req, res) {
     const { id, idReqItemLog } = req.query;
     const pool = await getConnection();
-
-    if (id) { // Busca os detalhes da requisição
+    if (id) {
         const headerResult = await pool.request().input('idReq', sql.Int, id).query("SELECT * FROM [dbo].[TB_REQUISICOES] WHERE ID_REQ = @idReq");
         if (headerResult.recordset.length === 0) return res.status(404).json({ message: "Requisição não encontrada" });
-        
-        const itemsResult = await pool.request().input('idReqItems', sql.Int, id)
-            .query(`SELECT I.*, P.DESCRICAO AS DESCRICAO_PRODUTO FROM [dbo].[TB_REQ_ITEM] I LEFT JOIN [dbo].[CAD_PROD] P ON I.CODIGO = P.CODIGO WHERE I.ID_REQ = @idReqItems ORDER BY I.ID_REQ_ITEM`);
-        
+        const itemsResult = await pool.request().input('idReqItems', sql.Int, id).query(`SELECT I.*, P.DESCRICAO AS DESCRICAO_PRODUTO FROM [dbo].[TB_REQ_ITEM] I LEFT JOIN [dbo].[CAD_PROD] P ON I.CODIGO = P.CODIGO WHERE I.ID_REQ = @idReqItems ORDER BY I.ID_REQ_ITEM`);
         return res.status(200).json({ header: headerResult.recordset[0], items: itemsResult.recordset });
-
-    } else if (idReqItemLog) { // Busca o log de um item
+    } else if (idReqItemLog) {
         const result = await pool.request().input('ID_REQ_ITEM', sql.Int, idReqItemLog).query("SELECT STATUS_ANTERIOR, STATUS_NOVO, RESPONSAVEL, DT_ALTERACAO, CONVERT(varchar(8), HR_ALTERACAO, 108) as HR_ALTERACAO_FORMATADA FROM TB_REQ_ITEM_LOG WHERE ID_REQ_ITEM = @ID_REQ_ITEM ORDER BY DT_ALTERACAO DESC, HR_ALTERACAO DESC;");
         return res.status(200).json(result.recordset);
-
-    } else { // Busca a lista completa
+    } else {
         const result = await pool.request().query("SELECT H.ID_REQ, H.DT_REQUISICAO, H.STATUS, H.PRIORIDADE, H.SOLICITANTE, (SELECT COUNT(*) FROM [dbo].[TB_REQ_ITEM] I WHERE I.ID_REQ = H.ID_REQ) AS TOTAL_ITENS FROM [dbo].[TB_REQUISICOES] H ORDER BY H.ID_REQ DESC;");
         return res.status(200).json(result.recordset);
     }
 }
 
-// --- LÓGICA PARA REQUISIÇÕES POST (CRIAR DADOS) ---
+// --- LÓGICA POST (sem alterações) ---
 async function handlePost(req, res) {
-    // A lógica de POST para criar requisições e itens permanece a mesma
     const { action } = req.body;
     const pool = await getConnection();
-
     if (action === 'createHeader') {
         const { dtNecessidade, prioridade, solicitante } = req.body;
         if (!dtNecessidade || !prioridade || !solicitante) return res.status(400).json({ message: "Todos os campos são obrigatórios" });
-        
-        const result = await pool.request()
-            .input('SOLICITANTE', sql.NVarChar, solicitante).input('DT_REQUISICAO', sql.Date, new Date()).input('HR_REQUSICAO', sql.NVarChar, new Date().toLocaleTimeString())
-            .input('STATUS', sql.NVarChar, 'Pendente').input('DT_NECESSIDADE', sql.Date, dtNecessidade).input('PRIORIDADE', sql.NVarChar, prioridade)
-            .query("INSERT INTO [dbo].[TB_REQUISICOES] (SOLICITANTE, DT_REQUISICAO, HR_REQUSICAO, STATUS, DT_NECESSIDADE, PRIORIDADE) OUTPUT INSERTED.ID_REQ VALUES (@SOLICITANTE, @DT_REQUISICAO, @HR_REQUSICAO, @STATUS, @DT_NECESSIDADE, @PRIORIDADE);");
-        
+        const result = await pool.request().input('SOLICITANTE', sql.NVarChar, solicitante).input('DT_REQUISICAO', sql.Date, new Date()).input('HR_REQUSICAO', sql.NVarChar, new Date().toLocaleTimeString()).input('STATUS', sql.NVarChar, 'Pendente').input('DT_NECESSIDADE', sql.Date, dtNecessidade).input('PRIORIDADE', sql.NVarChar, prioridade).query("INSERT INTO [dbo].[TB_REQUISICOES] (SOLICITANTE, DT_REQUISICAO, HR_REQUSICAO, STATUS, DT_NECESSIDADE, PRIORIDADE) OUTPUT INSERTED.ID_REQ VALUES (@SOLICITANTE, @DT_REQUISICAO, @HR_REQUSICAO, @STATUS, @DT_NECESSIDADE, @PRIORIDADE);");
         return res.status(201).json({ idReq: result.recordset[0].ID_REQ });
-
     } else if (action === 'uploadItems') {
         const { data, idReq } = req.body;
         if (!Array.isArray(data) || !data.length || !idReq) return res.status(400).json({ message: "Dados inválidos ou ID_REQ ausente" });
-
         let idReqItem = 1;
         for (let row of data) {
             const codigo = row.CODIGO;
             const qntReq = parseFloat(row.QNT_REQ);
             if (!codigo || isNaN(qntReq)) continue;
-
-            await pool.request()
-                .input('ID_REQ', sql.Int, idReq).input('ID_REQ_ITEM', sql.Int, idReqItem++).input('CODIGO', sql.NVarChar, codigo)
-                .input('QNT_REQ', sql.Float, qntReq).input('QNT_PAGA', sql.Float, 0).input('SALDO', sql.Float, qntReq).input('STATUS_ITEM', sql.NVarChar, 'Pendente')
-                .query("INSERT INTO [dbo].[TB_REQ_ITEM] (ID_REQ, ID_REQ_ITEM, CODIGO, QNT_REQ, QNT_PAGA, SALDO, STATUS_ITEM) VALUES (@ID_REQ, @ID_REQ_ITEM, @CODIGO, @QNT_REQ, @QNT_PAGA, @SALDO, @STATUS_ITEM)");
+            await pool.request().input('ID_REQ', sql.Int, idReq).input('ID_REQ_ITEM', sql.Int, idReqItem++).input('CODIGO', sql.NVarChar, codigo).input('QNT_REQ', sql.Float, qntReq).input('QNT_PAGA', sql.Float, 0).input('SALDO', sql.Float, qntReq).input('STATUS_ITEM', sql.NVarChar, 'Pendente').query("INSERT INTO [dbo].[TB_REQ_ITEM] (ID_REQ, ID_REQ_ITEM, CODIGO, QNT_REQ, QNT_PAGA, SALDO, STATUS_ITEM) VALUES (@ID_REQ, @ID_REQ_ITEM, @CODIGO, @QNT_REQ, @QNT_PAGA, @SALDO, @STATUS_ITEM)");
         }
         return res.status(201).json({ message: "Itens inseridos com sucesso" });
     }
-    
     return res.status(400).json({ message: "Ação POST inválida." });
 }
 
-// --- LÓGICA PARA REQUISIÇÕES PUT (ATUALIZAR DADOS) ---
+// --- LÓGICA PUT (COM A CORREÇÃO FINAL) ---
 async function handlePut(req, res) {
     const { action } = req.body;
     
     if (action === 'updateStatus') {
         const { idReqItem, idReq, novoStatus, statusAntigo, usuario } = req.body;
-        const statusValidos = ['Pendente', 'Em separação', 'Separado', 'Aguarda coleta', 'Finalizado'];
-        if (!idReqItem || !idReq || !novoStatus || !statusAntigo || !usuario || !statusValidos.includes(novoStatus)) {
-            return res.status(400).json({ message: "Dados para atualização de status inválidos." });
-        }
-
         const pool = await getConnection();
         const transaction = new sql.Transaction(pool);
         try {
@@ -119,36 +94,28 @@ async function handlePut(req, res) {
 
             // --- LÓGICA DE ATUALIZAÇÃO DO STATUS GERAL (CORRIGIDA E COM LOGS) ---
             console.log(`--- INICIANDO DEBUG DE STATUS PARA REQ ID: ${idReq} ---`);
-            
             const checkStatusQuery = `SELECT STATUS_ITEM FROM TB_REQ_ITEM WHERE ID_REQ = @ID_REQ`;
             const allItemsResult = await request.query(checkStatusQuery);
-            
-            // Limpa e padroniza a lista de status
-            const allStatuses = allItemsResult.recordset.map(item => 
-                (item.STATUS_ITEM || 'Pendente').trim().toUpperCase()
-            );
-
+            const allStatuses = allItemsResult.recordset.map(item => (item.STATUS_ITEM || 'Pendente').trim().toUpperCase());
             console.log("Status de todos os itens encontrados:", allStatuses);
 
             let novoStatusHeader;
-
-            // every() retorna true se TODOS os elementos do array passarem no teste.
             const todosFinalizados = allStatuses.length > 0 && allStatuses.every(s => s === 'FINALIZADO');
             const todosPendentes = allStatuses.length > 0 && allStatuses.every(s => s === 'PENDENTE');
 
             if (todosFinalizados) {
-                novoStatusHeader = 'Concluído';
+                novoStatusHeader = 'CONCLUIDO'; // MUDANÇA 1: Sem acento para teste
             } else if (todosPendentes) {
                 novoStatusHeader = 'Pendente';
             } else {
                 novoStatusHeader = 'Parcial';
             }
             
-            console.log(`Decisão da Lógica: Total de Itens=${allStatuses.length}, Todos Finalizados=${todosFinalizados}, Todos Pendentes=${todosPendentes}`);
-            console.log(`Status do Cabeçalho definido para: '${novoStatusHeader}'`);
+            console.log(`Decisão da Lógica: Status do Cabeçalho definido para: '${novoStatusHeader}'`);
 
-            await request.input('STATUS_HEADER', sql.NVarChar, novoStatusHeader).query("UPDATE TB_REQUISICOES SET STATUS = @STATUS_HEADER WHERE ID_REQ = @ID_REQ");
-            
+            // MUDANÇA 2: Capturando o resultado do UPDATE
+            const updateResult = await request.input('STATUS_HEADER', sql.NVarChar, novoStatusHeader).query("UPDATE TB_REQUISICOES SET STATUS = @STATUS_HEADER WHERE ID_REQ = @ID_REQ");
+            console.log(`Resultado do UPDATE: ${updateResult.rowsAffected[0]} linha(s) afetada(s).`);
             console.log(`--- FIM DO DEBUG ---`);
 
             await transaction.commit();
@@ -159,6 +126,5 @@ async function handlePut(req, res) {
             return res.status(500).json({ message: "Erro interno do servidor ao atualizar o status." });
         }
     }
-
     return res.status(400).json({ message: "Ação PUT inválida." });
 }
