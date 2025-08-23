@@ -27,16 +27,38 @@ export default async function handler(req, res) {
 }
 
 // --- LÓGICA PARA REQUISIÇÕES GET (BUSCAR DADOS) ---
+// Dentro do arquivo api/requisicao.js, substitua apenas esta função:
 async function handleGet(req, res) {
     const { id, idReqItemLog } = req.query;
+    const pool = await getConnection();
 
     if (id) { // Se tem um ID, busca os detalhes da requisição
         // LÓGICA DO ANTIGO 'detalhes.js'
-        const pool = await getConnection();
-        const headerResult = await pool.request().input('idReq', sql.Int, id).query("SELECT * FROM [dbo].[TB_REQUISICOES] WHERE ID_REQ = @idReq");
-        if (headerResult.recordset.length === 0) return res.status(404).json({ message: "Requisição não encontrada" });
+        const headerResult = await pool.request()
+            .input('idReq', sql.Int, id)
+            .query("SELECT * FROM [dbo].[TB_REQUISICOES] WHERE ID_REQ = @idReq");
         
-        const itemsResult = await pool.request().input('idReq', sql.Int, id).query("SELECT * FROM [dbo].[TB_REQ_ITEM] WHERE ID_REQ = @idReq ORDER BY ID_REQ_ITEM");
+        if (headerResult.recordset.length === 0) {
+            return res.status(404).json({ message: "Requisição não encontrada" });
+        }
+        
+        // --- CORREÇÃO APLICADA AQUI ---
+        // Adicionamos o LEFT JOIN com a tabela CAD_PROD para buscar a descrição
+        const itemsResult = await pool.request()
+            .input('idReqItems', sql.Int, id)
+            .query(`
+                SELECT 
+                    I.*, 
+                    P.DESCRICAO AS DESCRICAO_PRODUTO
+                FROM 
+                    [dbo].[TB_REQ_ITEM] I
+                LEFT JOIN 
+                    [dbo].[CAD_PROD] P ON I.CODIGO = P.CODIGO
+                WHERE 
+                    I.ID_REQ = @idReqItems 
+                ORDER BY 
+                    I.ID_REQ_ITEM
+            `);
         
         const headerData = headerResult.recordset[0];
         const safeHeader = { ...headerData, STATUS: headerData.STATUS || 'PENDENTE', PRIORIDADE: headerData.PRIORIDADE || 'NORMAL' };
@@ -45,13 +67,11 @@ async function handleGet(req, res) {
 
     } else if (idReqItemLog) { // Se quer o log de um item
         // LÓGICA DO ANTIGO 'getItemLog.js'
-        const pool = await getConnection();
         const result = await pool.request().input('ID_REQ_ITEM', sql.Int, idReqItemLog).query("SELECT STATUS_ANTERIOR, STATUS_NOVO, RESPONSAVEL, DT_ALTERACAO, CONVERT(varchar(8), HR_ALTERACAO, 108) as HR_ALTERACAO_FORMATADA FROM TB_REQ_ITEM_LOG WHERE ID_REQ_ITEM = @ID_REQ_ITEM ORDER BY DT_ALTERACAO DESC, HR_ALTERACAO DESC;");
         return res.status(200).json(result.recordset);
 
     } else { // Se não tem parâmetro, busca a lista completa
         // LÓGICA DO ANTIGO 'consulta.js'
-        const pool = await getConnection();
         const result = await pool.request().query("SELECT H.ID_REQ, H.DT_REQUISICAO, H.STATUS, H.PRIORIDADE, H.SOLICITANTE, (SELECT COUNT(*) FROM [dbo].[TB_REQ_ITEM] I WHERE I.ID_REQ = H.ID_REQ) AS TOTAL_ITENS FROM [dbo].[TB_REQUISICOES] H ORDER BY H.ID_REQ DESC;");
         const safeResults = result.recordset.map(req => ({...req, STATUS: req.STATUS || 'PENDENTE', PRIORIDADE: req.PRIORIDADE || 'NORMAL'}));
         return res.status(200).json(safeResults);
