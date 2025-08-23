@@ -383,3 +383,10 @@ input, button, select {
     background-color: #f8f9fa; /* Um cinza bem claro */
     border: 1px solid #dee2e6; /* Uma borda sutil */
 }
+/* ============================================= */
+/* CORREÇÃO EXTRA DE LEGIBILIDADE (STATUS PARCIAL) */
+/* ============================================= */
+
+.status-badge.status-parcial {
+    color: #0c5460; /* Um tom de azul/verde escuro para bom contraste */
+}
