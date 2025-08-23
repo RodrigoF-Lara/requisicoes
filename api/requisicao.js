@@ -13,7 +13,7 @@ export default async function handler(req, res) {
             case "POST":
                 await handlePost(req, res);
                 break;
-            case "PUT": // Usaremos PUT para atualizações
+            case "PUT":
                 await handlePut(req, res);
                 break;
             default:
@@ -27,84 +27,50 @@ export default async function handler(req, res) {
 }
 
 // --- LÓGICA PARA REQUISIÇÕES GET (BUSCAR DADOS) ---
-// Dentro do arquivo api/requisicao.js, substitua apenas esta função:
 async function handleGet(req, res) {
     const { id, idReqItemLog } = req.query;
     const pool = await getConnection();
 
-    if (id) { // Se tem um ID, busca os detalhes da requisição
-        // LÓGICA DO ANTIGO 'detalhes.js'
-        const headerResult = await pool.request()
-            .input('idReq', sql.Int, id)
-            .query("SELECT * FROM [dbo].[TB_REQUISICOES] WHERE ID_REQ = @idReq");
+    if (id) { // Busca os detalhes da requisição
+        const headerResult = await pool.request().input('idReq', sql.Int, id).query("SELECT * FROM [dbo].[TB_REQUISICOES] WHERE ID_REQ = @idReq");
+        if (headerResult.recordset.length === 0) return res.status(404).json({ message: "Requisição não encontrada" });
         
-        if (headerResult.recordset.length === 0) {
-            return res.status(404).json({ message: "Requisição não encontrada" });
-        }
+        const itemsResult = await pool.request().input('idReqItems', sql.Int, id)
+            .query(`SELECT I.*, P.DESCRICAO AS DESCRICAO_PRODUTO FROM [dbo].[TB_REQ_ITEM] I LEFT JOIN [dbo].[CAD_PROD] P ON I.CODIGO = P.CODIGO WHERE I.ID_REQ = @idReqItems ORDER BY I.ID_REQ_ITEM`);
         
-        // --- CORREÇÃO APLICADA AQUI ---
-        // Adicionamos o LEFT JOIN com a tabela CAD_PROD para buscar a descrição
-        const itemsResult = await pool.request()
-            .input('idReqItems', sql.Int, id)
-            .query(`
-                SELECT 
-                    I.*, 
-                    P.DESCRICAO AS DESCRICAO_PRODUTO
-                FROM 
-                    [dbo].[TB_REQ_ITEM] I
-                LEFT JOIN 
-                    [dbo].[CAD_PROD] P ON I.CODIGO = P.CODIGO
-                WHERE 
-                    I.ID_REQ = @idReqItems 
-                ORDER BY 
-                    I.ID_REQ_ITEM
-            `);
-        
-        const headerData = headerResult.recordset[0];
-        const safeHeader = { ...headerData, STATUS: headerData.STATUS || 'PENDENTE', PRIORIDADE: headerData.PRIORIDADE || 'NORMAL' };
-        
-        return res.status(200).json({ header: safeHeader, items: itemsResult.recordset });
+        return res.status(200).json({ header: headerResult.recordset[0], items: itemsResult.recordset });
 
-    } else if (idReqItemLog) { // Se quer o log de um item
-        // LÓGICA DO ANTIGO 'getItemLog.js'
+    } else if (idReqItemLog) { // Busca o log de um item
         const result = await pool.request().input('ID_REQ_ITEM', sql.Int, idReqItemLog).query("SELECT STATUS_ANTERIOR, STATUS_NOVO, RESPONSAVEL, DT_ALTERACAO, CONVERT(varchar(8), HR_ALTERACAO, 108) as HR_ALTERACAO_FORMATADA FROM TB_REQ_ITEM_LOG WHERE ID_REQ_ITEM = @ID_REQ_ITEM ORDER BY DT_ALTERACAO DESC, HR_ALTERACAO DESC;");
         return res.status(200).json(result.recordset);
 
-    } else { // Se não tem parâmetro, busca a lista completa
-        // LÓGICA DO ANTIGO 'consulta.js'
+    } else { // Busca a lista completa
         const result = await pool.request().query("SELECT H.ID_REQ, H.DT_REQUISICAO, H.STATUS, H.PRIORIDADE, H.SOLICITANTE, (SELECT COUNT(*) FROM [dbo].[TB_REQ_ITEM] I WHERE I.ID_REQ = H.ID_REQ) AS TOTAL_ITENS FROM [dbo].[TB_REQUISICOES] H ORDER BY H.ID_REQ DESC;");
-        const safeResults = result.recordset.map(req => ({...req, STATUS: req.STATUS || 'PENDENTE', PRIORIDADE: req.PRIORIDADE || 'NORMAL'}));
-        return res.status(200).json(safeResults);
+        return res.status(200).json(result.recordset);
     }
 }
 
 // --- LÓGICA PARA REQUISIÇÕES POST (CRIAR DADOS) ---
 async function handlePost(req, res) {
+    // A lógica de POST para criar requisições e itens permanece a mesma
     const { action } = req.body;
+    const pool = await getConnection();
 
     if (action === 'createHeader') {
-        // LÓGICA DO ANTIGO 'novaRequisicao.js'
         const { dtNecessidade, prioridade, solicitante } = req.body;
         if (!dtNecessidade || !prioridade || !solicitante) return res.status(400).json({ message: "Todos os campos são obrigatórios" });
         
-        const pool = await getConnection();
         const result = await pool.request()
-            .input('SOLICITANTE', sql.NVarChar, solicitante)
-            .input('DT_REQUISICAO', sql.Date, new Date())
-            .input('HR_REQUSICAO', sql.NVarChar, new Date().toLocaleTimeString())
-            .input('STATUS', sql.NVarChar, 'PENDENTE')
-            .input('DT_NECESSIDADE', sql.Date, dtNecessidade)
-            .input('PRIORIDADE', sql.NVarChar, prioridade)
+            .input('SOLICITANTE', sql.NVarChar, solicitante).input('DT_REQUISICAO', sql.Date, new Date()).input('HR_REQUSICAO', sql.NVarChar, new Date().toLocaleTimeString())
+            .input('STATUS', sql.NVarChar, 'Pendente').input('DT_NECESSIDADE', sql.Date, dtNecessidade).input('PRIORIDADE', sql.NVarChar, prioridade)
             .query("INSERT INTO [dbo].[TB_REQUISICOES] (SOLICITANTE, DT_REQUISICAO, HR_REQUSICAO, STATUS, DT_NECESSIDADE, PRIORIDADE) OUTPUT INSERTED.ID_REQ VALUES (@SOLICITANTE, @DT_REQUISICAO, @HR_REQUSICAO, @STATUS, @DT_NECESSIDADE, @PRIORIDADE);");
         
         return res.status(201).json({ idReq: result.recordset[0].ID_REQ });
 
     } else if (action === 'uploadItems') {
-        // LÓGICA DO ANTIGO 'upload.js'
         const { data, idReq } = req.body;
         if (!Array.isArray(data) || !data.length || !idReq) return res.status(400).json({ message: "Dados inválidos ou ID_REQ ausente" });
 
-        const pool = await getConnection();
         let idReqItem = 1;
         for (let row of data) {
             const codigo = row.CODIGO;
@@ -112,13 +78,8 @@ async function handlePost(req, res) {
             if (!codigo || isNaN(qntReq)) continue;
 
             await pool.request()
-                .input('ID_REQ', sql.Int, idReq)
-                .input('ID_REQ_ITEM', sql.Int, idReqItem++)
-                .input('CODIGO', sql.NVarChar, codigo)
-                .input('QNT_REQ', sql.Float, qntReq)
-                .input('QNT_PAGA', sql.Float, 0)
-                .input('SALDO', sql.Float, qntReq)
-                .input('STATUS_ITEM', sql.NVarChar, 'Pendente')
+                .input('ID_REQ', sql.Int, idReq).input('ID_REQ_ITEM', sql.Int, idReqItem++).input('CODIGO', sql.NVarChar, codigo)
+                .input('QNT_REQ', sql.Float, qntReq).input('QNT_PAGA', sql.Float, 0).input('SALDO', sql.Float, qntReq).input('STATUS_ITEM', sql.NVarChar, 'Pendente')
                 .query("INSERT INTO [dbo].[TB_REQ_ITEM] (ID_REQ, ID_REQ_ITEM, CODIGO, QNT_REQ, QNT_PAGA, SALDO, STATUS_ITEM) VALUES (@ID_REQ, @ID_REQ_ITEM, @CODIGO, @QNT_REQ, @QNT_PAGA, @SALDO, @STATUS_ITEM)");
         }
         return res.status(201).json({ message: "Itens inseridos com sucesso" });
@@ -132,7 +93,6 @@ async function handlePut(req, res) {
     const { action } = req.body;
     
     if (action === 'updateStatus') {
-        // LÓGICA DO ANTIGO 'atualizarStatusItem.js'
         const { idReqItem, idReq, novoStatus, statusAntigo, usuario } = req.body;
         const statusValidos = ['Pendente', 'Em separação', 'Separado', 'Aguarda coleta', 'Finalizado'];
         if (!idReqItem || !idReq || !novoStatus || !statusAntigo || !usuario || !statusValidos.includes(novoStatus)) {
@@ -157,7 +117,17 @@ async function handlePut(req, res) {
 
             const allItemsResult = await request.query("SELECT COUNT(*) as total, SUM(CASE WHEN STATUS_ITEM = 'Finalizado' THEN 1 ELSE 0 END) as finalizados FROM TB_REQ_ITEM WHERE ID_REQ = @ID_REQ");
             const { total, finalizados } = allItemsResult.recordset[0];
-            let novoStatusHeader = (total === finalizados) ? 'CONCLUIDO' : 'PARCIAL';
+            
+            // --- CORREÇÃO APLICADA AQUI ---
+            let novoStatusHeader = 'Parcial';
+            if (total === finalizados) {
+                novoStatusHeader = 'Concluído'; // <-- Padronizado com acento
+            } else {
+                const pendentesResult = await request.query("SELECT COUNT(*) as total, SUM(CASE WHEN STATUS_ITEM = 'Pendente' THEN 1 ELSE 0 END) as pendentes FROM TB_REQ_ITEM WHERE ID_REQ = @ID_REQ");
+                if (pendentesResult.recordset[0].total === pendentesResult.recordset[0].pendentes) {
+                    novoStatusHeader = 'Pendente'; // <-- Padronizado com letra maiúscula
+                }
+            }
             
             await request.input('STATUS_HEADER', sql.NVarChar, novoStatusHeader).query("UPDATE TB_REQUISICOES SET STATUS = @STATUS_HEADER WHERE ID_REQ = @ID_REQ");
 
