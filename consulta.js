@@ -40,15 +40,16 @@ document.addEventListener('DOMContentLoaded', function() {
             requisicoes.forEach(req => {
                 const dataFormatada = new Date(req.DT_REQUISICAO).toLocaleDateString('pt-BR');
                 const tr = document.createElement('tr');
+                // Substitua a linha tr.innerHTML = `...`; por esta:
                 tr.innerHTML = `
                     <td>${req.ID_REQ}</td>
                     <td>${dataFormatada}</td>
                     <td>${req.SOLICITANTE || 'N/A'}</td>
-                    <td><span class="status-tag prioridade-${(req.PRIORIDADE || 'normal').toLowerCase()}">${req.PRIORIDADE || 'Normal'}</span></td>
-                    <td><span class="status-tag status-${(req.STATUS || 'pendente').toLowerCase()}">${req.STATUS || 'Pendente'}</span></td>
+                    <td><span class="prioridade-badge prioridade-${(req.PRIORIDADE || 'NORMAL').toUpperCase()}">${req.PRIORIDADE || 'NORMAL'}</span></td>
+                    <td><span class="status-badge status-${(req.STATUS || 'PENDENTE').toUpperCase().replace(/\s/g, '-')}">${req.STATUS || 'PENDENTE'}</span></td>
                     <td>${req.TOTAL_ITENS}</td>
                     <td>
-                        <button class="btn-detalhes" onclick="verDetalhes(${req.ID_REQ})">
+                        <button class="btn-detalhes" data-id="${req.ID_REQ}">
                             <i class="fa-solid fa-circle-info"></i> Detalhes
                         </button>
                     </td>
