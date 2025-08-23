@@ -80,7 +80,7 @@ h2 {
 }
 .status-pendente { background-color: var(--cor-alerta); }
 .status-parcial { background-color: #17a2b8; }
-.status-concluido, .status-finalizado { background-color: var(--cor-sucesso); }
+.status-concluido, .status-concluído, .status-finalizado { background-color: var(--cor-sucesso); } /* Verde */
 .status-em-separação { background-color: #6f42c1; }
 .status-separado { background-color: #fd7e14; }
 .status-aguarda-coleta { background-color: #007bff; }
