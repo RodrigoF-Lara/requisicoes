@@ -6,17 +6,14 @@ export default async function handler(req, res) {
         return res.status(405).json({ message: "Método não permitido" });
     }
 
-    const { idReqItem, idReq, novoStatus, usuario } = req.body;
-
-    // Nova lista de status válidos
+    const { idReqItem, idReq, novoStatus, statusAntigo, usuario } = req.body;
     const statusValidos = ['Pendente', 'Em separação', 'Separado', 'Aguarda coleta', 'Finalizado'];
 
-    if (!idReqItem || !idReq || !novoStatus || !usuario) {
-        return res.status(400).json({ message: "Todos os campos (ID Item, ID Requisição, Novo Status, Usuário) são obrigatórios." });
+    if (!idReqItem || !idReq || !novoStatus || !statusAntigo || !usuario) {
+        return res.status(400).json({ message: "Todos os campos (ID Item, ID Requisição, Status Novo, Status Antigo, Usuário) são obrigatórios." });
     }
-
     if (!statusValidos.includes(novoStatus)) {
-        return res.status(400).json({ message: `Status inválido. Use um dos seguintes: ${statusValidos.join(', ')}.` });
+        return res.status(400).json({ message: `Status inválido.` });
     }
 
     const pool = await getConnection();
@@ -24,54 +21,53 @@ export default async function handler(req, res) {
 
     try {
         await transaction.begin();
+        // --- USAREMOS UM ÚNICO OBJETO DE REQUEST PARA TODA A TRANSAÇÃO ---
+        const request = new sql.Request(transaction);
 
-        // 1. Atualiza o item específico
-        const itemRequest = new sql.Request(transaction);
-        let queryUpdateItem = `
-            UPDATE TB_REQ_ITEM
-            SET STATUS_ITEM = @NOVO_STATUS
-        `;
-
-        // Lógica atualizada: Apenas o status 'Finalizado' altera as quantidades
+        // --- TAREFA 1: ATUALIZAR O STATUS ATUAL DO ITEM ---
+        let queryUpdateItem = `UPDATE TB_REQ_ITEM SET STATUS_ITEM = @NOVO_STATUS_ITEM`;
         if (novoStatus === 'Finalizado') {
             queryUpdateItem += `, QNT_PAGA = QNT_REQ, SALDO = 0`;
         } else if (novoStatus === 'Pendente') {
-            // Se retornar para pendente, reseta as quantidades
             queryUpdateItem += `, QNT_PAGA = 0, SALDO = QNT_REQ`;
         }
-        
-        queryUpdateItem += ` WHERE ID_REQ_ITEM = @ID_REQ_ITEM;`;
+        queryUpdateItem += ` WHERE ID_REQ_ITEM = @ID_REQ_ITEM AND ID_REQ = @ID_REQ;`;
 
-        await itemRequest
+        await request
+            .input('NOVO_STATUS_ITEM', sql.NVarChar, novoStatus)
             .input('ID_REQ_ITEM', sql.Int, idReqItem)
-            .input('NOVO_STATUS', sql.NVarChar, novoStatus)
+            .input('ID_REQ', sql.Int, idReq)
             .query(queryUpdateItem);
 
-        // 2. Verifica se todos os itens da requisição estão 'Finalizado' para atualizar o cabeçalho
-        const checkStatusRequest = new sql.Request(transaction);
-        const allItemsResult = await checkStatusRequest
-            .input('ID_REQ', sql.Int, idReq)
-            .query("SELECT COUNT(*) as total, SUM(CASE WHEN STATUS_ITEM = 'Finalizado' THEN 1 ELSE 0 END) as finalizados FROM TB_REQ_ITEM WHERE ID_REQ = @ID_REQ");
-
+        // --- TAREFA 2: INSERIR O REGISTRO DE LOG ---
+        const dataHoraAtual = new Date();
+        await request
+            .input('STATUS_ANTERIOR_LOG', sql.NVarChar, statusAntigo)
+            .input('STATUS_NOVO_LOG', sql.NVarChar, novoStatus)
+            .input('RESPONSAVEL_LOG', sql.NVarChar, usuario)
+            .input('DT_ALTERACAO_LOG', sql.Date, dataHoraAtual)
+            .input('HR_ALTERACAO_LOG', sql.Time, dataHoraAtual)
+            .query(`
+                INSERT INTO TB_REQ_ITEM_LOG 
+                (ID_REQ, ID_REQ_ITEM, STATUS_ANTERIOR, STATUS_NOVO, RESPONSAVEL, DT_ALTERACAO, HR_ALTERACAO)
+                VALUES 
+                (@ID_REQ, @ID_REQ_ITEM, @STATUS_ANTERIOR_LOG, @STATUS_NOVO_LOG, @RESPONSAVEL_LOG, @DT_ALTERACAO_LOG, @HR_ALTERACAO_LOG)
+            `);
+        
+        // --- TAREFA 3: ATUALIZAR O STATUS DO CABEÇALHO ---
+        const allItemsResult = await request.query("SELECT COUNT(*) as total, SUM(CASE WHEN STATUS_ITEM = 'Finalizado' THEN 1 ELSE 0 END) as finalizados FROM TB_REQ_ITEM WHERE ID_REQ = @ID_REQ");
         const { total, finalizados } = allItemsResult.recordset[0];
         let novoStatusHeader = 'PARCIAL';
+
         if (total === finalizados) {
             novoStatusHeader = 'CONCLUIDO';
-        } else if (finalizados === 0) {
-            // Se nenhum item foi finalizado, verifica se todos são pendentes
-            const pendentesResult = await new sql.Request(transaction)
-                .input('ID_REQ', sql.Int, idReq)
-                .query("SELECT COUNT(*) as total, SUM(CASE WHEN STATUS_ITEM = 'Pendente' THEN 1 ELSE 0 END) as pendentes FROM TB_REQ_ITEM WHERE ID_REQ = @ID_REQ");
+        } else {
+            const pendentesResult = await request.query("SELECT COUNT(*) as total, SUM(CASE WHEN STATUS_ITEM = 'Pendente' THEN 1 ELSE 0 END) as pendentes FROM TB_REQ_ITEM WHERE ID_REQ = @ID_REQ");
             if (pendentesResult.recordset[0].total === pendentesResult.recordset[0].pendentes) {
                 novoStatusHeader = 'PENDENTE';
             }
         }
-
-        const updateHeaderRequest = new sql.Request(transaction);
-        await updateHeaderRequest
-            .input('ID_REQ', sql.Int, idReq)
-            .input('STATUS', sql.NVarChar, novoStatusHeader)
-            .query("UPDATE TB_REQUISICOES SET STATUS = @STATUS WHERE ID_REQ = @ID_REQ");
+        await request.input('STATUS_HEADER', sql.NVarChar, novoStatusHeader).query("UPDATE TB_REQUISICOES SET STATUS = @STATUS_HEADER WHERE ID_REQ = @ID_REQ");
 
         await transaction.commit();
         res.status(200).json({ message: `Item alterado para '${novoStatus}' com sucesso!` });
