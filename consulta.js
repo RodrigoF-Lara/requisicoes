@@ -87,16 +87,26 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
 
-    function popularFiltroStatus(listaDeRequisicoes) {
-        const statuses = [...new Set(listaDeRequisicoes.map(r => r.STATUS || 'PENDENTE'))];
-        filterStatus.innerHTML = '<option value="">Todos os Status</option>';
-        statuses.sort().forEach(status => {
-            const option = document.createElement('option');
-            option.value = status;
-            option.textContent = status;
-            filterStatus.appendChild(option);
-        });
-    }
+   // Dentro do arquivo consulta.js, substitua apenas esta função:
+function popularFiltroStatus(listaDeRequisicoes) {
+    // --- CORREÇÃO APLICADA AQUI ---
+    const statuses = [...new Set(listaDeRequisicoes.map(r => {
+        let status = (r.STATUS || 'Pendente').trim();
+        // Padroniza 'CONCLUIDO' (sem acento) para 'Concluído' (com acento)
+        if (status.toUpperCase() === 'CONCLUIDO') {
+            return 'Concluído';
+        }
+        return status;
+    }))];
+    
+    filterStatus.innerHTML = '<option value="">Todos os Status</option>'; // Limpa e adiciona a opção padrão
+    statuses.sort().forEach(status => {
+        const option = document.createElement('option');
+        option.value = status;
+        option.textContent = status;
+        filterStatus.appendChild(option);
+    });
+}
 
     function aplicarFiltros() {
         const solicitante = filterSolicitante.value.toLowerCase();
