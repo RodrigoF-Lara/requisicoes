@@ -63,8 +63,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function atualizarSumario(listaDeRequisicoes) {
         const total = listaDeRequisicoes.length;
-        const pendentes = listaDeRequisicoes.filter(r => (r.STATUS || 'PENDENTE').trim() === 'PENDENTE').length;
-        const concluidas = listaDeRequisicoes.filter(r => (r.STATUS || '').trim() === 'CONCLUIDO').length;
+        const pendentes = listaDeRequisicoes.filter(r => (r.STATUS || 'Pendente').trim().toUpperCase() === 'PENDENTE').length;
+        const concluidas = listaDeRequisicoes.filter(r => (r.STATUS || '').trim().toUpperCase() === 'CONCLUIDO' || (r.STATUS || '').trim().toUpperCase() === 'CONCLUÍDO').length;
         const emAndamento = total - pendentes - concluidas;
 
         summaryContainer.innerHTML = `
@@ -87,35 +87,42 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
 
-   // Dentro do arquivo consulta.js, substitua apenas esta função:
-function popularFiltroStatus(listaDeRequisicoes) {
-    // --- CORREÇÃO APLICADA AQUI ---
-    const statuses = [...new Set(listaDeRequisicoes.map(r => {
-        let status = (r.STATUS || 'Pendente').trim();
-        // Padroniza 'CONCLUIDO' (sem acento) para 'Concluído' (com acento)
-        if (status.toUpperCase() === 'CONCLUIDO') {
-            return 'Concluído';
-        }
-        return status;
-    }))];
-    
-    filterStatus.innerHTML = '<option value="">Todos os Status</option>'; // Limpa e adiciona a opção padrão
-    statuses.sort().forEach(status => {
-        const option = document.createElement('option');
-        option.value = status;
-        option.textContent = status;
-        filterStatus.appendChild(option);
-    });
-}
+    // --- FUNÇÃO CORRIGIDA ---
+    function popularFiltroStatus(listaDeRequisicoes) {
+        const statuses = [...new Set(listaDeRequisicoes.map(r => {
+            let status = (r.STATUS || 'Pendente').trim();
+            // Padroniza 'CONCLUIDO' (sem acento) para 'Concluído' (com acento)
+            if (status.toUpperCase() === 'CONCLUIDO') {
+                return 'Concluído';
+            }
+            return status;
+        }))];
+        
+        filterStatus.innerHTML = '<option value="">Todos os Status</option>';
+        statuses.sort().forEach(status => {
+            const option = document.createElement('option');
+            option.value = status;
+            option.textContent = status;
+            filterStatus.appendChild(option);
+        });
+    }
 
     function aplicarFiltros() {
         const solicitante = filterSolicitante.value.toLowerCase();
-        const status = filterStatus.value;
+        let status = filterStatus.value;
         const prioridade = filterPrioridade.value;
+
+        // Padroniza o valor do filtro para a busca
+        if (status === 'Concluído') {
+            status = 'CONCLUIDO'; // Para buscar no array original
+        }
 
         const requisicoesFiltradas = todasRequisicoes.filter(req => {
             const matchSolicitante = (req.SOLICITANTE || '').toLowerCase().includes(solicitante);
-            const matchStatus = !status || (req.STATUS || 'PENDENTE') === status;
+            
+            let originalStatus = (req.STATUS || 'Pendente').trim().toUpperCase();
+            const matchStatus = !filterStatus.value || originalStatus === status.toUpperCase() || (filterStatus.value === 'Concluído' && originalStatus === 'CONCLUÍDO');
+
             const matchPrioridade = !prioridade || (req.PRIORIDADE || 'NORMAL') === prioridade;
             return matchSolicitante && matchStatus && matchPrioridade;
         });
