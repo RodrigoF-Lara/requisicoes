@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         try {
             headerContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
             itemsContainer.innerHTML = '';
-            const response = await fetch(`/api/detalhes?id=${idReq}`);
+            const response = await fetch(`/api/requisicao?id=${idReq}`);
             const responseData = await response.json();
             if (!response.ok) { throw new Error(responseData.message || 'Falha ao buscar detalhes da requisição.'); }
             renderHeader(responseData.header);
@@ -108,7 +108,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             logModal.style.display = 'block';
 
             try {
-                const response = await fetch(`/api/getItemLog?idReqItem=${idReqItem}`);
+                // ALTERAÇÃO AQUI
+            const response = await fetch(`/api/requisicao?idReqItemLog=${idReqItem}`);
                 const logData = await response.json();
                 if (!response.ok) throw new Error(logData.message || 'Erro ao buscar histórico.');
 
@@ -147,11 +148,19 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (confirm(`Tem certeza que deseja alterar o status de "${originalStatus}" para "${novoStatus}"?`)) {
             try {
                 select.disabled = true;
-                const response = await fetch('/api/atualizarStatusItem', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idReqItem, idReq, novoStatus, statusAntigo: originalStatus, usuario })
-                });
+                // ALTERAÇÃO AQUI
+            const response = await fetch('/api/requisicao', {
+                method: 'PUT', // Mudamos para PUT
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    action: 'updateStatus', // Novo parâmetro
+                    idReqItem, 
+                    idReq, 
+                    novoStatus, 
+                    statusAntigo: originalStatus, 
+                    usuario 
+                })
+            });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message);
                 

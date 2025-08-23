@@ -27,10 +27,16 @@ document.getElementById('csvForm').addEventListener('submit', async function(e) 
 
     try {
         // Criar a requisição
-        const responseNovaReq = await fetch("https://requisicoes-five.vercel.app/api/novaRequisicao", {
+        // ALTERAÇÃO AQUI
+        const responseNovaReq = await fetch("/api/requisicao", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ dtNecessidade, prioridade, solicitante: userName })
+            body: JSON.stringify({
+                action: 'createHeader', // Novo parâmetro de ação
+                dtNecessidade: dtNecessidade,
+                prioridade: prioridade,
+                solicitante: userName
+            })
         });
 
         const dataNovaReq = await responseNovaReq.json();
@@ -51,11 +57,16 @@ document.getElementById('csvForm').addEventListener('submit', async function(e) 
             delimiter: ";", // <-- ADICIONE ESTA LINHA
             complete: async function(results) {
                 try {
-                    const responseUpload = await fetch("https://requisicoes-five.vercel.app/api/upload", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ data: results.data, idReq: idReq })
-                    });
+                    // ALTERAÇÃO AQUI
+        const responseUpload = await fetch("/api/requisicao", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: 'uploadItems', // Novo parâmetro de ação
+                data: results.data,
+                idReq: idReq
+            })
+        });
 
                     const dataUpload = await responseUpload.json();
 

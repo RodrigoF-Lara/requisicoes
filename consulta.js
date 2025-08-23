@@ -3,8 +3,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function carregarRequisicoes() {
         try {
-            // Apontando para /api/consulta
-            const response = await fetch("/api/consulta"); 
+            // ALTERAÇÃO AQUI: Apontando para o novo endpoint
+            const response = await fetch("/api/requisicao"); 
             
             if (!response.ok) {
                 const errorData = await response.json();
