@@ -1,73 +1,149 @@
 document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('requisicoes-container');
+    const summaryContainer = document.getElementById('summary-container');
+    const filterSolicitante = document.getElementById('filterSolicitante');
+    const filterStatus = document.getElementById('filterStatus');
+    const filterPrioridade = document.getElementById('filterPrioridade');
+    
+    let todasRequisicoes = []; // Guarda todos os dados do servidor para filtrar
 
-    async function carregarRequisicoes() {
-        try {
-            // ALTERAÇÃO AQUI: Apontando para o novo endpoint
-            const response = await fetch("/api/requisicao"); 
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Falha ao buscar dados do servidor.');
-            }
-            const requisicoes = await response.json();
-            container.innerHTML = ''; 
+    // --- FUNÇÕES ---
 
-            if (requisicoes.length === 0) {
-                container.innerHTML = '<p class="info-message">Nenhuma requisição encontrada.</p>';
-                return;
-            }
+    function formatarData(dataString) {
+        if (!dataString) return 'N/A';
+        const data = new Date(dataString);
+        return data.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+    }
 
-            const table = document.createElement('table');
-            table.className = 'consulta-table';
-            table.innerHTML = `
-                <thead>
+    function verDetalhes(idReq) {
+        window.location.href = `detalhes.html?id=${idReq}`;
+    }
+
+    function renderRequisicoes(listaDeRequisicoes) {
+        container.innerHTML = '';
+        if (listaDeRequisicoes.length === 0) {
+            container.innerHTML = '<p class="info-message">Nenhuma requisição encontrada com os filtros aplicados.</p>';
+            return;
+        }
+
+        const table = document.createElement('table');
+        table.className = 'consulta-table';
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Data</th>
+                    <th>Solicitante</th>
+                    <th>Prioridade</th>
+                    <th>Status</th>
+                    <th>Nº de Itens</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${listaDeRequisicoes.map(req => `
                     <tr>
-                        <th>ID</th>
-                        <th>Data</th>
-                        <th>Solicitante</th>
-                        <th>Prioridade</th>
-                        <th>Status</th>
-                        <th>Nº de Itens</th>
-                        <th>Ações</th>
+                        <td>${req.ID_REQ}</td>
+                        <td>${formatarData(req.DT_REQUISICAO)}</td>
+                        <td>${req.SOLICITANTE || 'N/A'}</td>
+                        <td><span class="prioridade-badge prioridade-${(req.PRIORIDADE || 'NORMAL').toLowerCase()}">${req.PRIORIDADE || 'NORMAL'}</span></td>
+                        <td><span class="status-badge status-${(req.STATUS || 'PENDENTE').replace(/\s/g, '-').toLowerCase()}">${req.STATUS || 'PENDENTE'}</span></td>
+                        <td>${req.TOTAL_ITENS}</td>
+                        <td>
+                            <button class="btn-detalhes" data-id="${req.ID_REQ}">
+                                <i class="fa-solid fa-circle-info"></i> Detalhes
+                            </button>
+                        </td>
                     </tr>
-                </thead>
-                <tbody></tbody>
-            `;
+                `).join('')}
+            </tbody>
+        `;
+        container.appendChild(table);
+    }
 
-            const tbody = table.querySelector('tbody');
+    function atualizarSumario(listaDeRequisicoes) {
+        const total = listaDeRequisicoes.length;
+        const pendentes = listaDeRequisicoes.filter(r => (r.STATUS || 'PENDENTE').trim() === 'PENDENTE').length;
+        const concluidas = listaDeRequisicoes.filter(r => (r.STATUS || '').trim() === 'CONCLUIDO').length;
+        const emAndamento = total - pendentes - concluidas;
 
-            requisicoes.forEach(req => {
-                const dataFormatada = new Date(req.DT_REQUISICAO).toLocaleDateString('pt-BR');
-                const tr = document.createElement('tr');
-                // Substitua a linha tr.innerHTML = `...`; por esta:
-                tr.innerHTML = `
-                    <td>${req.ID_REQ}</td>
-                    <td>${dataFormatada}</td>
-                    <td>${req.SOLICITANTE || 'N/A'}</td>
-                    <td><span class="prioridade-badge prioridade-${(req.PRIORIDADE || 'NORMAL').toUpperCase()}">${req.PRIORIDADE || 'NORMAL'}</span></td>
-                    <td><span class="status-badge status-${(req.STATUS || 'PENDENTE').toUpperCase().replace(/\s/g, '-')}">${req.STATUS || 'PENDENTE'}</span></td>
-                    <td>${req.TOTAL_ITENS}</td>
-                    <td>
-                        <button class="btn-detalhes" data-id="${req.ID_REQ}">
-                            <i class="fa-solid fa-circle-info"></i> Detalhes
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-            container.appendChild(table);
+        summaryContainer.innerHTML = `
+            <div class="summary-card">
+                <h3>Total de Requisições</h3>
+                <p>${total}</p>
+            </div>
+            <div class="summary-card">
+                <h3>Pendentes</h3>
+                <p>${pendentes}</p>
+            </div>
+            <div class="summary-card">
+                <h3>Em Andamento</h3>
+                <p>${emAndamento}</p>
+            </div>
+            <div class="summary-card">
+                <h3>Concluídas</h3>
+                <p>${concluidas}</p>
+            </div>
+        `;
+    }
+
+    function popularFiltroStatus(listaDeRequisicoes) {
+        const statuses = [...new Set(listaDeRequisicoes.map(r => r.STATUS || 'PENDENTE'))];
+        filterStatus.innerHTML = '<option value="">Todos os Status</option>';
+        statuses.sort().forEach(status => {
+            const option = document.createElement('option');
+            option.value = status;
+            option.textContent = status;
+            filterStatus.appendChild(option);
+        });
+    }
+
+    function aplicarFiltros() {
+        const solicitante = filterSolicitante.value.toLowerCase();
+        const status = filterStatus.value;
+        const prioridade = filterPrioridade.value;
+
+        const requisicoesFiltradas = todasRequisicoes.filter(req => {
+            const matchSolicitante = (req.SOLICITANTE || '').toLowerCase().includes(solicitante);
+            const matchStatus = !status || (req.STATUS || 'PENDENTE') === status;
+            const matchPrioridade = !prioridade || (req.PRIORIDADE || 'NORMAL') === prioridade;
+            return matchSolicitante && matchStatus && matchPrioridade;
+        });
+
+        renderRequisicoes(requisicoesFiltradas);
+    }
+    
+    async function carregarDadosIniciais() {
+        try {
+            container.innerHTML = '<div class="loader-container"><div class="loader"></div><p>Buscando requisições...</p></div>';
+            const response = await fetch("/api/requisicao"); 
+            if (!response.ok) {
+                throw new Error('Falha ao buscar dados do servidor.');
+            }
+            todasRequisicoes = await response.json();
+            
+            renderRequisicoes(todasRequisicoes);
+            atualizarSumario(todasRequisicoes);
+            popularFiltroStatus(todasRequisicoes);
 
         } catch (error) {
-            console.error("Erro no lado do cliente (consulta.js):", error);
-            container.innerHTML = `<p class="error-message">Não foi possível carregar as requisições. Verifique o console (F12).</p>`;
+            console.error("Erro ao carregar requisições:", error);
+            container.innerHTML = `<p class="error-message">${error.message}</p>`;
         }
     }
 
-    carregarRequisicoes();
-});
+    // --- EVENT LISTENERS ---
+    filterSolicitante.addEventListener('keyup', aplicarFiltros);
+    filterStatus.addEventListener('change', aplicarFiltros);
+    filterPrioridade.addEventListener('change', aplicarFiltros);
 
-function verDetalhes(idReq) {
-    // Redireciona para a página de detalhes, passando o ID na URL
-    window.location.href = `detalhes.html?id=${idReq}`;
-}
+    container.addEventListener('click', function(event) {
+        const detalhesButton = event.target.closest('.btn-detalhes');
+        if(detalhesButton) {
+            verDetalhes(detalhesButton.dataset.id);
+        }
+    });
+
+    // --- INICIA A PÁGINA ---
+    carregarDadosIniciais();
+});
