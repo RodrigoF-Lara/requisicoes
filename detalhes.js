@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function renderHeader(header) {
         const dataNecessidade = formatarData(header.DT_NECESSIDADE);
-        const dataRequisicao = formatarData(header.DT_REQUISICOES); // Corrigido de DT_REQUISICAO para DT_REQUISICOES se for o caso no seu DB
+        const dataRequisicao = formatarData(header.DT_REQUISICOES);
         headerContainer.innerHTML = `
             <div class="detalhe-header">
                 <div><strong>Nº Requisição:</strong> ${header.ID_REQ}</div>
@@ -31,7 +31,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>`;
     }
 
-    // FUNÇÃO RENDERITEMS COM A CORREÇÃO
     function renderItems(items, idReq) {
         itemsContainer.innerHTML = '';
         const table = document.createElement('table');
@@ -39,11 +38,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         const tableRowsHTML = items.map(item => {
             const statusLimpo = item.STATUS_ITEM ? item.STATUS_ITEM.trim() : 'Pendente';
-            
-            const optionsHTML = statusOptions.map(opt => 
-                `<option value="${opt}" ${statusLimpo === opt ? 'selected' : ''}>${opt}</option>`
-            ).join('');
-
+            const optionsHTML = statusOptions.map(opt => `<option value="${opt}" ${statusLimpo === opt ? 'selected' : ''}>${opt}</option>`).join('');
             return `
                 <tr>
                     <td>${item.ID_REQ_ITEM}</td>
@@ -57,7 +52,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                         <select class="status-select" 
                                 data-id-req-item="${item.ID_REQ_ITEM}" 
                                 data-id-req="${idReq}"
-                                data-original-status="${statusLimpo}" ${statusLimpo === 'Finalizado' ? 'disabled' : ''}>
+                                data-original-status="${statusLimpo}"
+                                ${statusLimpo === 'Finalizado' ? 'disabled' : ''}>
                             ${optionsHTML}
                         </select>
                     </td>
@@ -90,7 +86,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // --- GERENCIADOR DE EVENTOS CORRIGIDO ---
+    // --- GERENCIADOR DE EVENTOS ---
     itemsContainer.addEventListener('change', async function(event) {
         const select = event.target;
         if (!select.classList.contains('status-select')) return;
@@ -99,24 +95,23 @@ document.addEventListener('DOMContentLoaded', async function() {
         const idReq = select.dataset.idReq;
         const novoStatus = select.value;
         const usuario = localStorage.getItem('userName');
-        
-        // CORREÇÃO APLICADA AQUI: Busca o status original de forma segura
         const statusAntigo = select.dataset.originalStatus;
 
         if (!usuario) { return alert('Erro: Usuário não identificado.'); }
 
-        if (confirm(`Tem certeza que deseja alterar o status para "${novoStatus}"?`)) {
+        if (confirm(`Tem certeza que deseja alterar o status de "${statusAntigo}" para "${novoStatus}"?`)) {
             try {
                 select.disabled = true;
                 const response = await fetch('/api/atualizarStatusItem', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idReqItem, idReq, novoStatus, usuario })
+                    // ÚNICA ALTERAÇÃO: ENVIANDO O statusAntigo NO CORPO DA REQUISIÇÃO
+                    body: JSON.stringify({ idReqItem, idReq, novoStatus, statusAntigo, usuario })
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message);
                 
-                carregarDetalhes(); // Recarrega para mostrar as atualizações
+                carregarDetalhes(); 
             } catch (error) {
                 console.error('Erro ao mudar status:', error);
                 alert(`Falha ao mudar o status: ${error.message}`);
@@ -124,7 +119,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 select.disabled = false;
             }
         } else {
-            select.value = statusAntigo; // Usuário cancelou, reverte a seleção
+            select.value = statusAntigo;
         }
     });
 
