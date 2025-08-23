@@ -132,10 +132,9 @@ h2 {
 .form-row { display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
 .form-group { display: flex; flex-direction: column; align-items: flex-start; }
 .form-group label { font-weight: bold; color: #555; margin-bottom: 5px; font-size: 0.9em; }
-.form-group input, .form-group select { min-width: 180px; border-radius: 5px; border: 1px solid var(--cor-cinza-borda); }
+.form-group input, .form-group select { min-width: 180px; border-radius: 5px; border: 1px solid var(--cor-cinza-borda); padding: 10px; font-size: 1em; }
 .btn-destaque { background: var(--cor-principal); color: var(--cor-branco); border: none; border-radius: 6px; padding: 10px 25px; font-size: 1em; cursor: pointer; transition: background 0.2s; }
 .btn-destaque:hover { background: var(--cor-principal-escura); }
-/* Estilo customizado para o botão de upload */
 .input-file-wrapper { position: relative; overflow: hidden; display: inline-block; }
 .btn-upload { background-color: #6c757d; color: white; padding: 10px 20px; border-radius: 5px; font-size: 1em; cursor: pointer; }
 .input-file-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
@@ -143,18 +142,30 @@ h2 {
 #resumoRequisicao th, #resumoRequisicao td { border: 1px solid var(--cor-cinza-borda); padding: 10px; text-align: left; }
 #resumoRequisicao th { background-color: #f8f9fa; }
 
-/* --- Páginas de Consulta e Detalhes (Tabelas e Cabeçalhos) --- */
-.consulta-table, #detalhe-itens-container table { width: 100%; border-collapse: collapse; margin-top: 25px; background-color: var(--cor-branco); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-radius: 8px; overflow: hidden; }
-.consulta-table th, .consulta-table td, #detalhe-itens-container th, #detalhe-itens-container td { padding: 15px; text-align: left; border-bottom: 1px solid var(--cor-cinza-borda); vertical-align: middle; }
-.consulta-table th, #detalhe-itens-container thead th { background-color: #f8f9fa; color: #333; font-weight: 600; text-transform: uppercase; font-size: 0.85em; }
-.consulta-table tbody tr:hover, #detalhe-itens-container tbody tr:hover { background-color: #f1f8ff; }
+/* --- Página de Consulta --- */
+#summary-container { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 30px; }
+.summary-card { flex: 1 1 200px; background-color: var(--cor-branco); padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); text-align: center; border-left: 5px solid var(--cor-principal); }
+.summary-card h3 { margin: 0 0 10px; font-size: 16px; color: #555; text-transform: uppercase; }
+.summary-card p { margin: 0; font-size: 32px; font-weight: 700; color: var(--cor-principal); }
+.filter-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; padding: 20px; background-color: var(--cor-branco); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.filter-container input, .filter-container select { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid var(--cor-cinza-borda); border-radius: 5px; font-size: 1em; }
+.consulta-table { width: 100%; border-collapse: collapse; margin-top: 25px; background-color: var(--cor-branco); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-radius: 8px; overflow: hidden; }
+.consulta-table th, .consulta-table td { padding: 15px; text-align: left; border-bottom: 1px solid var(--cor-cinza-borda); vertical-align: middle; }
+.consulta-table thead th { background-color: #f8f9fa; color: #333; font-weight: 600; text-transform: uppercase; font-size: 0.85em; }
+.consulta-table tbody tr:hover { background-color: #f1f8ff; }
 .btn-detalhes { background-color: var(--cor-principal); color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.9em; transition: background-color 0.2s; display: inline-flex; align-items: center; gap: 5px; }
 .btn-detalhes:hover { background-color: var(--cor-principal-escura); }
+
+/* --- Página de Detalhes --- */
 .detalhe-header { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; background-color: var(--cor-branco); padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 5px solid var(--cor-principal); text-align: left; }
 .detalhe-header div { font-size: 1.1em; }
 .detalhe-header div strong { color: #555; display: block; margin-bottom: 5px; font-size: 0.9em; }
+#detalhe-itens-container table { width: 100%; border-collapse: collapse; background-color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-radius: 8px; overflow: hidden; }
+#detalhe-itens-container th, #detalhe-itens-container td { padding: 15px; text-align: left; border-bottom: 1px solid var(--cor-cinza-borda); vertical-align: middle; }
+#detalhe-itens-container thead th { background-color: #f8f9fa; color: #333; font-weight: 600; text-transform: uppercase; font-size: 0.85em; }
+#detalhe-itens-container tbody tr:hover { background-color: #f1f8ff; }
 .acoes-container { display: flex; align-items: center; gap: 5px; }
-.status-select { flex-grow: 1; border-radius: 5px; border: 1px solid var(--cor-cinza-borda); }
+.status-select { flex-grow: 1; border-radius: 5px; border: 1px solid var(--cor-cinza-borda); padding: 8px; }
 .btn-log { padding: 6px 10px; font-size: 12px; border-radius: 4px; cursor: pointer; border: 1px solid #6c757d; background-color: var(--cor-branco); color: #6c757d; }
 .btn-log:hover { background-color: var(--cor-cinza-claro); }
 .log-entry { border-bottom: 1px solid #eee; padding: 10px 0; }
