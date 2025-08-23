@@ -362,3 +362,24 @@ input, button, select {
     background-color: #e0e0e0;
     margin: 30px 0;
 }
+/* ============================================= */
+/* CORREÇÃO DE LEGIBILIDADE PARA STATUS/PRIORIDADE */
+/* ============================================= */
+
+/* Esta regra se aplica aos status 'Pendente' e 'Parcial', 
+  e à prioridade 'Normal', que usam fundos claros.
+  Ela troca a cor do texto para um cinza escuro para garantir o contraste.
+*/
+.status-tag.status-pendente,
+.status-tag.status-parcial,
+.status-tag.prioridade-normal {
+    color: #343a40; /* Cor do texto escura */
+}
+
+/* Opcional: Podemos também dar uma cor de fundo um pouco mais visível 
+  para o status 'Pendente', para diferenciá-lo melhor.
+*/
+.status-tag.status-pendente {
+    background-color: #f8f9fa; /* Um cinza bem claro */
+    border: 1px solid #dee2e6; /* Uma borda sutil */
+}
