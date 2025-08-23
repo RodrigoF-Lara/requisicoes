@@ -15,10 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return data.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
     }
 
-    function verDetalhes(idReq) {
-        window.location.href = `detalhes.html?id=${idReq}`;
-    }
-
     function renderRequisicoes(listaDeRequisicoes) {
         container.innerHTML = '';
         if (listaDeRequisicoes.length === 0) {
@@ -41,13 +37,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 </tr>
             </thead>
             <tbody>
-                ${listaDeRequisicoes.map(req => `
+                ${listaDeRequisicoes.map(req => {
+                    // Padroniza os dados para exibição
+                    const prioridade = (req.PRIORIDADE || 'NORMAL').trim();
+                    let status = (req.STATUS || 'Pendente').trim();
+                    if (status.toUpperCase() === 'CONCLUIDO') status = 'Concluído';
+                    if (status === '') status = 'Pendente';
+
+                    return `
                     <tr>
                         <td>${req.ID_REQ}</td>
                         <td>${formatarData(req.DT_REQUISICAO)}</td>
                         <td>${req.SOLICITANTE || 'N/A'}</td>
-                        <td><span class="prioridade-badge prioridade-${(req.PRIORIDADE || 'NORMAL').toLowerCase()}">${req.PRIORIDADE || 'NORMAL'}</span></td>
-                        <td><span class="status-badge status-${(req.STATUS || 'PENDENTE').replace(/\s/g, '-').toLowerCase()}">${req.STATUS || 'PENDENTE'}</span></td>
+                        <td><span class="prioridade-badge prioridade-${prioridade.toLowerCase()}">${prioridade}</span></td>
+                        <td><span class="status-badge status-${status.replace(/\s/g, '-').toLowerCase()}">${status}</span></td>
                         <td>${req.TOTAL_ITENS}</td>
                         <td>
                             <button class="btn-detalhes" data-id="${req.ID_REQ}">
@@ -55,46 +58,42 @@ document.addEventListener('DOMContentLoaded', function() {
                             </button>
                         </td>
                     </tr>
-                `).join('')}
+                `}).join('')}
             </tbody>
         `;
         container.appendChild(table);
     }
 
     function atualizarSumario(listaDeRequisicoes) {
+        let pendentes = 0;
+        let concluidas = 0;
+
+        listaDeRequisicoes.forEach(r => {
+            const status = (r.STATUS || 'Pendente').trim().toUpperCase();
+            if (status === 'PENDENTE') {
+                pendentes++;
+            } else if (status === 'CONCLUIDO' || status === 'CONCLUÍDO') {
+                concluidas++;
+            }
+        });
+        
         const total = listaDeRequisicoes.length;
-        const pendentes = listaDeRequisicoes.filter(r => (r.STATUS || 'Pendente').trim().toUpperCase() === 'PENDENTE').length;
-        const concluidas = listaDeRequisicoes.filter(r => (r.STATUS || '').trim().toUpperCase() === 'CONCLUIDO' || (r.STATUS || '').trim().toUpperCase() === 'CONCLUÍDO').length;
         const emAndamento = total - pendentes - concluidas;
 
         summaryContainer.innerHTML = `
-            <div class="summary-card">
-                <h3>Total de Requisições</h3>
-                <p>${total}</p>
-            </div>
-            <div class="summary-card">
-                <h3>Pendentes</h3>
-                <p>${pendentes}</p>
-            </div>
-            <div class="summary-card">
-                <h3>Em Andamento</h3>
-                <p>${emAndamento}</p>
-            </div>
-            <div class="summary-card">
-                <h3>Concluídas</h3>
-                <p>${concluidas}</p>
-            </div>
+            <div class="summary-card"><h3>Total</h3><p>${total}</p></div>
+            <div class="summary-card"><h3>Pendentes</h3><p>${pendentes}</p></div>
+            <div class="summary-card"><h3>Em Andamento</h3><p>${emAndamento}</p></div>
+            <div class="summary-card"><h3>Concluídas</h3><p>${concluidas}</p></div>
         `;
     }
 
-    // --- FUNÇÃO CORRIGIDA ---
+    // --- FUNÇÃO DE FILTRO CORRIGIDA E MAIS ROBUSTA ---
     function popularFiltroStatus(listaDeRequisicoes) {
         const statuses = [...new Set(listaDeRequisicoes.map(r => {
             let status = (r.STATUS || 'Pendente').trim();
-            // Padroniza 'CONCLUIDO' (sem acento) para 'Concluído' (com acento)
-            if (status.toUpperCase() === 'CONCLUIDO') {
-                return 'Concluído';
-            }
+            if (status === '') return 'Pendente'; // Trata strings vazias
+            if (status.toUpperCase() === 'CONCLUIDO') return 'Concluído'; // Padroniza
             return status;
         }))];
         
@@ -109,22 +108,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function aplicarFiltros() {
         const solicitante = filterSolicitante.value.toLowerCase();
-        let status = filterStatus.value;
+        const statusFiltro = filterStatus.value;
         const prioridade = filterPrioridade.value;
-
-        // Padroniza o valor do filtro para a busca
-        if (status === 'Concluído') {
-            status = 'CONCLUIDO'; // Para buscar no array original
-        }
 
         const requisicoesFiltradas = todasRequisicoes.filter(req => {
             const matchSolicitante = (req.SOLICITANTE || '').toLowerCase().includes(solicitante);
-            
-            let originalStatus = (req.STATUS || 'Pendente').trim().toUpperCase();
-            const matchStatus = !filterStatus.value || originalStatus === status.toUpperCase() || (filterStatus.value === 'Concluído' && originalStatus === 'CONCLUÍDO');
-
             const matchPrioridade = !prioridade || (req.PRIORIDADE || 'NORMAL') === prioridade;
-            return matchSolicitante && matchStatus && matchPrioridade;
+
+            // Lógica de filtro de status mais robusta
+            let statusOriginal = (req.STATUS || 'Pendente').trim();
+            if (statusOriginal === '') statusOriginal = 'Pendente';
+            if (statusOriginal.toUpperCase() === 'CONCLUIDO') statusOriginal = 'Concluído';
+            
+            const matchStatus = !statusFiltro || statusOriginal === statusFiltro;
+            
+            return matchSolicitante && matchPrioridade && matchStatus;
         });
 
         renderRequisicoes(requisicoesFiltradas);
@@ -134,9 +132,8 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             container.innerHTML = '<div class="loader-container"><div class="loader"></div><p>Buscando requisições...</p></div>';
             const response = await fetch("/api/requisicao"); 
-            if (!response.ok) {
-                throw new Error('Falha ao buscar dados do servidor.');
-            }
+            if (!response.ok) throw new Error('Falha ao buscar dados do servidor.');
+            
             todasRequisicoes = await response.json();
             
             renderRequisicoes(todasRequisicoes);
@@ -157,10 +154,9 @@ document.addEventListener('DOMContentLoaded', function() {
     container.addEventListener('click', function(event) {
         const detalhesButton = event.target.closest('.btn-detalhes');
         if(detalhesButton) {
-            verDetalhes(detalhesButton.dataset.id);
+            window.location.href = `detalhes.html?id=${detalhesButton.dataset.id}`;
         }
     });
 
-    // --- INICIA A PÁGINA ---
     carregarDadosIniciais();
 });
