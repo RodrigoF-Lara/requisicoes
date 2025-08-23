@@ -8,28 +8,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let todasRequisicoes = []; // Guarda todos os dados do servidor
 
     // --- FUNÇÕES AUXILIARES ---
-
     function formatarData(dataString) {
         if (!dataString) return 'N/A';
         const data = new Date(dataString);
         return data.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
     }
 
-    /**
-     * Função central para limpar e padronizar os status.
-     * Lida com nulos, strings vazias e variações de "Concluído".
-     * @param {string | null} status O status vindo do banco.
-     * @returns {string} O status padronizado.
-     */
-    function padronizarStatus(status) {
-        let statusLimpo = (status || 'Pendente').trim();
-        if (statusLimpo === '') return 'Pendente';
-        if (statusLimpo.toUpperCase() === 'CONCLUIDO') return 'Concluído';
-        return statusLimpo;
-    }
-
     // --- FUNÇÕES DE RENDERIZAÇÃO ---
-
     function renderRequisicoes(listaDeRequisicoes) {
         container.innerHTML = '';
         if (listaDeRequisicoes.length === 0) {
@@ -46,17 +31,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 </tr>
             </thead>
             <tbody>
-                ${listaDeRequisicoes.map(req => {
-                    const prioridade = (req.PRIORIDADE || 'NORMAL').trim();
-                    const status = padronizarStatus(req.STATUS); // Usa a função nova
-
-                    return `
+                ${listaDeRequisicoes.map(req => `
                     <tr>
                         <td>${req.ID_REQ}</td>
                         <td>${formatarData(req.DT_REQUISICAO)}</td>
-                        <td>${req.SOLICITANTE || 'N/A'}</td>
-                        <td><span class="prioridade-badge prioridade-${prioridade.toLowerCase()}">${prioridade}</span></td>
-                        <td><span class="status-badge status-${status.replace(/\s/g, '-').toLowerCase()}">${status}</span></td>
+                        <td>${req.SOLICITANTE}</td>
+                        <td><span class="prioridade-badge prioridade-${req.PRIORIDADE.toLowerCase()}">${req.PRIORIDADE}</span></td>
+                        <td><span class="status-badge status-${req.STATUS.replace(/\s/g, '-').toLowerCase()}">${req.STATUS}</span></td>
                         <td>${req.TOTAL_ITENS}</td>
                         <td>
                             <button class="btn-detalhes" data-id="${req.ID_REQ}">
@@ -64,23 +45,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             </button>
                         </td>
                     </tr>
-                `}).join('')}
+                `).join('')}
             </tbody>
         `;
         container.appendChild(table);
     }
 
     function atualizarSumario(listaDeRequisicoes) {
-        let pendentes = 0;
-        let concluidas = 0;
-
-        listaDeRequisicoes.forEach(r => {
-            const status = padronizarStatus(r.STATUS); // Usa a função nova
-            if (status === 'Pendente') pendentes++;
-            else if (status === 'Concluído') concluidas++;
-        });
-        
         const total = listaDeRequisicoes.length;
+        const pendentes = listaDeRequisicoes.filter(r => r.STATUS === 'Pendente').length;
+        const concluidas = listaDeRequisicoes.filter(r => r.STATUS === 'Concluído').length;
         const emAndamento = total - pendentes - concluidas;
 
         summaryContainer.innerHTML = `
@@ -92,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function popularFiltroStatus(listaDeRequisicoes) {
-        const statuses = [...new Set(listaDeRequisicoes.map(r => padronizarStatus(r.STATUS)))]; // Usa a função nova
+        const statuses = [...new Set(listaDeRequisicoes.map(r => r.STATUS))];
         
         filterStatus.innerHTML = '<option value="">Todos os Status</option>';
         statuses.sort().forEach(status => {
@@ -109,12 +83,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const prioridade = filterPrioridade.value;
 
         const requisicoesFiltradas = todasRequisicoes.filter(req => {
-            const matchSolicitante = (req.SOLICITANTE || '').toLowerCase().includes(solicitante);
-            const matchPrioridade = !prioridade || (req.PRIORIDADE || 'NORMAL') === prioridade;
-            
-            const statusPadronizado = padronizarStatus(req.STATUS); // Usa a função nova
-            const matchStatus = !statusFiltro || statusPadronizado === statusFiltro;
-            
+            const matchSolicitante = req.SOLICITANTE.toLowerCase().includes(solicitante);
+            const matchPrioridade = !prioridade || req.PRIORIDADE === prioridade;
+            const matchStatus = !statusFiltro || req.STATUS === statusFiltro;
             return matchSolicitante && matchPrioridade && matchStatus;
         });
 
@@ -129,6 +100,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             todasRequisicoes = await response.json();
             
+            // Garantia extra: a API já deveria fazer isso, mas vamos garantir aqui também.
+            todasRequisicoes.forEach(req => {
+                if (!req.STATUS || req.STATUS.trim() === '') req.STATUS = 'Pendente';
+                if (!req.PRIORIDADE || req.PRIORIDADE.trim() === '') req.PRIORIDADE = 'NORMAL';
+            });
+
             renderRequisicoes(todasRequisicoes);
             atualizarSumario(todasRequisicoes);
             popularFiltroStatus(todasRequisicoes);
