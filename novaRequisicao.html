@@ -19,29 +19,38 @@
 
         <div id="novaRequisicaoContainer">
             <h2>Nova Requisição</h2>
-            <form id="csvForm">
-                <div class="form-row destaque">
-                    <div class="form-group">
-                        <label for="dtNecessidade">Data de Necessidade:</label>
-                        <input type="date" id="dtNecessidade" required />
-                    </div>
-                    <div class="form-group">
-                        <label for="prioridade">Prioridade:</label>
-                        <select id="prioridade" required>
-                            <option value="">Selecione</option>
-                            <option value="BAIXA">Baixa</option>
-                            <option value="NORMAL">Normal</option>
-                            <option value="ALTA">Alta</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="csvFile" class="file-label">Escolher Ficheiro:</label>
-                        <input type="file" id="csvFile" accept=".csv" required />
-                    </div>
-                    <button type="submit" class="btn-destaque">Gerar Requisição</button>
+            ...
+<div id="novaRequisicaoContainer">
+    <h2>Nova Requisição</h2>
+    <form id="csvForm">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="dtNecessidade">Data de Necessidade:</label>
+                <input type="date" id="dtNecessidade" required />
+            </div>
+            <div class="form-group">
+                <label for="prioridade">Prioridade:</label>
+                <select id="prioridade" required>
+                    <option value="NORMAL">Normal</option>
+                    <option value="ALTA">Alta</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Arquivo CSV:</label>
+                <div class="input-file-wrapper">
+                    <button type="button" class="btn-upload">Selecionar Arquivo</button>
+                    <input type="file" id="csvFile" name="csvFile" accept=".csv" required />
                 </div>
-                <div id="aguardeAnimacao">Aguarde...</div>
-            </form>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn-destaque">Gerar Requisição</button>
+            </div>
+        </div>
+    </form>
+    <div id="status"></div>
+    <div id="aguardeAnimacao"></div>
+</div>
+...
             <p class="status" id="status"></p>
         </div>
 
