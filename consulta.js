@@ -5,15 +5,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const filterStatus = document.getElementById('filterStatus');
     const filterPrioridade = document.getElementById('filterPrioridade');
     
-    let todasRequisicoes = []; // Guarda todos os dados do servidor para filtrar
+    let todasRequisicoes = []; // Guarda todos os dados do servidor
 
-    // --- FUNÇÕES ---
+    // --- FUNÇÕES AUXILIARES ---
 
     function formatarData(dataString) {
         if (!dataString) return 'N/A';
         const data = new Date(dataString);
         return data.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
     }
+
+    /**
+     * Função central para limpar e padronizar os status.
+     * Lida com nulos, strings vazias e variações de "Concluído".
+     * @param {string | null} status O status vindo do banco.
+     * @returns {string} O status padronizado.
+     */
+    function padronizarStatus(status) {
+        let statusLimpo = (status || 'Pendente').trim();
+        if (statusLimpo === '') return 'Pendente';
+        if (statusLimpo.toUpperCase() === 'CONCLUIDO') return 'Concluído';
+        return statusLimpo;
+    }
+
+    // --- FUNÇÕES DE RENDERIZAÇÃO ---
 
     function renderRequisicoes(listaDeRequisicoes) {
         container.innerHTML = '';
@@ -27,22 +42,13 @@ document.addEventListener('DOMContentLoaded', function() {
         table.innerHTML = `
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Data</th>
-                    <th>Solicitante</th>
-                    <th>Prioridade</th>
-                    <th>Status</th>
-                    <th>Nº de Itens</th>
-                    <th>Ações</th>
+                    <th>ID</th><th>Data</th><th>Solicitante</th><th>Prioridade</th><th>Status</th><th>Nº de Itens</th><th>Ações</th>
                 </tr>
             </thead>
             <tbody>
                 ${listaDeRequisicoes.map(req => {
-                    // Padroniza os dados para exibição
                     const prioridade = (req.PRIORIDADE || 'NORMAL').trim();
-                    let status = (req.STATUS || 'Pendente').trim();
-                    if (status.toUpperCase() === 'CONCLUIDO') status = 'Concluído';
-                    if (status === '') status = 'Pendente';
+                    const status = padronizarStatus(req.STATUS); // Usa a função nova
 
                     return `
                     <tr>
@@ -69,12 +75,9 @@ document.addEventListener('DOMContentLoaded', function() {
         let concluidas = 0;
 
         listaDeRequisicoes.forEach(r => {
-            const status = (r.STATUS || 'Pendente').trim().toUpperCase();
-            if (status === 'PENDENTE') {
-                pendentes++;
-            } else if (status === 'CONCLUIDO' || status === 'CONCLUÍDO') {
-                concluidas++;
-            }
+            const status = padronizarStatus(r.STATUS); // Usa a função nova
+            if (status === 'Pendente') pendentes++;
+            else if (status === 'Concluído') concluidas++;
         });
         
         const total = listaDeRequisicoes.length;
@@ -88,14 +91,8 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
 
-    // --- FUNÇÃO DE FILTRO CORRIGIDA E MAIS ROBUSTA ---
     function popularFiltroStatus(listaDeRequisicoes) {
-        const statuses = [...new Set(listaDeRequisicoes.map(r => {
-            let status = (r.STATUS || 'Pendente').trim();
-            if (status === '') return 'Pendente'; // Trata strings vazias
-            if (status.toUpperCase() === 'CONCLUIDO') return 'Concluído'; // Padroniza
-            return status;
-        }))];
+        const statuses = [...new Set(listaDeRequisicoes.map(r => padronizarStatus(r.STATUS)))]; // Usa a função nova
         
         filterStatus.innerHTML = '<option value="">Todos os Status</option>';
         statuses.sort().forEach(status => {
@@ -114,13 +111,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const requisicoesFiltradas = todasRequisicoes.filter(req => {
             const matchSolicitante = (req.SOLICITANTE || '').toLowerCase().includes(solicitante);
             const matchPrioridade = !prioridade || (req.PRIORIDADE || 'NORMAL') === prioridade;
-
-            // Lógica de filtro de status mais robusta
-            let statusOriginal = (req.STATUS || 'Pendente').trim();
-            if (statusOriginal === '') statusOriginal = 'Pendente';
-            if (statusOriginal.toUpperCase() === 'CONCLUIDO') statusOriginal = 'Concluído';
             
-            const matchStatus = !statusFiltro || statusOriginal === statusFiltro;
+            const statusPadronizado = padronizarStatus(req.STATUS); // Usa a função nova
+            const matchStatus = !statusFiltro || statusPadronizado === statusFiltro;
             
             return matchSolicitante && matchPrioridade && matchStatus;
         });
