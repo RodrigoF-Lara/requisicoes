@@ -86,6 +86,7 @@ h2 {
 .status-aguarda-coleta { background-color: #007bff; }
 .prioridade-normal { background-color: #6c757d; }
 .prioridade-alta { background-color: var(--cor-erro); }
+.prioridade-baixa { background-color: #20c997; } /* Verde-água */
 .status-pendente, .status-parcial,.prioridade-baixa { /* Adicionamos esta linha */
     color: #212529; /* Cor de texto escura */
 }
