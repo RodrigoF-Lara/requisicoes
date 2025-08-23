@@ -117,21 +117,39 @@ async function handlePut(req, res) {
             await request.input('STATUS_ANTERIOR_LOG', sql.NVarChar, statusAntigo).input('STATUS_NOVO_LOG', sql.NVarChar, novoStatus).input('RESPONSAVEL_LOG', sql.NVarChar, usuario).input('DT_ALTERACAO_LOG', sql.Date, dataHoraAtual).input('HR_ALTERACAO_LOG', sql.Time, dataHoraAtual)
                 .query("INSERT INTO TB_REQ_ITEM_LOG (ID_REQ, ID_REQ_ITEM, STATUS_ANTERIOR, STATUS_NOVO, RESPONSAVEL, DT_ALTERACAO, HR_ALTERACAO) VALUES (@ID_REQ, @ID_REQ_ITEM, @STATUS_ANTERIOR_LOG, @STATUS_NOVO_LOG, @RESPONSAVEL_LOG, @DT_ALTERACAO_LOG, @HR_ALTERACAO_LOG)");
 
-            // 3. Determina e atualiza o status do cabeçalho (LÓGICA CORRIGIDA)
+            // --- LÓGICA DE ATUALIZAÇÃO DO STATUS GERAL (CORRIGIDA E COM LOGS) ---
+            console.log(`--- INICIANDO DEBUG DE STATUS PARA REQ ID: ${idReq} ---`);
+            
             const checkStatusQuery = `SELECT STATUS_ITEM FROM TB_REQ_ITEM WHERE ID_REQ = @ID_REQ`;
             const allItemsResult = await request.query(checkStatusQuery);
-            const allStatuses = allItemsResult.recordset.map(item => (item.STATUS_ITEM || '').trim().toUpperCase());
+            
+            // Limpa e padroniza a lista de status
+            const allStatuses = allItemsResult.recordset.map(item => 
+                (item.STATUS_ITEM || 'Pendente').trim().toUpperCase()
+            );
+
+            console.log("Status de todos os itens encontrados:", allStatuses);
 
             let novoStatusHeader;
-            if (allStatuses.every(s => s === 'FINALIZADO')) {
+
+            // every() retorna true se TODOS os elementos do array passarem no teste.
+            const todosFinalizados = allStatuses.length > 0 && allStatuses.every(s => s === 'FINALIZADO');
+            const todosPendentes = allStatuses.length > 0 && allStatuses.every(s => s === 'PENDENTE');
+
+            if (todosFinalizados) {
                 novoStatusHeader = 'Concluído';
-            } else if (allStatuses.every(s => s === 'PENDENTE')) {
+            } else if (todosPendentes) {
                 novoStatusHeader = 'Pendente';
             } else {
                 novoStatusHeader = 'Parcial';
             }
             
+            console.log(`Decisão da Lógica: Total de Itens=${allStatuses.length}, Todos Finalizados=${todosFinalizados}, Todos Pendentes=${todosPendentes}`);
+            console.log(`Status do Cabeçalho definido para: '${novoStatusHeader}'`);
+
             await request.input('STATUS_HEADER', sql.NVarChar, novoStatusHeader).query("UPDATE TB_REQUISICOES SET STATUS = @STATUS_HEADER WHERE ID_REQ = @ID_REQ");
+            
+            console.log(`--- FIM DO DEBUG ---`);
 
             await transaction.commit();
             return res.status(200).json({ message: `Item alterado para '${novoStatus}' com sucesso!` });
