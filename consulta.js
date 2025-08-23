@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function atualizarSumario(listaDeRequisicoes) {
         const total = listaDeRequisicoes.length;
         const pendentes = listaDeRequisicoes.filter(r => (r.STATUS || 'PENDENTE').trim() === 'PENDENTE').length;
-        const concluidas = listaDeRequisicoes.filter(r => (r.STATUS || '').trim() === 'CONCLUIDO').length;
+        const concluidas = listaDeRequisicoes.filter(r => (r.STATUS || '').trim() === 'CONCLUÍDO').length;
         const emAndamento = total - pendentes - concluidas;
 
         summaryContainer.innerHTML = `

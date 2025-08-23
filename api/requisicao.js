@@ -157,7 +157,7 @@ async function handlePut(req, res) {
 
             const allItemsResult = await request.query("SELECT COUNT(*) as total, SUM(CASE WHEN STATUS_ITEM = 'Finalizado' THEN 1 ELSE 0 END) as finalizados FROM TB_REQ_ITEM WHERE ID_REQ = @ID_REQ");
             const { total, finalizados } = allItemsResult.recordset[0];
-            let novoStatusHeader = (total === finalizados) ? 'CONCLUIDO' : 'PARCIAL';
+            let novoStatusHeader = (total === finalizados) ? 'CONCLUÍDO' : 'PARCIAL';
             
             await request.input('STATUS_HEADER', sql.NVarChar, novoStatusHeader).query("UPDATE TB_REQUISICOES SET STATUS = @STATUS_HEADER WHERE ID_REQ = @ID_REQ");
 
