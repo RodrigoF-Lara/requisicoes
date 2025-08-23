@@ -5,6 +5,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const idReq = urlParams.get('id');
 
+    // Elementos dos Modais
+    const atenderModal = document.getElementById('atenderModal');
+    const atenderForm = document.getElementById('atenderForm');
+    const logModal = document.getElementById('logModal');
+    const logContent = document.getElementById('logContent');
+    
+
     if (!idReq) {
         headerContainer.innerHTML = "<p class='error-message'>ID da requisição não encontrado na URL.</p>";
         return;
@@ -49,13 +56,18 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <td>${item.SALDO}</td>
                     <td><span class="status-badge status-${(statusLimpo || 'pendente').replace(/\s/g, '-').toLowerCase()}">${statusLimpo}</span></td>
                     <td>
-                        <select class="status-select" 
-                                data-id-req-item="${item.ID_REQ_ITEM}" 
-                                data-id-req="${idReq}"
-                                data-original-status="${statusLimpo}"
-                                ${statusLimpo === 'Finalizado' ? 'disabled' : ''}>
-                            ${optionsHTML}
-                        </select>
+                        <div class="acoes-container">
+                            <select class="status-select" 
+                                    data-id-req-item="${item.ID_REQ_ITEM}" 
+                                    data-id-req="${idReq}"
+                                    data-original-status="${statusLimpo}"
+                                    ${statusLimpo === 'Finalizado' ? 'disabled' : ''}>
+                                ${optionsHTML}
+                            </select>
+                            <button class="btn-log" data-id-req-item="${item.ID_REQ_ITEM}" title="Ver Histórico">
+                                <i class="fa-solid fa-history"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>`;
         }).join('');
@@ -86,27 +98,59 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // --- GERENCIADOR DE EVENTOS ---
+    // --- GERENCIADORES DE EVENTOS ---
+    itemsContainer.addEventListener('click', async function(event) {
+        const btnLog = event.target.closest('.btn-log');
+
+        if (btnLog) {
+            const idReqItem = btnLog.dataset.idReqItem;
+            logContent.innerHTML = '<div class="loader"></div>';
+            logModal.style.display = 'block';
+
+            try {
+                const response = await fetch(`/api/getItemLog?idReqItem=${idReqItem}`);
+                const logData = await response.json();
+                if (!response.ok) throw new Error(logData.message || 'Erro ao buscar histórico.');
+
+                if (logData.length === 0) {
+                    logContent.innerHTML = '<p class="info-message">Nenhum histórico de alteração para este item.</p>';
+                    return;
+                }
+
+                let logHTML = '';
+                logData.forEach(entry => {
+                    logHTML += `
+                        <div class="log-entry">
+                            <p>Status alterado de <strong>${entry.STATUS_ANTERIOR || 'N/A'}</strong> para <strong>${entry.STATUS_NOVO}</strong></p>
+                            <p class="log-meta">Por: <strong>${entry.RESPONSAVEL}</strong> em ${formatarData(entry.DT_ALTERACAO)} às ${entry.HR_ALTERACAO_FORMATADA}</p>
+                        </div>
+                    `;
+                });
+                logContent.innerHTML = logHTML;
+
+            } catch(error) {
+                logContent.innerHTML = `<p class="error-message">${error.message}</p>`;
+            }
+        }
+    });
+
     itemsContainer.addEventListener('change', async function(event) {
         const select = event.target;
         if (!select.classList.contains('status-select')) return;
 
-        const idReqItem = select.dataset.idReqItem;
-        const idReq = select.dataset.idReq;
+        const { idReqItem, idReq, originalStatus } = select.dataset;
         const novoStatus = select.value;
         const usuario = localStorage.getItem('userName');
-        const statusAntigo = select.dataset.originalStatus;
 
         if (!usuario) { return alert('Erro: Usuário não identificado.'); }
 
-        if (confirm(`Tem certeza que deseja alterar o status de "${statusAntigo}" para "${novoStatus}"?`)) {
+        if (confirm(`Tem certeza que deseja alterar o status de "${originalStatus}" para "${novoStatus}"?`)) {
             try {
                 select.disabled = true;
                 const response = await fetch('/api/atualizarStatusItem', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    // ÚNICA ALTERAÇÃO: ENVIANDO O statusAntigo NO CORPO DA REQUISIÇÃO
-                    body: JSON.stringify({ idReqItem, idReq, novoStatus, statusAntigo, usuario })
+                    body: JSON.stringify({ idReqItem, idReq, novoStatus, statusAntigo: originalStatus, usuario })
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message);
@@ -115,11 +159,30 @@ document.addEventListener('DOMContentLoaded', async function() {
             } catch (error) {
                 console.error('Erro ao mudar status:', error);
                 alert(`Falha ao mudar o status: ${error.message}`);
-                select.value = statusAntigo; 
+                select.value = originalStatus; 
                 select.disabled = false;
             }
         } else {
-            select.value = statusAntigo;
+            select.value = originalStatus;
+        }
+    });
+
+    // --- Lógica para fechar os modais (atualizada para funcionar com múltiplos modais) ---
+    document.querySelectorAll('.close-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const modalId = btn.dataset.modalId;
+            if(modalId) {
+                document.getElementById(modalId).style.display = 'none';
+            } else {
+                // Fallback para modais antigos
+                btn.closest('.modal').style.display = 'none';
+            }
+        });
+    });
+    
+    window.addEventListener('click', (event) => {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
         }
     });
 
