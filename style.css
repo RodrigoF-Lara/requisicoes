@@ -1,15 +1,17 @@
 /* =================================================================== */
-/* ESTILOS GERAIS E GLOBAIS DA APLICAÇÃO (TEMA ESCURO)               */
+/* ESTILOS GERAIS E GLOBAIS DA APLICAÇÃO (TEMA CLARO)                */
 /* =================================================================== */
 :root {
-    --cor-principal: #00aaff;
-    --cor-principal-escura: #0088cc;
-    --cor-fundo-sidebar: #1e222d;
-    --cor-fundo-main: #141820;
-    --cor-fundo-card: rgba(44, 52, 69, 0.6);
-    --cor-texto-claro: #f0f0f0;
-    --cor-texto-escuro: #a0a0a0;
-    --cor-borda: rgba(255, 255, 255, 0.1);
+    --cor-principal: #1976d2;
+    --cor-principal-escura: #135a9e;
+    --cor-fundo: #f4f6f9;
+    --cor-texto: #333;
+    --cor-branco: #ffffff;
+    --cor-cinza-claro: #e9ecef;
+    --cor-cinza-borda: #dee2e6;
+    --cor-sucesso: #28a745;
+    --cor-alerta: #ffc107;
+    --cor-erro: #dc3545;
 }
 
 * {
@@ -23,37 +25,32 @@ body {
     display: flex;
     height: 100vh;
     overflow: hidden;
-    background: linear-gradient(-45deg, #23a6d5, #23d5ab, #e73c7e, #ee7752);
-    background-size: 400% 400%;
-    animation: gradient 15s ease infinite;
-}
-
-@keyframes gradient {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto);
 }
 
 h1, h2 {
-    color: var(--cor-texto-claro);
+    color: #1a253c;
     font-weight: 600;
     text-align: left;
     border: none;
 }
-h1 { margin-bottom: 25px; }
-h2 { margin-bottom: 20px; font-size: 1.4em; }
+h1 { margin-bottom: 25px; text-align: center; }
+h2 { margin-bottom: 20px; font-size: 1.4em; border-bottom: 2px solid var(--cor-cinza-borda); padding-bottom: 10px; }
 
 /* =================================================================== */
 /* LAYOUT PRINCIPAL (SIDEBAR + CONTEÚDO)                             */
 /* =================================================================== */
 .sidebar {
     width: 250px;
-    background-color: var(--cor-fundo-sidebar);
-    color: var(--cor-texto-claro);
+    background-color: var(--cor-branco);
+    color: var(--cor-texto);
     display: flex;
     flex-direction: column;
     padding: 20px 0;
-    flex-shrink: 0; /* Impede que o sidebar encolha */
+    flex-shrink: 0;
+    border-right: 1px solid var(--cor-cinza-borda);
+    box-shadow: 2px 0 5px rgba(0,0,0,0.05);
 }
 
 .sidebar-header {
@@ -71,10 +68,12 @@ h2 { margin-bottom: 20px; font-size: 1.4em; }
     align-items: center;
     gap: 10px;
     padding: 15px 20px;
-    background-color: rgba(0,0,0,0.2);
+    background-color: var(--cor-fundo);
     margin-bottom: 20px;
+    border-top: 1px solid var(--cor-cinza-borda);
+    border-bottom: 1px solid var(--cor-cinza-borda);
 }
-.sidebar-user-info i { font-size: 1.5em; }
+.sidebar-user-info i { font-size: 1.5em; color: var(--cor-principal); }
 
 .sidebar-nav {
     flex-grow: 1;
@@ -82,83 +81,93 @@ h2 { margin-bottom: 20px; font-size: 1.4em; }
     flex-direction: column;
 }
 .sidebar-nav a {
-    color: var(--cor-texto-escuro);
+    color: #555;
     text-decoration: none;
     padding: 15px 25px;
     display: flex;
     align-items: center;
     gap: 15px;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     border-left: 3px solid transparent;
 }
 .sidebar-nav a:hover {
-    background-color: var(--cor-fundo-card);
-    color: var(--cor-texto-claro);
+    background-color: #e3eafc;
+    color: var(--cor-principal-escura);
 }
 .sidebar-nav a.active {
-    background-color: var(--cor-fundo-card);
+    background-color: #e3eafc;
     color: var(--cor-principal);
     border-left-color: var(--cor-principal);
+    font-weight: bold;
 }
 .sidebar-nav a i { width: 20px; text-align: center; }
 
 .sidebar-footer {
-    padding: 0 20px;
+    padding: 10px 20px;
+    border-top: 1px solid var(--cor-cinza-borda);
 }
 .sidebar-footer a {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
     text-align: center;
     padding: 10px;
-    background-color: rgba(255, 82, 82, 0.1);
-    color: #ff5252;
+    background-color: rgba(220, 53, 69, 0.1);
+    color: var(--cor-erro);
     border-radius: 5px;
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    font-weight: bold;
 }
 .sidebar-footer a:hover {
-    background-color: #ff5252;
+    background-color: var(--cor-erro);
     color: #fff;
 }
 
 .main-content {
     flex-grow: 1;
     padding: 30px;
-    overflow-y: auto; /* Permite rolagem apenas no conteúdo */
+    overflow-y: auto;
     height: 100vh;
 }
 
+.container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0;
+}
+
 /* =================================================================== */
-/* ESTILOS DE COMPONENTES ADAPTADOS PARA O TEMA ESCURO               */
+/* ESTILOS DE COMPONENTES (TEMA CLARO)                               */
 /* =================================================================== */
-.card, .consulta-table, #detalhe-itens-container table, .detalhe-header, .filter-container, .summary-card {
-    background-color: var(--cor-fundo-card);
-    border: 1px solid var(--cor-borda);
+.card, .consulta-table, #detalhe-itens-container table, .detalhe-header, .filter-container, .summary-card, #novaRequisicaoContainer {
+    background-color: var(--cor-branco);
+    border: 1px solid var(--cor-cinza-borda);
     border-radius: 8px;
     padding: 25px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    color: var(--cor-texto-claro);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 input, select, button {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--cor-texto-claro);
-    border: 1px solid var(--cor-borda);
+    background-color: var(--cor-branco);
+    color: var(--cor-texto);
+    border: 1px solid var(--cor-cinza-borda);
     border-radius: 5px;
     padding: 12px;
     font-size: 1em;
 }
-input::placeholder { color: var(--cor-texto-escuro); }
 input:focus, select:focus {
     outline: none;
     border-color: var(--cor-principal);
-    box-shadow: 0 0 0 3px rgba(0, 170, 255, 0.3);
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.2);
 }
 
 button, .btn-destaque, .btn-login, .btn-detalhes {
     background-color: var(--cor-principal);
     color: #fff;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.2s;
     border: none;
 }
 button:hover, .btn-destaque:hover, .btn-login:hover, .btn-detalhes:hover {
@@ -172,24 +181,25 @@ table {
 th, td {
     padding: 15px;
     text-align: left;
-    border-bottom: 1px solid var(--cor-borda);
+    border-bottom: 1px solid var(--cor-cinza-borda);
+    vertical-align: middle;
 }
 thead th {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: var(--cor-texto-claro);
+    background-color: #f8f9fa;
+    color: var(--cor-texto);
     font-weight: 600;
 }
 tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.03);
+    background-color: #f1f8ff;
 }
 
-/* Badges de Status */
+/* Badges de Status e Prioridade */
 .status-badge, .prioridade-badge {
     padding: 5px 12px; border-radius: 15px; font-size: 0.85em;
     font-weight: bold; color: #fff; text-transform: uppercase;
     white-space: nowrap;
 }
-.status-pendente { background-color: var(--cor-alerta); color: #111; }
+.status-pendente { background-color: var(--cor-alerta); }
 .status-parcial { background-color: #17a2b8; }
 .status-concluido, .status-concluído, .status-finalizado { background-color: var(--cor-sucesso); }
 .status-em-separação { background-color: #6f42c1; }
@@ -198,9 +208,10 @@ tbody tr:hover {
 .prioridade-normal { background-color: #6c757d; }
 .prioridade-alta { background-color: var(--cor-erro); }
 .prioridade-baixa { background-color: #20c997; }
+.status-pendente, .status-parcial { color: #212529; }
 
 /* --- Página de Login (sem sidebar) --- */
-.login-body { display: block; }
-.login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 0; }
-.login-card { background: var(--cor-fundo-card); border: 1px solid var(--cor-borda); padding: 40px; min-width: 380px; text-align: center; }
-.login-card h2 { color: var(--cor-texto-claro); }
+.login-body { display: block; padding: 0; }
+.login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(120deg, var(--cor-principal) 0%, #90caf9 100%); }
+.login-card { background: var(--cor-branco); border-radius: 12px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); padding: 40px; min-width: 380px; text-align: center; }
+.login-card h2 { color: var(--cor-principal); }
