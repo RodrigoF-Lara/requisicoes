@@ -58,7 +58,7 @@ async function handlePost(req, res) {
     return res.status(400).json({ message: "Ação POST inválida." });
 }
 
-// --- LÓGICA PUT (COM A NOVA AÇÃO 'bulkUpdateStatus') ---
+// --- LÓGICA PUT (COM A CORREÇÃO NA GESTÃO DA TRANSAÇÃO) ---
 async function handlePut(req, res) {
     const { action } = req.body;
     const pool = await getConnection();
@@ -66,30 +66,29 @@ async function handlePut(req, res) {
 
     try {
         await transaction.begin();
-        const request = new sql.Request(transaction);
         
         if (action === 'updateStatus') {
             const { idReqItem, idReq, novoStatus, statusAntigo, usuario } = req.body;
-            await updateSingleItem(request, { idReqItem, idReq, novoStatus, statusAntigo, usuario });
+            await updateSingleItem(transaction, { idReqItem, idReq, novoStatus, statusAntigo, usuario });
         
         } else if (action === 'bulkUpdateStatus') {
             const { itemIds, idReq, novoStatus, usuario } = req.body;
             if (!Array.isArray(itemIds) || itemIds.length === 0) {
                 throw new Error("Nenhum item selecionado para atualização.");
             }
-            // Para cada item, buscamos o status antigo e atualizamos
             for (const idReqItem of itemIds) {
-                const result = await request.input('ID_REQ_ITEM_BULK', sql.Int, idReqItem).query('SELECT STATUS_ITEM FROM TB_REQ_ITEM WHERE ID_REQ_ITEM = @ID_REQ_ITEM_BULK');
+                // Para cada item, buscamos o status antigo e então atualizamos
+                const getStatusRequest = new sql.Request(transaction);
+                const result = await getStatusRequest.input('ID_REQ_ITEM_BULK', sql.Int, idReqItem).query('SELECT STATUS_ITEM FROM TB_REQ_ITEM WHERE ID_REQ_ITEM = @ID_REQ_ITEM_BULK');
                 const statusAntigo = result.recordset[0]?.STATUS_ITEM || 'Pendente';
-                await updateSingleItem(request, { idReqItem, idReq, novoStatus, statusAntigo, usuario });
+                await updateSingleItem(transaction, { idReqItem, idReq, novoStatus, statusAntigo, usuario });
             }
         } else {
+            await transaction.rollback(); // Importante reverter se a ação for inválida
             return res.status(400).json({ message: "Ação PUT inválida." });
         }
 
-        // Após todas as atualizações (seja uma ou várias), recalcula o status do header
-        await updateHeaderStatus(request, req.body.idReq);
-
+        await updateHeaderStatus(transaction, req.body.idReq);
         await transaction.commit();
         res.status(200).json({ message: `Operação concluída com sucesso!` });
 
@@ -100,10 +99,12 @@ async function handlePut(req, res) {
     }
 }
 
-
 // --- FUNÇÕES AUXILIARES PARA ATUALIZAÇÃO ---
 
-async function updateSingleItem(request, { idReqItem, idReq, novoStatus, statusAntigo, usuario }) {
+async function updateSingleItem(transaction, { idReqItem, idReq, novoStatus, statusAntigo, usuario }) {
+    // Cria um novo objeto de requisição para cada item, garantindo isolamento
+    const request = new sql.Request(transaction);
+    
     // 1. Atualiza o item
     let queryUpdateItem = `UPDATE TB_REQ_ITEM SET STATUS_ITEM = @NOVO_STATUS_ITEM`;
     if (novoStatus === 'Finalizado') queryUpdateItem += `, QNT_PAGA = QNT_REQ, SALDO = 0`;
@@ -117,6 +118,7 @@ async function updateSingleItem(request, { idReqItem, idReq, novoStatus, statusA
 
     // 2. Insere o log
     const dataHoraAtual = new Date();
+    // Reutiliza o mesmo request, mas poderia criar outro se quisesse
     await request
         .input('STATUS_ANTERIOR_LOG', sql.NVarChar, statusAntigo)
         .input('STATUS_NOVO_LOG', sql.NVarChar, novoStatus)
@@ -126,7 +128,8 @@ async function updateSingleItem(request, { idReqItem, idReq, novoStatus, statusA
         .query("INSERT INTO TB_REQ_ITEM_LOG (ID_REQ, ID_REQ_ITEM, STATUS_ANTERIOR, STATUS_NOVO, RESPONSAVEL, DT_ALTERACAO, HR_ALTERACAO) VALUES (@ID_REQ, @ID_REQ_ITEM, @STATUS_ANTERIOR_LOG, @STATUS_NOVO_LOG, @RESPONSAVEL_LOG, @DT_ALTERACAO_LOG, @HR_ALTERACAO_LOG)");
 }
 
-async function updateHeaderStatus(request, idReq) {
+async function updateHeaderStatus(transaction, idReq) {
+    const request = new sql.Request(transaction);
     const checkStatusQuery = `SELECT STATUS_ITEM FROM TB_REQ_ITEM WHERE ID_REQ = @ID_REQ_HEADER`;
     const allItemsResult = await request.input('ID_REQ_HEADER', sql.Int, idReq).query(checkStatusQuery);
     const allStatuses = allItemsResult.recordset.map(item => (item.STATUS_ITEM || 'Pendente').trim().toUpperCase());
