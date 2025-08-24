@@ -312,3 +312,40 @@ tbody tr:hover {
     font-weight: bold;
     color: #555;
 }
+
+/* --- Página de Status NF (NOVA SEÇÃO) --- */
+#status-container table {
+    table-layout: fixed;
+    word-wrap: break-word;
+}
+#status-container .actions-cell {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap; /* Impede que os botões quebrem a linha */
+}
+#status-container .btn-update,
+#status-container .btn-log {
+    padding: 8px 12px;
+    font-size: 0.9em;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+#status-container .btn-update {
+    background-color: var(--cor-principal);
+    color: var(--cor-branco);
+    border: none;
+}
+#status-container .btn-update:hover {
+    background-color: var(--cor-principal-escura);
+}
+#status-container .btn-log {
+    background-color: var(--cor-branco);
+    color: #6c757d;
+    border: 1px solid #6c757d;
+}
+#status-container .btn-log:hover {
+    background-color: var(--cor-cinza-claro);
+}
+
