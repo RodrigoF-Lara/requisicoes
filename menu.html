@@ -7,13 +7,17 @@
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 </head>
-<body class="menu-body">
-    <div id="userInfoBar"></div>
-    <div class="menu-container">
-        <div class="menu-card">
+<body>
+    <!-- O novo menu lateral será carregado aqui pelo layout.js -->
+    <div id="sidebar-container" class="sidebar"></div>
+
+    <!-- Todo o conteúdo da página fica dentro desta div -->
+    <div class="main-content">
+        <div class="container">
+            <!-- O conteúdo específico da página de menu vai aqui -->
             <div class="menu-header">
-                <h1>Menu Principal</h1>
-                <p id="welcomeMessage">Olá! Selecione uma opção para começar.</p>
+                 <h1>Menu Principal</h1>
+                 <p id="welcomeMessage">Olá! Selecione uma opção para começar.</p>
             </div>
             <div class="menu-options">
                 <a href="novaRequisicao.html" class="menu-option-card">
@@ -28,25 +32,16 @@
                     <i class="fa-solid fa-barcode"></i>
                     <h2>Status NF</h2>
                 </a>
-                </div>
+            </div>
         </div>
     </div>
 
+    <!-- O novo script de layout que carrega o menu e o usuário -->
+    <script src="layout.js"></script>
+    <!-- Script adicional para personalizar a mensagem de boas-vindas -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const userName = localStorage.getItem('userName');
-            const loginTime = localStorage.getItem('loginTime');
-
-            // Script para a barra de usuário
-            if (userName && loginTime) {
-                const userInfoBar = document.getElementById('userInfoBar');
-                userInfoBar.innerHTML = `<strong>Usuário:</strong> ${userName} | <strong>Login:</strong> ${loginTime}`;
-            } else {
-                // Se não encontrar os dados, redireciona para o login por segurança
-                window.location.href = "index.html";
-            }
-            
-            // Script para a mensagem de boas-vindas
             if (userName) {
                 const welcomeMessage = document.getElementById('welcomeMessage');
                 welcomeMessage.textContent = `Olá, ${userName}! Selecione uma opção para começar.`;
