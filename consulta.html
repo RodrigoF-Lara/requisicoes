@@ -19,17 +19,24 @@
         <div id="summary-container">
             </div>
 
+        <!-- Substitua o filter-container antigo por este -->
         <div class="filter-container">
+            <input type="number" id="filterId" placeholder="Filtrar por ID...">
             <input type="text" id="filterSolicitante" placeholder="Filtrar por solicitante...">
             <select id="filterStatus">
                 <option value="">Todos os Status</option>
-                </select>
+                <!-- Opções de status serão inseridas aqui pelo JavaScript -->
+            </select>
             <select id="filterPrioridade">
                 <option value="">Todas as Prioridades</option>
                 <option value="NORMAL">Normal</option>
                 <option value="ALTA">Alta</option>
                 <option value="BAIXA">Baixa</option>
             </select>
+            <div class="form-group">
+                <label for="filterDataNecessidade">Data de Necessidade:</label>
+                <input type="date" id="filterDataNecessidade">
+            </div>
         </div>
 
         <div id="requisicoes-container">

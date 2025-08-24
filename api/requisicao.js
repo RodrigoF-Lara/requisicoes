@@ -45,7 +45,8 @@ async function handleGet(req, res) {
         return res.status(200).json(result.recordset);
 
     } else { // Busca a lista completa
-        const result = await pool.request().query("SELECT H.ID_REQ, H.DT_REQUISICAO, H.STATUS, H.PRIORIDADE, H.SOLICITANTE, (SELECT COUNT(*) FROM [dbo].[TB_REQ_ITEM] I WHERE I.ID_REQ = H.ID_REQ) AS TOTAL_ITENS FROM [dbo].[TB_REQUISICOES] H ORDER BY H.ID_REQ DESC;");
+        // Substitua a linha da query pela versão abaixo, que inclui H.DT_NECESSIDADE
+        const result = await pool.request().query("SELECT H.ID_REQ, H.DT_REQUISICAO, H.DT_NECESSIDADE, H.STATUS, H.PRIORIDADE, H.SOLICITANTE, (SELECT COUNT(*) FROM [dbo].[TB_REQ_ITEM] I WHERE I.ID_REQ = H.ID_REQ) AS TOTAL_ITENS FROM [dbo].[TB_REQUISICOES] H ORDER BY H.ID_REQ DESC;");
         return res.status(200).json(result.recordset);
     }
 }

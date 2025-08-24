@@ -1,9 +1,13 @@
 document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('requisicoes-container');
     const summaryContainer = document.getElementById('summary-container');
+    
+    // --- ELEMENTOS DE FILTRO ---
+    const filterId = document.getElementById('filterId');
     const filterSolicitante = document.getElementById('filterSolicitante');
     const filterStatus = document.getElementById('filterStatus');
     const filterPrioridade = document.getElementById('filterPrioridade');
+    const filterDataNecessidade = document.getElementById('filterDataNecessidade');
     
     let todasRequisicoes = []; // Guarda todos os dados do servidor
 
@@ -12,6 +16,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!dataString) return 'N/A';
         const data = new Date(dataString);
         return data.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+    }
+
+    function padronizarStatus(status) {
+        let statusLimpo = (status || 'Pendente').trim();
+        if (statusLimpo === '') return 'Pendente';
+        if (statusLimpo.toUpperCase() === 'CONCLUIDO') return 'Concluído';
+        return statusLimpo;
     }
 
     // --- FUNÇÕES DE RENDERIZAÇÃO ---
@@ -31,13 +42,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 </tr>
             </thead>
             <tbody>
-                ${listaDeRequisicoes.map(req => `
+                ${listaDeRequisicoes.map(req => {
+                    const prioridade = (req.PRIORIDADE || 'NORMAL').trim();
+                    const status = padronizarStatus(req.STATUS);
+                    return `
                     <tr>
                         <td>${req.ID_REQ}</td>
                         <td>${formatarData(req.DT_REQUISICAO)}</td>
                         <td>${req.SOLICITANTE}</td>
-                        <td><span class="prioridade-badge prioridade-${req.PRIORIDADE.toLowerCase()}">${req.PRIORIDADE}</span></td>
-                        <td><span class="status-badge status-${req.STATUS.replace(/\s/g, '-').toLowerCase()}">${req.STATUS}</span></td>
+                        <td><span class="prioridade-badge prioridade-${prioridade.toLowerCase()}">${prioridade}</span></td>
+                        <td><span class="status-badge status-${status.replace(/\s/g, '-').toLowerCase()}">${status}</span></td>
                         <td>${req.TOTAL_ITENS}</td>
                         <td>
                             <button class="btn-detalhes" data-id="${req.ID_REQ}">
@@ -45,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </button>
                         </td>
                     </tr>
-                `).join('')}
+                `}).join('')}
             </tbody>
         `;
         container.appendChild(table);
@@ -53,8 +67,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function atualizarSumario(listaDeRequisicoes) {
         const total = listaDeRequisicoes.length;
-        const pendentes = listaDeRequisicoes.filter(r => r.STATUS === 'Pendente').length;
-        const concluidas = listaDeRequisicoes.filter(r => r.STATUS === 'Concluído').length;
+        const pendentes = listaDeRequisicoes.filter(r => padronizarStatus(r.STATUS) === 'Pendente').length;
+        const concluidas = listaDeRequisicoes.filter(r => padronizarStatus(r.STATUS) === 'Concluído').length;
         const emAndamento = total - pendentes - concluidas;
 
         summaryContainer.innerHTML = `
@@ -66,8 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function popularFiltroStatus(listaDeRequisicoes) {
-        const statuses = [...new Set(listaDeRequisicoes.map(r => r.STATUS))];
-        
+        const statuses = [...new Set(listaDeRequisicoes.map(r => padronizarStatus(r.STATUS)))];
         filterStatus.innerHTML = '<option value="">Todos os Status</option>';
         statuses.sort().forEach(status => {
             const option = document.createElement('option');
@@ -77,16 +90,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // --- FUNÇÃO DE FILTRO ATUALIZADA ---
     function aplicarFiltros() {
+        const id = filterId.value;
         const solicitante = filterSolicitante.value.toLowerCase();
         const statusFiltro = filterStatus.value;
         const prioridade = filterPrioridade.value;
+        const dataNecessidade = filterDataNecessidade.value; // Formato: YYYY-MM-DD
 
         const requisicoesFiltradas = todasRequisicoes.filter(req => {
-            const matchSolicitante = req.SOLICITANTE.toLowerCase().includes(solicitante);
-            const matchPrioridade = !prioridade || req.PRIORIDADE === prioridade;
-            const matchStatus = !statusFiltro || req.STATUS === statusFiltro;
-            return matchSolicitante && matchPrioridade && matchStatus;
+            const matchId = !id || req.ID_REQ.toString() === id;
+            const matchSolicitante = (req.SOLICITANTE || '').toLowerCase().includes(solicitante);
+            const matchPrioridade = !prioridade || (req.PRIORIDADE || 'NORMAL') === prioridade;
+            const statusPadronizado = padronizarStatus(req.STATUS);
+            const matchStatus = !statusFiltro || statusPadronizado === statusFiltro;
+            
+            // Lógica para o filtro de data
+            const reqDataNecessidade = req.DT_NECESSIDADE ? req.DT_NECESSIDADE.split('T')[0] : '';
+            const matchData = !dataNecessidade || reqDataNecessidade === dataNecessidade;
+            
+            return matchId && matchSolicitante && matchPrioridade && matchStatus && matchData;
         });
 
         renderRequisicoes(requisicoesFiltradas);
@@ -100,26 +123,21 @@ document.addEventListener('DOMContentLoaded', function() {
             
             todasRequisicoes = await response.json();
             
-            // Garantia extra: a API já deveria fazer isso, mas vamos garantir aqui também.
-            todasRequisicoes.forEach(req => {
-                if (!req.STATUS || req.STATUS.trim() === '') req.STATUS = 'Pendente';
-                if (!req.PRIORIDADE || req.PRIORIDADE.trim() === '') req.PRIORIDADE = 'NORMAL';
-            });
-
             renderRequisicoes(todasRequisicoes);
             atualizarSumario(todasRequisicoes);
             popularFiltroStatus(todasRequisicoes);
-
         } catch (error) {
             console.error("Erro ao carregar requisições:", error);
             container.innerHTML = `<p class="error-message">${error.message}</p>`;
         }
     }
 
-    // --- EVENT LISTENERS ---
+    // --- EVENT LISTENERS ATUALIZADOS ---
+    filterId.addEventListener('keyup', aplicarFiltros);
     filterSolicitante.addEventListener('keyup', aplicarFiltros);
     filterStatus.addEventListener('change', aplicarFiltros);
     filterPrioridade.addEventListener('change', aplicarFiltros);
+    filterDataNecessidade.addEventListener('change', aplicarFiltros);
 
     container.addEventListener('click', function(event) {
         const detalhesButton = event.target.closest('.btn-detalhes');
