@@ -11,6 +11,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     const bulkStatusSelect = document.getElementById('bulk-status-select');
     const bulkApplyBtn = document.getElementById('bulk-apply-btn');
     
+    // Elementos do Modal de Log
+    const logModal = document.getElementById('logModal');
+    const logContent = document.getElementById('logContent');
+
     if (!idReq) {
         headerContainer.innerHTML = "<p class='error-message'>ID da requisição não encontrado na URL.</p>";
         return;
@@ -30,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         headerContainer.innerHTML = `<div class="detalhe-header"><div><strong>Nº Requisição:</strong> ${header.ID_REQ}</div><div><strong>Solicitante:</strong> ${header.SOLICITANTE || 'N/A'}</div><div><strong>Data Requisição:</strong> ${dataRequisicao}</div><div><strong>Data Necessidade:</strong> ${dataNecessidade}</div><div><strong>Prioridade:</strong> <span class="prioridade-badge prioridade-${prioridade.toLowerCase()}">${prioridade}</span></div><div><strong>Status:</strong> <span class="status-badge status-${(header.STATUS || 'PENDENTE').replace(/\s/g, '-').toLowerCase()}">${header.STATUS || 'PENDENTE'}</span></div></div>`;
     }
 
-    function renderItems(items, idReq) {
+    function renderItems(items) {
         itemsContainer.innerHTML = '';
         const table = document.createElement('table');
         const statusOptions = ['Pendente', 'Em separação', 'Separado', 'Aguarda coleta', 'Finalizado'];
@@ -89,8 +93,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             const responseData = await response.json();
             if (!response.ok) { throw new Error(responseData.message); }
             renderHeader(responseData.header);
-            renderItems(responseData.items, idReq);
-            updateBulkActionBar(); // Garante que a barra esteja escondida ao recarregar
+            renderItems(responseData.items);
+            updateBulkActionBar();
         } catch (error) {
             console.error("Erro ao carregar detalhes:", error);
             headerContainer.innerHTML = `<p class='error-message'>${error.message}</p>`;
@@ -98,9 +102,37 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // --- GERENCIADORES DE EVENTOS ---
+
+    // Listener para cliques na tabela (botão de log)
+    itemsContainer.addEventListener('click', async function(event) {
+        const btnLog = event.target.closest('.btn-log');
+        if (btnLog) {
+            const idReqItem = btnLog.dataset.idReqItem;
+            logContent.innerHTML = '<div class="loader"></div>';
+            logModal.style.display = 'block';
+            try {
+                const response = await fetch(`/api/requisicao?idReqItemLog=${idReqItem}`);
+                const logData = await response.json();
+                if (!response.ok) throw new Error(logData.message || 'Erro ao buscar histórico.');
+
+                if (logData.length === 0) {
+                    logContent.innerHTML = '<p class="info-message">Nenhum histórico de alteração para este item.</p>';
+                    return;
+                }
+                let logHTML = '';
+                logData.forEach(entry => {
+                    logHTML += `<div class="log-entry"><p>Status alterado de <strong>${entry.STATUS_ANTERIOR || 'N/A'}</strong> para <strong>${entry.STATUS_NOVO}</strong></p><p class="log-meta">Por: <strong>${entry.RESPONSAVEL}</strong> em ${formatarData(entry.DT_ALTERACAO)} às ${entry.HR_ALTERACAO_FORMATADA}</p></div>`;
+                });
+                logContent.innerHTML = logHTML;
+            } catch(error) {
+                logContent.innerHTML = `<p class="error-message">${error.message}</p>`;
+            }
+        }
+    });
+
+    // Listener para mudanças na tabela (selects e checkboxes)
     itemsContainer.addEventListener('change', async function(event) {
         const target = event.target;
-        // Lógica para mudança de status individual
         if (target.classList.contains('status-select')) {
             const { idReqItem, originalStatus } = target.dataset;
             const novoStatus = target.value;
@@ -124,42 +156,37 @@ document.addEventListener('DOMContentLoaded', async function() {
                 target.value = originalStatus;
             }
         }
-        // Lógica para checkboxes
-        if (target.id === 'select-all-checkbox') {
-            const allCheckboxes = itemsContainer.querySelectorAll('.item-checkbox');
-            allCheckboxes.forEach(checkbox => checkbox.checked = target.checked);
-            updateBulkActionBar();
-        }
-        if (target.classList.contains('item-checkbox')) {
+        if (target.id === 'select-all-checkbox' || target.classList.contains('item-checkbox')) {
+            if (target.id === 'select-all-checkbox') {
+                itemsContainer.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = target.checked);
+            }
             updateBulkActionBar();
         }
     });
 
+    // Listener para o botão de aplicar em massa
     bulkApplyBtn.addEventListener('click', async () => {
         const selectedCheckboxes = itemsContainer.querySelectorAll('.item-checkbox:checked');
         const itemIds = Array.from(selectedCheckboxes).map(cb => cb.dataset.idReqItem);
         const novoStatus = bulkStatusSelect.value;
         const usuario = localStorage.getItem('userName');
 
-        if (itemIds.length === 0) return alert('Nenhum item selecionado.');
-        if (!novoStatus) return alert('Por favor, selecione um status para aplicar.');
-        if (!usuario) return alert('Usuário não identificado.');
+        if (itemIds.length === 0 || !novoStatus || !usuario) {
+            return alert('Selecione os itens, um novo status e certifique-se de estar logado.');
+        }
 
         if (confirm(`Tem certeza que deseja alterar ${itemIds.length} item(ns) para o status "${novoStatus}"?`)) {
             try {
                 bulkApplyBtn.disabled = true;
                 bulkApplyBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Aplicando...';
-                
                 const response = await fetch('/api/requisicao', {
                     method: 'PUT', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'bulkUpdateStatus', itemIds, idReq, novoStatus, usuario })
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message);
-
                 alert(result.message);
                 await carregarDetalhes();
-
             } catch (error) {
                 alert(`Falha na atualização em massa: ${error.message}`);
             } finally {
@@ -170,12 +197,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     });
 
-    // Lógica de modais (simplificada, já que o de atender foi removido)
-    itemsContainer.addEventListener('click', async function(event) {
-        const btnLog = event.target.closest('.btn-log');
-        if (btnLog) { /* ... lógica do modal de log ... */ }
+    // Listeners para fechar o modal de log
+    document.querySelectorAll('.close-btn').forEach(btn => {
+        btn.addEventListener('click', () => btn.closest('.modal').style.display = 'none');
     });
-    // ... restante dos listeners de modal ...
+    window.addEventListener('click', (event) => {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    });
 
     carregarDetalhes();
 });
