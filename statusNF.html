@@ -8,16 +8,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 </head>
 <body>
-    <!-- O novo menu lateral será carregado aqui pelo layout.js -->
     <div id="sidebar-container" class="sidebar"></div>
 
-    <!-- Todo o conteúdo da página fica dentro desta div -->
     <div class="main-content">
         <div class="container">
             <h1>Status de Processamento de NF</h1>
             <div id="summary-container"></div>
 
-            <div class="filter-container">
+            <div class="filter-container card">
                 <select id="filterTipoProduto">
                     <option value="EMBALAGEM" selected>Tipo: Embalagens</option>
                     <option value="OUTROS">Tipo: Outros</option>
@@ -30,17 +28,16 @@
                 <select id="filterProcesso"><option value="">Todos os Status</option></select>
             </div>
             
-            <div id="status-container">
+            <div id="status-container" class="card">
                 <div class="loader-container"><div class="loader"></div><p>Buscando dados...</p></div>
             </div>
         </div>
     </div>
 
-    <!-- Modais ficam fora do main-content para cobrir a tela inteira -->
     <div id="updateModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Alterar Processo</h2><span class="close-btn">&times;</span>
+                <h2>Alterar Processo</h2><span class="close-btn" data-modal-id="updateModal">&times;</span>
             </div>
             <form id="updateForm">
                 <p><strong>NF:</strong> <span id="modalNF"></span></p>
@@ -57,7 +54,7 @@
     <div id="logModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Histórico do Item</h2><span class="close-btn">&times;</span>
+                <h2>Histórico do Item</h2><span class="close-btn" data-modal-id="logModal">&times;</span>
             </div>
             <p><strong>NF:</strong> <span id="logModalNF"></span> | <strong>Código:</strong> <span id="logModalCodigo"></span></p>
             <div id="logContent"></div>
@@ -65,7 +62,6 @@
     </div>
 
     <script src="statusNF-page.js"></script>
-    <!-- O novo script de layout que carrega o menu e o usuário -->
     <script src="layout.js"></script>
 </body>
 </html>
