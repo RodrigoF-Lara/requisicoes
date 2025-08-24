@@ -6,79 +6,56 @@
     <title>Detalhes da Requisição - Kardex</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-    
 </head>
 <body>
-    <div id="userInfoBar"></div>
-    <div class="container">
-        <a href="consulta.html" class="btn-voltar">
-            <i class="fa-solid fa-arrow-left"></i> Voltar
-        </a>
-        <h1>Detalhes da Requisição</h1>
-        <div id="detalhe-header-container"></div>
-        <h2>Itens da Requisição</h2> 
-        
-        <!-- ADICIONE ESTE BLOCO ABAIXO -->
-        <div id="bulk-actions-container" class="bulk-actions-bar" style="display: none;">
-            <span id="bulk-counter">0 itens selecionados</span>
-            <select id="bulk-status-select">
-                <option value="">Alterar status para...</option>
-                <option value="Pendente">Pendente</option>
-                <option value="Em separação">Em separação</option>
-                <option value="Separado">Separado</option>
-                <option value="Aguarda coleta">Aguarda coleta</option>
-                <option value="Finalizado">Finalizado</option>
-            </select>
-            <button id="bulk-apply-btn" class="btn-destaque">Aplicar</button>
-        </div>
-        <!-- FIM DO BLOCO ADICIONADO -->
+    <!-- O novo menu lateral será carregado aqui pelo layout.js -->
+    <div id="sidebar-container" class="sidebar"></div>
 
-        <div id="detalhe-itens-container"></div>
+    <!-- Todo o conteúdo da página fica dentro desta div -->
+    <div class="main-content">
+        <div class="container">
+            <h1>Detalhes da Requisição</h1>
+            
+            <div id="detalhe-header-container">
+                <!-- O cabeçalho da requisição será inserido aqui -->
+            </div>
+            
+            <h2>Itens da Requisição</h2> 
+            
+            <div id="bulk-actions-container" class="bulk-actions-bar" style="display: none;">
+                <span id="bulk-counter">0 itens selecionados</span>
+                <select id="bulk-status-select">
+                    <option value="">Alterar status para...</option>
+                    <option value="Pendente">Pendente</option>
+                    <option value="Em separação">Em separação</option>
+                    <option value="Separado">Separado</option>
+                    <option value="Aguarda coleta">Aguarda coleta</option>
+                    <option value="Finalizado">Finalizado</option>
+                </select>
+                <button id="bulk-apply-btn" class="btn-destaque">Aplicar</button>
+            </div>
+
+            <div id="detalhe-itens-container">
+                <!-- A tabela de itens será inserida aqui -->
+            </div>
+        </div>
     </div>
 
-    <div id="atenderModal" class="modal">
+    <!-- Modal de Histórico/Log -->
+    <div id="logModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Atender Item</h2>
+                <h2>Histórico do Item</h2>
                 <span class="close-btn">&times;</span>
             </div>
-            <p><strong>Código:</strong> <span id="modalCodigo"></span></p>
-            <p><strong>QNT Solicitada:</strong> <span id="modalQntReq"></span></p>
-            <p><strong>Saldo Atual:</strong> <span id="modalSaldo"></span></p>
-            <form id="atenderForm">
-                <div class="form-group">
-                    <label for="quantidadeAtendida">Quantidade a Atender:</label>
-                    <input type="number" id="quantidadeAtendida" step="any" required>
-                </div>
-                <button type="submit" class="btn-destaque">Salvar Atendimento</button>
-                <div id="modalStatus" class="status" style="margin-top: 15px;"></div>
-            </form>
-        </div>
-    </div>
-
-    <div id="logModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Histórico do Item</h2>
-            <span class="close-btn" data-modal-id="logModal">&times;</span>
-        </div>
-        <div id="logContent">
+            <div id="logContent">
+                <!-- O histórico será inserido aqui pelo JavaScript -->
             </div>
+        </div>
     </div>
-</div>
-    <script src="detalhes.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const userName = localStorage.getItem('userName');
-            const loginTime = localStorage.getItem('loginTime');
-            if (userName && loginTime) {
-                const userInfoBar = document.getElementById('userInfoBar');
-                userInfoBar.innerHTML = `<strong>Usuário:</strong> ${userName} | <strong>Login:</strong> ${loginTime}`;
-            } else {
-                window.location.href = "index.html";
-            }
-        });
-    </script>
 
+    <script src="detalhes.js"></script>
+    <!-- O novo script de layout que carrega o menu e o usuário -->
+    <script src="layout.js"></script>
 </body>
 </html>
