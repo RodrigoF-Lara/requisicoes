@@ -313,15 +313,22 @@ tbody tr:hover {
     color: #555;
 }
 
-/* --- Página de Status NF (NOVA SEÇÃO) --- */
+/* --- Página de Status NF (SEÇÃO CORRIGIDA) --- */
 #status-container table {
     table-layout: fixed;
     word-wrap: break-word;
 }
+/* Adicionado para controlar as larguras das colunas */
+#status-container th.descricao-col {
+    width: 35%; /* Dá mais espaço para a descrição */
+}
+#status-container th.actions-col {
+    width: 300px; /* Largura fixa para a coluna de ações */
+}
 #status-container .actions-cell {
     display: flex;
     gap: 8px;
-    flex-wrap: nowrap; /* Impede que os botões quebrem a linha */
+    flex-wrap: nowrap;
 }
 #status-container .btn-update,
 #status-container .btn-log {
