@@ -173,6 +173,30 @@ h2 {
 .btn-log:hover { background-color: var(--cor-cinza-claro); }
 .log-entry { border-bottom: 1px solid #eee; padding: 10px 0; }
 .log-entry:last-child { border-bottom: none; }
+/* Cole no final da seção "Página de Detalhes" */
+.bulk-actions-bar {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background-color: #e3eafc;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #c8d4e8;
+}
+#bulk-counter {
+    font-weight: bold;
+    color: #333;
+}
+#bulk-status-select {
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid var(--cor-cinza-borda);
+}
+.item-checkbox {
+    width: 18px;
+    height: 18px;
+}
 
 /* =================================================================== */
 /* RESPONSIVIDADE                                                    */

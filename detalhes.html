@@ -18,6 +18,21 @@
         <div id="detalhe-header-container"></div>
         <h2>Itens da Requisição</h2> 
         
+        <!-- ADICIONE ESTE BLOCO ABAIXO -->
+        <div id="bulk-actions-container" class="bulk-actions-bar" style="display: none;">
+            <span id="bulk-counter">0 itens selecionados</span>
+            <select id="bulk-status-select">
+                <option value="">Alterar status para...</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Em separação">Em separação</option>
+                <option value="Separado">Separado</option>
+                <option value="Aguarda coleta">Aguarda coleta</option>
+                <option value="Finalizado">Finalizado</option>
+            </select>
+            <button id="bulk-apply-btn" class="btn-destaque">Aplicar</button>
+        </div>
+        <!-- FIM DO BLOCO ADICIONADO -->
+
         <div id="detalhe-itens-container"></div>
     </div>
 
