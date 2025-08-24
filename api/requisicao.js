@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     }
 }
 
-// --- LÓGICA GET (sem alterações) ---
+// --- LÓGICA GET (COM AJUSTE NA BUSCA DO LOG) ---
 async function handleGet(req, res) {
     const { id, idReqItemLog } = req.query;
     const pool = await getConnection();
@@ -29,7 +29,8 @@ async function handleGet(req, res) {
         const itemsResult = await pool.request().input('idReqItems', sql.Int, id).query(`SELECT I.*, P.DESCRICAO AS DESCRICAO_PRODUTO FROM [dbo].[TB_REQ_ITEM] I LEFT JOIN [dbo].[CAD_PROD] P ON I.CODIGO = P.CODIGO WHERE I.ID_REQ = @idReqItems ORDER BY I.ID_REQ_ITEM`);
         return res.status(200).json({ header: headerResult.recordset[0], items: itemsResult.recordset });
     } else if (idReqItemLog) {
-        const result = await pool.request().input('ID_REQ_ITEM', sql.Int, idReqItemLog).query("SELECT STATUS_ANTERIOR, STATUS_NOVO, RESPONSAVEL, DT_ALTERACAO, CONVERT(varchar(8), HR_ALTERACAO, 108) as HR_ALTERACAO_FORMATADA FROM TB_REQ_ITEM_LOG WHERE ID_REQ_ITEM = @ID_REQ_ITEM ORDER BY DT_ALTERACAO DESC, HR_ALTERACAO DESC;");
+        // CORREÇÃO: Busca a nova coluna DT_HR_ALTERACAO para a conversão de fuso
+        const result = await pool.request().input('ID_REQ_ITEM', sql.Int, idReqItemLog).query("SELECT STATUS_ANTERIOR, STATUS_NOVO, RESPONSAVEL, DT_HR_ALTERACAO FROM TB_REQ_ITEM_LOG WHERE ID_REQ_ITEM = @ID_REQ_ITEM ORDER BY DT_HR_ALTERACAO DESC;");
         return res.status(200).json(result.recordset);
     } else {
         const result = await pool.request().query("SELECT H.ID_REQ, H.DT_REQUISICAO, H.DT_NECESSIDADE, H.STATUS, H.PRIORIDADE, H.SOLICITANTE, (SELECT COUNT(*) FROM [dbo].[TB_REQ_ITEM] I WHERE I.ID_REQ = H.ID_REQ) AS TOTAL_ITENS FROM [dbo].[TB_REQUISICOES] H ORDER BY H.ID_REQ DESC;");
@@ -58,40 +59,31 @@ async function handlePost(req, res) {
     return res.status(400).json({ message: "Ação POST inválida." });
 }
 
-// --- LÓGICA PUT (COM A CORREÇÃO NA GESTÃO DA TRANSAÇÃO) ---
+// --- LÓGICA PUT (COM AJUSTE NO LOG) ---
 async function handlePut(req, res) {
     const { action } = req.body;
     const pool = await getConnection();
     const transaction = new sql.Transaction(pool);
-
     try {
         await transaction.begin();
-        
         if (action === 'updateStatus') {
             const { idReqItem, idReq, novoStatus, statusAntigo, usuario } = req.body;
             await updateSingleItem(transaction, { idReqItem, idReq, novoStatus, statusAntigo, usuario });
-        
         } else if (action === 'bulkUpdateStatus') {
             const { itemIds, idReq, novoStatus, usuario } = req.body;
-            if (!Array.isArray(itemIds) || itemIds.length === 0) {
-                throw new Error("Nenhum item selecionado para atualização.");
-            }
             for (const idReqItem of itemIds) {
-                // Para cada item, buscamos o status antigo e então atualizamos
                 const getStatusRequest = new sql.Request(transaction);
                 const result = await getStatusRequest.input('ID_REQ_ITEM_BULK', sql.Int, idReqItem).query('SELECT STATUS_ITEM FROM TB_REQ_ITEM WHERE ID_REQ_ITEM = @ID_REQ_ITEM_BULK');
                 const statusAntigo = result.recordset[0]?.STATUS_ITEM || 'Pendente';
                 await updateSingleItem(transaction, { idReqItem, idReq, novoStatus, statusAntigo, usuario });
             }
         } else {
-            await transaction.rollback(); // Importante reverter se a ação for inválida
+            await transaction.rollback();
             return res.status(400).json({ message: "Ação PUT inválida." });
         }
-
         await updateHeaderStatus(transaction, req.body.idReq);
         await transaction.commit();
         res.status(200).json({ message: `Operação concluída com sucesso!` });
-
     } catch (err) {
         await transaction.rollback();
         console.error("Erro na transação de atualização:", err);
@@ -99,33 +91,29 @@ async function handlePut(req, res) {
     }
 }
 
-// --- FUNÇÕES AUXILIARES PARA ATUALIZAÇÃO ---
-
 async function updateSingleItem(transaction, { idReqItem, idReq, novoStatus, statusAntigo, usuario }) {
-    // Cria um novo objeto de requisição para cada item, garantindo isolamento
     const request = new sql.Request(transaction);
-    
-    // 1. Atualiza o item
     let queryUpdateItem = `UPDATE TB_REQ_ITEM SET STATUS_ITEM = @NOVO_STATUS_ITEM`;
     if (novoStatus === 'Finalizado') queryUpdateItem += `, QNT_PAGA = QNT_REQ, SALDO = 0`;
     else if (novoStatus === 'Pendente') queryUpdateItem += `, QNT_PAGA = 0, SALDO = QNT_REQ`;
     queryUpdateItem += ` WHERE ID_REQ_ITEM = @ID_REQ_ITEM AND ID_REQ = @ID_REQ;`;
-    await request
-        .input('NOVO_STATUS_ITEM', sql.NVarChar, novoStatus)
-        .input('ID_REQ_ITEM', sql.Int, idReqItem)
-        .input('ID_REQ', sql.Int, idReq)
-        .query(queryUpdateItem);
+    await request.input('NOVO_STATUS_ITEM', sql.NVarChar, novoStatus).input('ID_REQ_ITEM', sql.Int, idReqItem).input('ID_REQ', sql.Int, idReq).query(queryUpdateItem);
 
-    // 2. Insere o log
+    // CORREÇÃO: Salva nas colunas antigas E na nova coluna
     const dataHoraAtual = new Date();
-    // Reutiliza o mesmo request, mas poderia criar outro se quisesse
     await request
         .input('STATUS_ANTERIOR_LOG', sql.NVarChar, statusAntigo)
         .input('STATUS_NOVO_LOG', sql.NVarChar, novoStatus)
         .input('RESPONSAVEL_LOG', sql.NVarChar, usuario)
-        .input('DT_ALTERACAO_LOG', sql.Date, dataHoraAtual)
-        .input('HR_ALTERACAO_LOG', sql.Time, dataHoraAtual)
-        .query("INSERT INTO TB_REQ_ITEM_LOG (ID_REQ, ID_REQ_ITEM, STATUS_ANTERIOR, STATUS_NOVO, RESPONSAVEL, DT_ALTERACAO, HR_ALTERACAO) VALUES (@ID_REQ, @ID_REQ_ITEM, @STATUS_ANTERIOR_LOG, @STATUS_NOVO_LOG, @RESPONSAVEL_LOG, @DT_ALTERACAO_LOG, @HR_ALTERACAO_LOG)");
+        .input('DT_ALTERACAO_LOG', sql.Date, dataHoraAtual)       // Coluna antiga
+        .input('HR_ALTERACAO_LOG', sql.Time, dataHoraAtual)       // Coluna antiga
+        .input('DT_HR_ALTERACAO_LOG', sql.DateTime2, dataHoraAtual) // Nova coluna
+        .query(`
+            INSERT INTO TB_REQ_ITEM_LOG 
+            (ID_REQ, ID_REQ_ITEM, STATUS_ANTERIOR, STATUS_NOVO, RESPONSAVEL, DT_ALTERACAO, HR_ALTERACAO, DT_HR_ALTERACAO) 
+            VALUES 
+            (@ID_REQ, @ID_REQ_ITEM, @STATUS_ANTERIOR_LOG, @STATUS_NOVO_LOG, @RESPONSAVEL_LOG, @DT_ALTERACAO_LOG, @HR_ALTERACAO_LOG, @DT_HR_ALTERACAO_LOG)
+        `);
 }
 
 async function updateHeaderStatus(transaction, idReq) {
@@ -133,7 +121,6 @@ async function updateHeaderStatus(transaction, idReq) {
     const checkStatusQuery = `SELECT STATUS_ITEM FROM TB_REQ_ITEM WHERE ID_REQ = @ID_REQ_HEADER`;
     const allItemsResult = await request.input('ID_REQ_HEADER', sql.Int, idReq).query(checkStatusQuery);
     const allStatuses = allItemsResult.recordset.map(item => (item.STATUS_ITEM || 'Pendente').trim().toUpperCase());
-
     let novoStatusHeader;
     if (allStatuses.length > 0 && allStatuses.every(s => s === 'FINALIZADO')) {
         novoStatusHeader = 'Concluído';
@@ -142,6 +129,5 @@ async function updateHeaderStatus(transaction, idReq) {
     } else {
         novoStatusHeader = 'Parcial';
     }
-    
     await request.input('STATUS_HEADER', sql.NVarChar, novoStatusHeader).query("UPDATE TB_REQUISICOES SET STATUS = @STATUS_HEADER WHERE ID_REQ = @ID_REQ_HEADER");
 }
