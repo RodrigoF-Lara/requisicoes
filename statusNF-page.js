@@ -233,6 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
     /**
      * Lida com o envio do formulário de atualização de status.
      */
+   // ...existing code...
     async function handleUpdateSubmit(e) {
         e.preventDefault();
         const { nf, codigo, idNf, idNfProd } = updateForm.dataset;
@@ -251,17 +252,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nf, codigo, processo, usuario, id_nf: idNf, id_nf_prod: idNfProd })
             });
-            const result = await response.json();
+
+            // tenta parsear JSON; se falhar, usa texto bruto para erro
+            const raw = await response.text();
+            let result;
+            try {
+                result = JSON.parse(raw);
+            } catch (parseErr) {
+                result = { message: raw };
+            }
+
             if (!response.ok) throw new Error(result.message || 'Erro ao salvar.');
-            modalStatus.textContent = result.message;
+
+            modalStatus.textContent = result.message || 'Alteração salva com sucesso.';
             modalStatus.style.color = "green";
-            fetchDataAndRender();
+            fetchDataAndRender(); // Recarrega os dados
             setTimeout(() => closeModal('updateModal'), 1500);
         } catch (error) {
+            console.error("Erro ao salvar alteração:", error);
             modalStatus.textContent = `Erro: ${error.message}`;
             modalStatus.style.color = "#c00";
         }
     }
+// ...existing code...
 
     // --- EVENT LISTENERS ---
 
