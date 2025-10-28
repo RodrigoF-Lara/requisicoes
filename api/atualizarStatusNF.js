@@ -1,4 +1,4 @@
-import { getConnection, closeConnection } from "./db.js";
+import { getConnection } from "./db.js";
 import sql from "mssql";
 
 export default async function handler(req, res) {
@@ -12,8 +12,9 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: "Parâmetros obrigatórios: nf, codigo, processo, usuario" });
     }
 
+    let pool;
     try {
-        const pool = await getConnection();
+        pool = await getConnection();
         const now = new Date();
 
         // Formata data e hora
@@ -42,6 +43,8 @@ export default async function handler(req, res) {
         console.error("ERRO /api/atualizarStatusNF:", err);
         return res.status(500).json({ message: "Erro interno ao atualizar processo.", error: err.message });
     } finally {
-        await closeConnection();
+        if (pool && typeof pool.close === "function") {
+            try { await pool.close(); } catch (e) { console.warn("Falha ao fechar pool:", e.message); }
+        }
     }
 }
