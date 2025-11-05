@@ -10,15 +10,15 @@ export default async function handler(req, res) {
       if (!codigo) return res.status(400).json({ message: "codigo é obrigatório" });
 
       const prod = await pool.request()
-        .input("CODIGO", sql.NVarChar, codigo)
+        .input("CODIGO", sql.VarChar(10), codigo)
         .query("SELECT TOP 1 CODIGO, DESCRICAO FROM [dbo].[CAD_PROD] WHERE CODIGO = @CODIGO");
 
       const saldoRes = await pool.request()
-        .input("CODIGO", sql.NVarChar, codigo)
+        .input("CODIGO", sql.VarChar(10), codigo)
         .query("SELECT ISNULL(SUM(SALDO),0) AS SALDO FROM [dbo].[KARDEX_2025_EMBALAGEM] WHERE CODIGO = @CODIGO AND D_E_L_E_T_ <> '*'");
 
       const mov = await pool.request()
-        .input("CODIGO", sql.NVarChar, codigo)
+        .input("CODIGO", sql.VarChar(10), codigo)
         .query(`
           SELECT TOP 50 ID, CODIGO, OPERACAO, QNT, USUARIO, convert(varchar, DT, 23) AS DT, convert(varchar, HR, 8) AS HR, MOTIVO, ID_TB_RESUMO
           FROM [dbo].[KARDEX_2025]
@@ -46,12 +46,14 @@ export default async function handler(req, res) {
       }
 
       const { codigo, tipo, quantidade, usuario, endereco, armazem, motivo } = body;
-      if (!codigo || !tipo || !quantidade || !usuario) {
+      if (!codigo || !tipo || quantidade == null || !usuario) {
         return res.status(400).json({ message: "codigo, tipo, quantidade e usuario são obrigatórios" });
       }
 
       const operacao = (String(tipo).toUpperCase() === "ENTRADA") ? "ENTRADA" : "SAIDA";
-      const qntValue = Number(quantidade) * (operacao === "SAIDA" ? -1 : 1);
+      const qntNumber = Number(quantidade);
+      if (Number.isNaN(qntNumber)) return res.status(400).json({ message: "quantidade inválida" });
+      const qntValue = qntNumber * (operacao === "SAIDA" ? -1 : 1);
 
       const transaction = pool.transaction();
       try {
@@ -61,28 +63,30 @@ export default async function handler(req, res) {
         const now = new Date();
         const dtParam = now;
         const hrParam = now.toTimeString().split(" ")[0];
-        const KARDEX_CONST = 2025;
+        const KARDEX_CONST_INT = 2025;    // para KARDEX_2025_EMBALAGEM (int)
+        const KARDEX_CONST_STR = "2025"; // para KARDEX_2025 (varchar)
 
         let resumoId = null;
 
         // Para ENTRADA: primeiro insere em KARDEX_2025_EMBALAGEM e recupera o ID gerado
         if (operacao === "ENTRADA") {
           const insertEmbResult = await txReq
-            .input("CODIGO2", sql.NVarChar, codigo)
-            .input("ENDERECO2", sql.NVarChar, endereco || "")
-            .input("ARMAZEM2", sql.NVarChar, armazem || "")
-            .input("QNT2", sql.Int, Number(quantidade))
-            .input("USUARIO2", sql.NVarChar, usuario)
-            .input("DT2", sql.DateTime, dtParam)
-            .input("HR2", sql.VarChar, hrParam)
-            .input("MOTIVO2", sql.NVarChar, motivo || "")
-            .input("KARDEX2", sql.Int, KARDEX_CONST)
+            .input("D_E_L_E_T__EMB", sql.NChar(2), '')
+            .input("CODIGO2", sql.VarChar(10), codigo)
+            .input("ENDERECO2", sql.VarChar(100), endereco || "")
+            .input("ARMAZEM2", sql.NVarChar(sql.MAX), armazem || "")
+            .input("QNT2", sql.Float, qntNumber) // positivo na embalagem
+            .input("USUARIO2", sql.VarChar(50), usuario)
+            .input("DT2", sql.Date, dtParam)
+            .input("HR2", sql.VarChar(8), hrParam)
+            .input("MOTIVO2", sql.VarChar(30), motivo || "")
+            .input("KARDEX2", sql.Int, KARDEX_CONST_INT)
             .query(`
               INSERT INTO [dbo].[KARDEX_2025_EMBALAGEM]
                 ([D_E_L_E_T_],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[USUARIO],[DT],[HR],[MOTIVO],[KARDEX])
               OUTPUT INSERTED.ID AS NEWID
               VALUES
-                ('', @CODIGO2, @ENDERECO2, @ARMAZEM2, @QNT2, @USUARIO2, @DT2, @HR2, @MOTIVO2, @KARDEX2);
+                (@D_E_L_E_T__EMB, @CODIGO2, @ENDERECO2, @ARMAZEM2, @QNT2, @USUARIO2, @DT2, @HR2, @MOTIVO2, @KARDEX2);
             `);
 
           if (insertEmbResult && insertEmbResult.recordset && insertEmbResult.recordset[0]) {
@@ -92,32 +96,29 @@ export default async function handler(req, res) {
           }
         }
 
-        // Em seguida insere em KARDEX_2025 — se houver resumoId passa em ID_TB_RESUMO
+        // Em seguida insere em KARDEX_2025 — grava ID_TB_RESUMO quando houver resumoId
         const insertKardexReq = txReq
-          .input("D_E_L_E_T_", sql.NVarChar, "")
-          .input("APLICATIVO", sql.NVarChar, "WEB")
-          .input("CODIGO", sql.NVarChar, codigo)
-          .input("ENDERECO", sql.NVarChar, endereco || "")
-          .input("ARMAZEM", sql.NVarChar, armazem || "")
-          .input("QNT", sql.Int, qntValue)
-          .input("OPERACAO", sql.NVarChar, operacao)
-          .input("USUARIO", sql.NVarChar, usuario)
-          .input("DT", sql.DateTime, dtParam)
-          .input("HR", sql.VarChar, hrParam)
-          .input("MOTIVO", sql.NVarChar, motivo || "")
-          .input("KARDEX", sql.Int, KARDEX_CONST);
+          .input("D_E_L_E_T_", sql.NChar(2), '')
+          .input("APLICATIVO", sql.VarChar(100), "WEB")
+          .input("CODIGO", sql.VarChar(10), codigo)
+          .input("ENDERECO", sql.VarChar(100), endereco || "")
+          .input("ARMAZEM", sql.NVarChar(sql.MAX), armazem || "")
+          .input("QNT", sql.Float, qntValue)
+          .input("OPERACAO", sql.NVarChar(50), operacao)
+          .input("USUARIO", sql.VarChar(50), usuario)
+          .input("DT", sql.Date, dtParam)
+          .input("HR", sql.VarChar(8), hrParam)
+          .input("MOTIVO", sql.VarChar(30), motivo || "")
+          .input("KARDEX", sql.VarChar(50), KARDEX_CONST_STR);
 
         if (resumoId !== null) insertKardexReq.input("ID_TB_RESUMO", sql.Int, resumoId);
         else insertKardexReq.input("ID_TB_RESUMO", sql.Int, null);
 
-        const columns = `[D_E_L_E_T_],[APLICATIVO],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[OPERACAO],[USUARIO],[DT],[HR],[MOTIVO],[KARDEX],[ID_TB_RESUMO]`;
-        const values = `(@D_E_L_E_T_, @APLICATIVO, @CODIGO, @ENDERECO, @ARMAZEM, @QNT, @OPERACAO, @USUARIO, @DT, @HR, @MOTIVO, @KARDEX, @ID_TB_RESUMO)`;
-
         await insertKardexReq.query(`
           INSERT INTO [dbo].[KARDEX_2025]
-            (${columns})
+            ([D_E_L_E_T_],[APLICATIVO],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[OPERACAO],[USUARIO],[DT],[HR],[MOTIVO],[KARDEX],[ID_TB_RESUMO])
           VALUES
-            (${values});
+            (@D_E_L_E_T_, @APLICATIVO, @CODIGO, @ENDERECO, @ARMAZEM, @QNT, @OPERACAO, @USUARIO, @DT, @HR, @MOTIVO, @KARDEX, @ID_TB_RESUMO);
         `);
 
         await transaction.commit();
