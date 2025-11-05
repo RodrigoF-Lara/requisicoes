@@ -6,7 +6,6 @@ export default async function handler(req, res) {
     const pool = await getConnection();
 
     if (req.method === "GET") {
-      // ...existing code...
       const codigo = String((req.query && req.query.codigo) || "").trim();
       if (!codigo) return res.status(400).json({ message: "codigo é obrigatório" });
 
@@ -36,7 +35,17 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST") {
-      const { codigo, tipo, quantidade, usuario, endereco, armazem, motivo } = req.body || {};
+      // parse seguro do body (evita exception se vier string inválida)
+      let body = {};
+      try {
+        if (req.body && typeof req.body === "string") body = JSON.parse(req.body);
+        else body = req.body || {};
+      } catch (parseErr) {
+        console.error("Invalid JSON body:", parseErr);
+        return res.status(400).json({ message: "Invalid JSON in request body" });
+      }
+
+      const { codigo, tipo, quantidade, usuario, endereco, armazem, motivo } = body;
       if (!codigo || !tipo || !quantidade || !usuario) {
         return res.status(400).json({ message: "codigo, tipo, quantidade e usuario são obrigatórios" });
       }
@@ -44,11 +53,16 @@ export default async function handler(req, res) {
       const operacao = (String(tipo).toUpperCase() === "ENTRADA") ? "ENTRADA" : "SAIDA";
       const qntValue = Number(quantidade) * (operacao === "SAIDA" ? -1 : 1);
 
-      // use transaction to avoid partial inserts
+      // transaction to avoid partial inserts
       const transaction = pool.transaction();
       try {
         await transaction.begin();
         const txReq = transaction.request();
+
+        // parâmetros comuns
+        const now = new Date();
+        const dtParam = now; // sql.Date / sql.DateTime handled below
+        const hrParam = now.toTimeString().split(" ")[0];
 
         // primeiro INSERT (KARDEX_2025)
         await txReq
@@ -60,8 +74,8 @@ export default async function handler(req, res) {
           .input("QNT", sql.Int, qntValue)
           .input("OPERACAO", sql.NVarChar, operacao)
           .input("USUARIO", sql.NVarChar, usuario)
-          .input("DT", sql.Date, new Date())
-          .input("HR", sql.VarChar, new Date().toTimeString().split(" ")[0])
+          .input("DT", sql.DateTime, dtParam)
+          .input("HR", sql.VarChar, hrParam)
           .input("MOTIVO", sql.NVarChar, motivo || "")
           .query(`
             INSERT INTO [dbo].[KARDEX_2025]
@@ -78,8 +92,8 @@ export default async function handler(req, res) {
             .input("ARMAZEM2", sql.NVarChar, armazem || "")
             .input("QNT2", sql.Int, Number(quantidade)) // salve positivo
             .input("USUARIO2", sql.NVarChar, usuario)
-            .input("DT2", sql.Date, new Date())
-            .input("HR2", sql.VarChar, new Date().toTimeString().split(" ")[0])
+            .input("DT2", sql.DateTime, dtParam)
+            .input("HR2", sql.VarChar, hrParam)
             .input("MOTIVO2", sql.NVarChar, motivo || "")
             .query(`
               INSERT INTO [dbo].[KARDEX_2025_EMBALAGEM]
