@@ -1,4 +1,4 @@
-// Carrega o menu-lateral.html (se existir) e inicializa comportamento do sidebar
+// Carrega menu-lateral.html (se existir) e inicializa comportamento do sidebar
 document.addEventListener('DOMContentLoaded', function () {
   const sidebarContainer = document.getElementById('sidebar-container');
   if (!sidebarContainer) return;
@@ -14,21 +14,16 @@ document.addEventListener('DOMContentLoaded', function () {
     })
     .catch(err => {
       console.error('Falha ao carregar menu-lateral.html:', err);
-      // Fallback simples caso o arquivo não exista
+      // Fallback sincronizado com nomes existentes no projeto
       sidebarContainer.innerHTML = `
-        <div class="sidebar-brand">Kardex System</div>
-        <div class="user-panel">
-          <div class="user-icon"><i class="fa fa-user-circle"></i></div>
-          <div class="user-info"><div id="sidebar-username">Usuário</div></div>
-        </div>
+        <div class="sidebar-header"><h3>Kardex System</h3></div>
+        <div class="sidebar-user-info"><span id="sidebar-username">Usuário</span></div>
         <nav class="sidebar-nav">
-          <ul>
-            <li><a id="nav-menu" href="menu.html"><i class="fa fa-home"></i> Menu Principal</a></li>
-            <li><a id="nav-nova-requisicao" href="nova-requisicao.html"><i class="fa fa-plus-square"></i> Nova Requisição</a></li>
-            <li><a id="nav-consultar" href="consultar.html"><i class="fa fa-search"></i> Consultar</a></li>
-            <li><a id="nav-estoque" href="estoque.html"><i class="fa fa-archive"></i> Gerenciar Estoque</a></li>
-            <li><a id="nav-status-nf" href="status-nf.html"><i class="fa fa-barcode"></i> Status NF</a></li>
-          </ul>
+          <a href="menu.html" id="nav-menu"><i class="fa fa-home"></i> Menu Principal</a>
+          <a href="nova-requisicao.html" id="nav-nova-requisicao"><i class="fa fa-plus-square"></i> Nova Requisição</a>
+          <a href="consultar.html" id="nav-consultar"><i class="fa fa-search"></i> Consultar</a>
+          <a href="estoque.html" id="nav-estoque"><i class="fa fa-archive"></i> Gerenciar Estoque</a>
+          <a href="status-nf.html" id="nav-status-nf"><i class="fa fa-barcode"></i> Status NF</a>
         </nav>
         <div class="sidebar-footer"><button id="logout-btn" class="logout-btn">Sair</button></div>
       `;
@@ -37,15 +32,12 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function inicializarSidebar() {
-  // mostra usuário
   const userName = localStorage.getItem('userName');
   const usernameEl = document.getElementById('sidebar-username');
   if (usernameEl) usernameEl.textContent = userName || 'Usuário';
 
-  // destaca link ativo
   const filename = (window.location.pathname.split('/').pop() || 'menu.html').toLowerCase();
   const pageKey = filename.replace('.html', '') || 'menu';
-  // mapeamento simples para ids (caso nomes de arquivo diferentes)
   const idMap = {
     'menu': 'nav-menu',
     'nova-requisicao': 'nav-nova-requisicao',
@@ -58,7 +50,6 @@ function inicializarSidebar() {
   const navLink = document.getElementById(navId);
   if (navLink) navLink.classList.add('active');
 
-  // logout
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', (e) => {
