@@ -61,8 +61,9 @@ export default async function handler(req, res) {
         const now = new Date();
         const dtParam = now;
         const hrParam = now.toTimeString().split(" ")[0];
+        const KARDEX_CONST = 2025;
 
-        // INSERT em KARDEX_2025
+        // INSERT em KARDEX_2025 (inclui KARDEX)
         await txReq
           .input("D_E_L_E_T_", sql.NVarChar, "")
           .input("APLICATIVO", sql.NVarChar, "WEB")
@@ -75,14 +76,15 @@ export default async function handler(req, res) {
           .input("DT", sql.DateTime, dtParam)
           .input("HR", sql.VarChar, hrParam)
           .input("MOTIVO", sql.NVarChar, motivo || "")
+          .input("KARDEX", sql.Int, KARDEX_CONST)
           .query(`
             INSERT INTO [dbo].[KARDEX_2025]
-              ([D_E_L_E_T_],[APLICATIVO],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[OPERACAO],[USUARIO],[DT],[HR],[MOTIVO])
+              ([D_E_L_E_T_],[APLICATIVO],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[OPERACAO],[USUARIO],[DT],[HR],[MOTIVO],[KARDEX])
             VALUES
-              (@D_E_L_E_T_, @APLICATIVO, @CODIGO, @ENDERECO, @ARMAZEM, @QNT, @OPERACAO, @USUARIO, @DT, @HR, @MOTIVO);
+              (@D_E_L_E_T_, @APLICATIVO, @CODIGO, @ENDERECO, @ARMAZEM, @QNT, @OPERACAO, @USUARIO, @DT, @HR, @MOTIVO, @KARDEX);
           `);
 
-        // INSERT em KARDEX_2025_EMBALAGEM apenas para ENTRADA
+        // INSERT em KARDEX_2025_EMBALAGEM apenas para ENTRADA (inclui KARDEX)
         if (operacao === "ENTRADA") {
           await txReq
             .input("CODIGO2", sql.NVarChar, codigo)
@@ -93,11 +95,12 @@ export default async function handler(req, res) {
             .input("DT2", sql.DateTime, dtParam)
             .input("HR2", sql.VarChar, hrParam)
             .input("MOTIVO2", sql.NVarChar, motivo || "")
+            .input("KARDEX2", sql.Int, KARDEX_CONST)
             .query(`
               INSERT INTO [dbo].[KARDEX_2025_EMBALAGEM]
-                ([D_E_L_E_T_],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[USUARIO],[DT],[HR],[MOTIVO])
+                ([D_E_L_E_T_],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[USUARIO],[DT],[HR],[MOTIVO],[KARDEX])
               VALUES
-                ('', @CODIGO2, @ENDERECO2, @ARMAZEM2, @QNT2, @USUARIO2, @DT2, @HR2, @MOTIVO2);
+                ('', @CODIGO2, @ENDERECO2, @ARMAZEM2, @QNT2, @USUARIO2, @DT2, @HR2, @MOTIVO2, @KARDEX2);
             `);
         }
 

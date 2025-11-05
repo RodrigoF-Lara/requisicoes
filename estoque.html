@@ -36,8 +36,20 @@
                         <option value="ENTRADA">Entrada</option>
                         <option value="SAIDA">Saída</option>
                     </select>
+                </div>
+
+                <!-- NOVOS CAMPOS: endereço e armazém -->
+                <div style="margin-top:8px;">
+                    <label for="endereco">Endereço:</label>
+                    <input type="text" id="endereco" placeholder="Ex: TESTE1" />
+                    <label for="armazem" style="margin-left:12px;">Armazém:</label>
+                    <input type="text" id="armazem" placeholder="Ex: 01" style="width:80px;" />
+                </div>
+
+                <div style="margin-top:8px;">
                     <button id="gerenciarBtn" class="btn-destaque">Registrar Movimento</button>
                 </div>
+
                 <div id="status" class="status-message"></div>
             </div>
 

@@ -12,6 +12,10 @@
   const gerenciarBtn = document.getElementById("gerenciarBtn");
   const statusEl = document.getElementById("status");
 
+  // novos campos de endereço e armazém (devem existir no HTML)
+  const enderecoEl = document.getElementById("endereco");
+  const armazemEl = document.getElementById("armazem");
+
   const historicoContainer = document.getElementById("historicoContainer");
   const historicoBody = document.getElementById("historicoBody");
 
@@ -67,15 +71,21 @@
     const quantidade = Number(quantidadeEl.value) || 0;
     const tipo = tipoMovimento.value;
     const usuario = localStorage.getItem("userName") || "WEB";
+
+    const endereco = (enderecoEl && enderecoEl.value || "").trim();
+    const armazem = (armazemEl && armazemEl.value || "").trim();
+
+    // validação mínima
     if (!codigo || quantidade <= 0) {
       statusEl.style.color = "#c00";
       statusEl.textContent = "Código e quantidade válidos são obrigatórios.";
       return;
     }
+
     statusEl.style.color = "#222";
     statusEl.textContent = "Registrando...";
     try {
-      const body = { codigo, tipo, quantidade, usuario };
+      const body = { codigo, tipo, quantidade, usuario, endereco, armazem };
       const res = await fetch("/api/inventory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -85,7 +95,10 @@
       if (!res.ok) throw new Error(data.message || "Erro ao registrar movimento");
       statusEl.style.color = "green";
       statusEl.textContent = data.message || "Movimento registrado";
+      // atualiza informações e histórico
       await consultar(codigo);
+      // limpa quantidade (opcional)
+      quantidadeEl.value = "1";
     } catch (err) {
       statusEl.style.color = "#c00";
       statusEl.textContent = `Erro: ${err.message}`;
