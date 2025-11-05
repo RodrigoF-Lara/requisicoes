@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST") {
-      // parse seguro do body (evita exception se vier string inválida)
+      // parse seguro do body
       let body = {};
       try {
         if (req.body && typeof req.body === "string") body = JSON.parse(req.body);
@@ -53,18 +53,16 @@ export default async function handler(req, res) {
       const operacao = (String(tipo).toUpperCase() === "ENTRADA") ? "ENTRADA" : "SAIDA";
       const qntValue = Number(quantidade) * (operacao === "SAIDA" ? -1 : 1);
 
-      // transaction to avoid partial inserts
       const transaction = pool.transaction();
       try {
         await transaction.begin();
         const txReq = transaction.request();
 
-        // parâmetros comuns
         const now = new Date();
-        const dtParam = now; // sql.Date / sql.DateTime handled below
+        const dtParam = now;
         const hrParam = now.toTimeString().split(" ")[0];
 
-        // primeiro INSERT (KARDEX_2025)
+        // INSERT em KARDEX_2025
         await txReq
           .input("D_E_L_E_T_", sql.NVarChar, "")
           .input("APLICATIVO", sql.NVarChar, "WEB")
@@ -84,22 +82,22 @@ export default async function handler(req, res) {
               (@D_E_L_E_T_, @APLICATIVO, @CODIGO, @ENDERECO, @ARMAZEM, @QNT, @OPERACAO, @USUARIO, @DT, @HR, @MOTIVO);
           `);
 
-        // segundo INSERT só para ENTRADA (ajuste conforme sua regra)
+        // INSERT em KARDEX_2025_EMBALAGEM apenas para ENTRADA
         if (operacao === "ENTRADA") {
           await txReq
             .input("CODIGO2", sql.NVarChar, codigo)
             .input("ENDERECO2", sql.NVarChar, endereco || "")
             .input("ARMAZEM2", sql.NVarChar, armazem || "")
-            .input("QNT2", sql.Int, Number(quantidade)) // salve positivo
+            .input("QNT2", sql.Int, Number(quantidade))
             .input("USUARIO2", sql.NVarChar, usuario)
             .input("DT2", sql.DateTime, dtParam)
             .input("HR2", sql.VarChar, hrParam)
             .input("MOTIVO2", sql.NVarChar, motivo || "")
             .query(`
               INSERT INTO [dbo].[KARDEX_2025_EMBALAGEM]
-                ([D_E_L_E_T_],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[USUARIO],[DT],[HR],[MOTIVO],[SALDO])
+                ([D_E_L_E_T_],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[USUARIO],[DT],[HR],[MOTIVO])
               VALUES
-                ('', @CODIGO2, @ENDERECO2, @ARMAZEM2, @QNT2, @USUARIO2, @DT2, @HR2, @MOTIVO2, @QNT2);
+                ('', @CODIGO2, @ENDERECO2, @ARMAZEM2, @QNT2, @USUARIO2, @DT2, @HR2, @MOTIVO2);
             `);
         }
 
