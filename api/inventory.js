@@ -6,6 +6,7 @@ export default async function handler(req, res) {
     const pool = await getConnection();
 
     if (req.method === "GET") {
+      // ...existing code...
       const codigo = String((req.query && req.query.codigo) || "").trim();
       if (!codigo) return res.status(400).json({ message: "codigo é obrigatório" });
 
@@ -41,52 +42,66 @@ export default async function handler(req, res) {
       }
 
       const operacao = (String(tipo).toUpperCase() === "ENTRADA") ? "ENTRADA" : "SAIDA";
-      const qnt = Number(quantidade) * (operacao === "SAIDA" ? -1 : 1);
+      const qntValue = Number(quantidade) * (operacao === "SAIDA" ? -1 : 1);
 
-      await pool.request()
-        .input("D_E_L_E_T_", sql.NVarChar, "")
-        .input("APLICATIVO", sql.NVarChar, "WEB")
-        .input("CODIGO", sql.NVarChar, codigo)
-        .input("ENDERECO", sql.NVarChar, endereco || "")
-        .input("ARMAZEM", sql.NVarChar, armazem || "")
-        .input("QNT", sql.Int, qnt)
-        .input("OPERACAO", sql.NVarChar, operacao)
-        .input("USUARIO", sql.NVarChar, usuario)
-        .input("DT", sql.Date, new Date())
-        .input("HR", sql.VarChar, new Date().toTimeString().split(" ")[0])
-        .input("MOTIVO", sql.NVarChar, motivo || "")
-        .query(`
-          INSERT INTO [dbo].[KARDEX_2025]
-            ([D_E_L_E_T_],[APLICATIVO],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[OPERACAO],[USUARIO],[DT],[HR],[MOTIVO])
-          VALUES
-            (@D_E_L_E_T_, @APLICATIVO, @CODIGO, @ENDERECO, @ARMAZEM, @QNT, @OPERACAO, @USUARIO, @DT, @HR, @MOTIVO);
-        `);
+      // use transaction to avoid partial inserts
+      const transaction = pool.transaction();
+      try {
+        await transaction.begin();
+        const txReq = transaction.request();
 
-      if (operacao === "ENTRADA") {
-        await pool.request()
+        // primeiro INSERT (KARDEX_2025)
+        await txReq
+          .input("D_E_L_E_T_", sql.NVarChar, "")
+          .input("APLICATIVO", sql.NVarChar, "WEB")
           .input("CODIGO", sql.NVarChar, codigo)
           .input("ENDERECO", sql.NVarChar, endereco || "")
           .input("ARMAZEM", sql.NVarChar, armazem || "")
-          .input("QNT", sql.Int, qnt)
+          .input("QNT", sql.Int, qntValue)
+          .input("OPERACAO", sql.NVarChar, operacao)
           .input("USUARIO", sql.NVarChar, usuario)
           .input("DT", sql.Date, new Date())
           .input("HR", sql.VarChar, new Date().toTimeString().split(" ")[0])
           .input("MOTIVO", sql.NVarChar, motivo || "")
           .query(`
-            INSERT INTO [dbo].[KARDEX_2025_EMBALAGEM]
-              ([D_E_L_E_T_],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[USUARIO],[DT],[HR],[MOTIVO],[SALDO])
+            INSERT INTO [dbo].[KARDEX_2025]
+              ([D_E_L_E_T_],[APLICATIVO],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[OPERACAO],[USUARIO],[DT],[HR],[MOTIVO])
             VALUES
-              ('', @CODIGO, @ENDERECO, @ARMAZEM, @QNT, @USUARIO, @DT, @HR, @MOTIVO, @QNT);
+              (@D_E_L_E_T_, @APLICATIVO, @CODIGO, @ENDERECO, @ARMAZEM, @QNT, @OPERACAO, @USUARIO, @DT, @HR, @MOTIVO);
           `);
-      }
 
-      return res.status(200).json({ message: "Movimento registrado com sucesso." });
+        // segundo INSERT só para ENTRADA (ajuste conforme sua regra)
+        if (operacao === "ENTRADA") {
+          await txReq
+            .input("CODIGO2", sql.NVarChar, codigo)
+            .input("ENDERECO2", sql.NVarChar, endereco || "")
+            .input("ARMAZEM2", sql.NVarChar, armazem || "")
+            .input("QNT2", sql.Int, Number(quantidade)) // salve positivo
+            .input("USUARIO2", sql.NVarChar, usuario)
+            .input("DT2", sql.Date, new Date())
+            .input("HR2", sql.VarChar, new Date().toTimeString().split(" ")[0])
+            .input("MOTIVO2", sql.NVarChar, motivo || "")
+            .query(`
+              INSERT INTO [dbo].[KARDEX_2025_EMBALAGEM]
+                ([D_E_L_E_T_],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[USUARIO],[DT],[HR],[MOTIVO],[SALDO])
+              VALUES
+                ('', @CODIGO2, @ENDERECO2, @ARMAZEM2, @QNT2, @USUARIO2, @DT2, @HR2, @MOTIVO2, @QNT2);
+            `);
+        }
+
+        await transaction.commit();
+        return res.status(200).json({ message: "Movimento registrado com sucesso." });
+      } catch (txErr) {
+        try { await transaction.rollback(); } catch (r) { console.error("Rollback falhou:", r); }
+        console.error("TRANSACTION ERROR /api/inventory:", txErr);
+        return res.status(500).json({ message: "Erro interno durante registro (transação)", error: txErr.message, stack: txErr.stack });
+      }
     }
 
     res.setHeader("Allow", "GET, POST");
     return res.status(405).json({ message: "Método não permitido" });
   } catch (err) {
     console.error("ERRO /api/inventory:", err);
-    return res.status(500).json({ message: "Erro interno", error: err.message });
+    return res.status(500).json({ message: "Erro interno", error: err.message, stack: err.stack });
   }
 }
