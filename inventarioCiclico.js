@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const gerarListaBtn = document.getElementById('gerarListaBtn');
     const carregarInventariosBtn = document.getElementById('carregarInventariosBtn');
     const salvarInventarioBtn = document.getElementById('salvarInventarioBtn');
+    const imprimirInventarioBtn = document.getElementById('imprimirInventarioBtn');
     const finalizarInventarioBtn = document.getElementById('finalizarInventarioBtn');
     const listaInventarioContainer = document.getElementById('listaInventarioContainer');
     const listaInventariosSalvos = document.getElementById('listaInventariosSalvos');
@@ -17,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
     gerarListaBtn.addEventListener('click', gerarNovaLista);
     carregarInventariosBtn.addEventListener('click', carregarInventariosSalvos);
     salvarInventarioBtn.addEventListener('click', salvarInventario);
+    imprimirInventarioBtn.addEventListener('click', imprimirInventario);
     finalizarInventarioBtn.addEventListener('click', finalizarInventario);
 
     // Event listeners para fechar modal
@@ -57,6 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             renderizarInventario(inventarioAtual);
             salvarInventarioBtn.style.display = 'inline-block';
+            imprimirInventarioBtn.style.display = 'inline-block';
             finalizarInventarioBtn.style.display = 'none';
             
             statusMessage.style.color = 'green';
@@ -202,11 +205,17 @@ document.addEventListener('DOMContentLoaded', function() {
             inventarioAtual = data.inventario;
             renderizarInventario(inventarioAtual);
 
-            if (inventarioAtual.status === 'EM_ANDAMENTO') {
+            if (inventarioAtual.status === 'FINALIZADO') {
                 salvarInventarioBtn.style.display = 'none';
+                imprimirInventarioBtn.style.display = 'inline-block';
+                finalizarInventarioBtn.style.display = 'none';
+            } else if (inventarioAtual.status === 'EM_ANDAMENTO') {
+                salvarInventarioBtn.style.display = 'none';
+                imprimirInventarioBtn.style.display = 'inline-block';
                 finalizarInventarioBtn.style.display = 'inline-block';
             } else {
-                salvarInventarioBtn.style.display = 'none';
+                salvarInventarioBtn.style.display = 'inline-block';
+                imprimirInventarioBtn.style.display = 'inline-block';
                 finalizarInventarioBtn.style.display = 'none';
             }
 
@@ -493,6 +502,145 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         acuracidadeModal.style.display = 'block';
+    }
+
+    function imprimirInventario() {
+        if (!inventarioAtual || !inventarioAtual.itens || inventarioAtual.itens.length === 0) {
+            alert('Nenhum inventário carregado para impressão');
+            return;
+        }
+
+        const { itens, dataGeracao, criterio, id, status, blocos, valorTotalGeral } = inventarioAtual;
+        const dataFormatada = formatarDataHora(dataGeracao);
+        const usuarioNome = localStorage.getItem('userName') || 'Sistema';
+
+        const janelaImpressao = window.open('', '_blank', 'width=800,height=600');
+        
+        let blocosInfo = '';
+        if (blocos) {
+            blocosInfo = `
+                <div class="blocos-resumo">
+                    <div class="bloco-item movimentacao">
+                        <strong>Movimentação:</strong> ${blocos.movimentacao} itens
+                    </div>
+                    <div class="bloco-item baixa-acuracidade">
+                        <strong>Baixa Acuracidade:</strong> ${blocos.baixaAcuracidade} itens
+                    </div>
+                    <div class="bloco-item maior-valor">
+                        <strong>Maior Valor:</strong> ${blocos.maiorValor} itens
+                    </div>
+                </div>
+            `;
+        }
+
+        const htmlImpressao = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventário ${id ? '#' + id : 'Nova Lista'} - Impressão</title>
+    <style>
+        @media print {
+            @page { size: A4 landscape; margin: 10mm; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .no-print { display: none !important; }
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; line-height: 1.3; color: #333; background: white; }
+        .header { text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 3px solid #2c3e50; }
+        .header h1 { font-size: 18pt; color: #2c3e50; margin-bottom: 5px; }
+        .header h2 { font-size: 14pt; color: #34495e; font-weight: normal; }
+        .info-section { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px; }
+        .info-item { display: flex; gap: 5px; }
+        .info-item strong { color: #2c3e50; }
+        .blocos-resumo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+        .bloco-item { padding: 8px; text-align: center; border-radius: 5px; font-size: 9pt; }
+        .bloco-item.movimentacao { background-color: #e3f2fd; border-left: 4px solid #2196F3; }
+        .bloco-item.baixa-acuracidade { background-color: #fff3e0; border-left: 4px solid #ff9800; }
+        .bloco-item.maior-valor { background-color: #e8f5e9; border-left: 4px solid #4caf50; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 9pt; }
+        thead { background-color: #2c3e50; color: white; }
+        th { padding: 8px 4px; text-align: left; font-weight: 600; border: 1px solid #34495e; }
+        td { padding: 6px 4px; border: 1px solid #ddd; }
+        tbody tr:nth-child(even) { background-color: #f8f9fa; }
+        tbody tr:hover { background-color: #e9ecef; }
+        .bloco-badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 8pt; font-weight: bold; white-space: nowrap; }
+        .bloco-movimentacao { background-color: #2196F3; color: white; }
+        .bloco-baixa-acuracidade { background-color: #ff9800; color: white; }
+        .bloco-maior-valor { background-color: #4caf50; color: white; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .footer { margin-top: 20px; padding-top: 10px; border-top: 2px solid #2c3e50; font-size: 8pt; text-align: center; color: #666; }
+        .total-row { background-color: #34495e !important; color: white !important; font-weight: bold; }
+        .total-row td { border-color: #2c3e50 !important; }
+        .btn-imprimir { position: fixed; top: 10px; right: 10px; padding: 10px 20px; background-color: #2c3e50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 11pt; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .btn-imprimir:hover { background-color: #34495e; }
+        .contagem-campo { border: 1px solid #ccc; padding: 4px; min-width: 60px; min-height: 20px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <button class="btn-imprimir no-print" onclick="window.print()">🖨️ Imprimir</button>
+    <div class="header">
+        <h1>KARDEX SYSTEM</h1>
+        <h2>Inventário Cíclico ${id ? '#' + id : '- Nova Lista'}</h2>
+    </div>
+    <div class="info-section">
+        <div class="info-item"><strong>Data de Geração:</strong><span>${dataFormatada}</span></div>
+        <div class="info-item"><strong>Status:</strong><span>${status || 'NOVO'}</span></div>
+        <div class="info-item"><strong>Total de Itens:</strong><span>${itens.length}</span></div>
+        <div class="info-item"><strong>Impresso por:</strong><span>${usuarioNome}</span></div>
+        ${valorTotalGeral !== undefined ? `<div class="info-item"><strong>Valor Total em Estoque:</strong><span>R$ ${valorTotalGeral.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>` : ''}
+    </div>
+    ${blocosInfo}
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 30px;">#</th>
+                <th style="width: 80px;">Bloco</th>
+                <th style="width: 100px;">Código</th>
+                <th>Descrição</th>
+                <th style="width: 70px;" class="text-right">Saldo Sist.</th>
+                <th style="width: 70px;" class="text-right">Vlr Unit.</th>
+                <th style="width: 80px;" class="text-right">Vlr Total</th>
+                <th style="width: 80px;" class="text-center">Contagem</th>
+                <th style="width: 120px;">Contado Por</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${itens.map((item, index) => {
+                const saldoSistema = item.SALDO_ATUAL || 0;
+                const custoUnitario = item.CUSTO_UNITARIO || 0;
+                const valorTotal = item.VALOR_TOTAL_ESTOQUE || 0;
+                let blocoTexto = '', blocoClass = '';
+                if (item.BLOCO === 'MOVIMENTACAO') { blocoTexto = 'Movimentação'; blocoClass = 'bloco-movimentacao'; }
+                else if (item.BLOCO === 'BAIXA_ACURACIDADE') { blocoTexto = 'Baixa Acurac.'; blocoClass = 'bloco-baixa-acuracidade'; }
+                else if (item.BLOCO === 'MAIOR_VALOR') { blocoTexto = 'Maior Valor'; blocoClass = 'bloco-maior-valor'; }
+                return \`<tr>
+                    <td class="text-center">\${index + 1}</td>
+                    <td><span class="bloco-badge \${blocoClass}">\${blocoTexto}</span></td>
+                    <td><strong>\${item.CODIGO}</strong></td>
+                    <td>\${item.DESCRICAO || 'N/A'}</td>
+                    <td class="text-right">\${saldoSistema.toLocaleString('pt-BR')}</td>
+                    <td class="text-right">R$ \${custoUnitario.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td class="text-right"><strong>R$ \${valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
+                    <td class="text-center"><div class="contagem-campo">\${item.CONTAGEM_FISICA || '______'}</div></td>
+                    <td>_____________________</td>
+                </tr>\`;
+            }).join('')}
+        </tbody>
+        ${valorTotalGeral !== undefined ? \`<tfoot><tr class="total-row"><td colspan="6" class="text-right"><strong>TOTAL GERAL:</strong></td><td class="text-right"><strong>R$ \${valorTotalGeral.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td><td colspan="2"></td></tr></tfoot>\` : ''}
+    </table>
+    <div class="footer">
+        <p><strong>Critério de Seleção:</strong> ${criterio}</p>
+        <p>Documento gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+    </div>
+</body>
+</html>`;
+
+        janelaImpressao.document.write(htmlImpressao);
+        janelaImpressao.document.close();
+        setTimeout(() => { janelaImpressao.focus(); }, 250);
     }
 
     function formatarDataHora(dataString) {
