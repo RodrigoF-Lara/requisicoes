@@ -31,13 +31,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ message: "Ação não especificada ou inválida" });
 }
 
-// Gera uma nova lista de inventário
+// Gera uma nova lista de inventário com 3 blocos
 async function gerarListaInventario(req, res) {
     try {
         const pool = await getConnection();
         
-        // Busca os 10 itens mais movimentados nos últimos 21 dias
-        const result = await pool.request().query(`
+        // BLOCO 1: TOP 10 mais movimentados nos últimos 21 dias
+        const bloco1 = await pool.request().query(`
             WITH Movimentacoes AS (
                 SELECT 
                     k.CODIGO,
@@ -62,17 +62,98 @@ async function gerarListaInventario(req, res) {
                 cp.DESCRICAO,
                 m.TOTAL_MOVIMENTACOES,
                 m.TOTAL_QUANTIDADE_MOVIMENTADA,
-                ISNULL(s.SALDO_ATUAL, 0) AS SALDO_ATUAL
+                ISNULL(s.SALDO_ATUAL, 0) AS SALDO_ATUAL,
+                'MOVIMENTACAO' AS BLOCO
             FROM Movimentacoes m
             LEFT JOIN [dbo].[CAD_PROD] cp ON m.CODIGO = cp.CODIGO
             LEFT JOIN SaldoAtual s ON m.CODIGO = s.CODIGO
             ORDER BY m.TOTAL_MOVIMENTACOES DESC, m.TOTAL_QUANTIDADE_MOVIMENTADA DESC;
         `);
 
+        const codigosBloco1 = bloco1.recordset.map(item => item.CODIGO);
+        
+        // BLOCO 2: Itens com acuracidade < 95% no último inventário
+        const bloco2 = await pool.request().query(`
+            WITH UltimoInventario AS (
+                SELECT MAX(ID_INVENTARIO) AS ID_INVENTARIO
+                FROM [dbo].[TB_INVENTARIO_CICLICO]
+                WHERE STATUS = 'FINALIZADO'
+            ),
+            ItensBaixaAcuracidade AS (
+                SELECT 
+                    i.CODIGO,
+                    i.ACURACIDADE
+                FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] i
+                INNER JOIN UltimoInventario u ON i.ID_INVENTARIO = u.ID_INVENTARIO
+                WHERE i.ACURACIDADE < 95
+                    AND i.CODIGO NOT IN (${codigosBloco1.length > 0 ? "'" + codigosBloco1.join("','") + "'" : "''"})
+            ),
+            SaldoAtual AS (
+                SELECT 
+                    CODIGO,
+                    ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
+                FROM [dbo].[KARDEX_2025_EMBALAGEM]
+                WHERE D_E_L_E_T_ <> '*'
+                GROUP BY CODIGO
+            )
+            SELECT 
+                iba.CODIGO,
+                cp.DESCRICAO,
+                iba.ACURACIDADE AS ACURACIDADE_ANTERIOR,
+                ISNULL(s.SALDO_ATUAL, 0) AS SALDO_ATUAL,
+                'BAIXA_ACURACIDADE' AS BLOCO
+            FROM ItensBaixaAcuracidade iba
+            LEFT JOIN [dbo].[CAD_PROD] cp ON iba.CODIGO = cp.CODIGO
+            LEFT JOIN SaldoAtual s ON iba.CODIGO = s.CODIGO
+            ORDER BY iba.ACURACIDADE ASC;
+        `);
+
+        const codigosBloco2 = bloco2.recordset.map(item => item.CODIGO);
+        const codigosExcluir = [...codigosBloco1, ...codigosBloco2];
+
+        // BLOCO 3: TOP 3 itens com maior valor em estoque
+        const bloco3 = await pool.request().query(`
+            WITH SaldoValorizado AS (
+                SELECT 
+                    ke.CODIGO,
+                    ISNULL(SUM(ke.SALDO), 0) AS SALDO_ATUAL,
+                    ISNULL(cp.PRECO_UNIT, 0) AS PRECO_UNITARIO,
+                    ISNULL(SUM(ke.SALDO), 0) * ISNULL(cp.PRECO_UNIT, 0) AS VALOR_TOTAL_ESTOQUE
+                FROM [dbo].[KARDEX_2025_EMBALAGEM] ke
+                LEFT JOIN [dbo].[CAD_PROD] cp ON ke.CODIGO = cp.CODIGO
+                WHERE ke.D_E_L_E_T_ <> '*'
+                    AND ke.CODIGO NOT IN (${codigosExcluir.length > 0 ? "'" + codigosExcluir.join("','") + "'" : "''"})
+                GROUP BY ke.CODIGO, cp.PRECO_UNIT
+                HAVING ISNULL(SUM(ke.SALDO), 0) > 0
+            )
+            SELECT TOP 3
+                sv.CODIGO,
+                cp.DESCRICAO,
+                sv.SALDO_ATUAL,
+                sv.PRECO_UNITARIO,
+                sv.VALOR_TOTAL_ESTOQUE,
+                'MAIOR_VALOR' AS BLOCO
+            FROM SaldoValorizado sv
+            LEFT JOIN [dbo].[CAD_PROD] cp ON sv.CODIGO = cp.CODIGO
+            ORDER BY sv.VALOR_TOTAL_ESTOQUE DESC;
+        `);
+
+        // Combina os 3 blocos
+        const todosItens = [
+            ...bloco1.recordset,
+            ...bloco2.recordset,
+            ...bloco3.recordset
+        ];
+
         return res.status(200).json({
-            itens: result.recordset,
+            itens: todosItens,
             dataGeracao: new Date().toISOString(),
-            criterio: 'TOP 10 mais movimentados nos últimos 21 dias'
+            criterio: `Bloco 1: ${bloco1.recordset.length} mais movimentados | Bloco 2: ${bloco2.recordset.length} com baixa acuracidade | Bloco 3: ${bloco3.recordset.length} maior valor`,
+            blocos: {
+                movimentacao: bloco1.recordset.length,
+                baixaAcuracidade: bloco2.recordset.length,
+                maiorValor: bloco3.recordset.length
+            }
         });
 
     } catch (err) {
@@ -119,10 +200,11 @@ async function salvarInventario(req, res) {
                 .input('SALDO_SISTEMA', sql.Float, item.SALDO_ATUAL || 0)
                 .input('CONTAGEM_FISICA', sql.Float, item.CONTAGEM_FISICA || 0)
                 .input('TOTAL_MOVIMENTACOES', sql.Int, item.TOTAL_MOVIMENTACOES || 0)
+                .input('BLOCO', sql.NVarChar, item.BLOCO || 'MOVIMENTACAO')
                 .query(`
                     INSERT INTO [dbo].[TB_INVENTARIO_CICLICO_ITEM]
-                    (ID_INVENTARIO, CODIGO, DESCRICAO, SALDO_SISTEMA, CONTAGEM_FISICA, TOTAL_MOVIMENTACOES)
-                    VALUES (@ID_INVENTARIO, @CODIGO, @DESCRICAO, @SALDO_SISTEMA, @CONTAGEM_FISICA, @TOTAL_MOVIMENTACOES);
+                    (ID_INVENTARIO, CODIGO, DESCRICAO, SALDO_SISTEMA, CONTAGEM_FISICA, TOTAL_MOVIMENTACOES, BLOCO)
+                    VALUES (@ID_INVENTARIO, @CODIGO, @DESCRICAO, @SALDO_SISTEMA, @CONTAGEM_FISICA, @TOTAL_MOVIMENTACOES, @BLOCO);
                 `);
         }
 
@@ -217,7 +299,8 @@ async function abrirInventario(req, res) {
                 CONTAGEM_FISICA: item.CONTAGEM_FISICA,
                 TOTAL_MOVIMENTACOES: item.TOTAL_MOVIMENTACOES,
                 USUARIO_CONTAGEM: item.USUARIO_CONTAGEM,
-                DT_CONTAGEM: item.DT_CONTAGEM
+                DT_CONTAGEM: item.DT_CONTAGEM,
+                BLOCO: item.BLOCO
             }))
         };
 

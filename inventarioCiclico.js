@@ -51,7 +51,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 status: 'NOVO',
                 itens: data.itens,
                 dataGeracao: data.dataGeracao,
-                criterio: data.criterio
+                criterio: data.criterio,
+                blocos: data.blocos
             };
 
             renderizarInventario(inventarioAtual);
@@ -219,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     function renderizarInventario(inventario) {
-        const { itens, dataGeracao, criterio, id, status } = inventario;
+        const { itens, dataGeracao, criterio, id, status, blocos } = inventario;
 
         if (!itens || itens.length === 0) {
             infoLista.innerHTML = '<p class="info-message">Nenhum item encontrado para inventário.</p>';
@@ -229,11 +230,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
         tituloInventario.textContent = id ? `Inventário #${id}` : 'Nova Lista de Inventário';
 
+        let blocosInfo = '';
+        if (blocos) {
+            blocosInfo = `
+                <p><strong>Distribuição:</strong></p>
+                <ul class="blocos-info">
+                    <li><span class="bloco-badge bloco-movimentacao">Movimentação:</span> ${blocos.movimentacao} itens</li>
+                    <li><span class="bloco-badge bloco-baixa-acuracidade">Baixa Acuracidade:</span> ${blocos.baixaAcuracidade} itens</li>
+                    <li><span class="bloco-badge bloco-maior-valor">Maior Valor:</span> ${blocos.maiorValor} itens</li>
+                </ul>
+            `;
+        }
+
         infoLista.innerHTML = `
             <p><strong>Status:</strong> <span class="status-badge status-${status.toLowerCase()}">${status.replace('_', ' ')}</span></p>
             <p><strong>Data de Geração:</strong> ${formatarDataHora(dataGeracao)}</p>
             <p><strong>Total de Itens:</strong> ${itens.length}</p>
             <p><strong>Critério:</strong> ${criterio}</p>
+            ${blocosInfo}
         `;
 
         const podeEditar = status !== 'FINALIZADO';
@@ -244,6 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <thead>
                 <tr>
                     <th>#</th>
+                    <th>Bloco</th>
                     <th>Código</th>
                     <th>Descrição</th>
                     <th>Saldo Sistema</th>
@@ -263,9 +278,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     const usuarioContagem = item.USUARIO_CONTAGEM || '-';
                     const dataContagem = item.DT_CONTAGEM ? formatarDataHora(item.DT_CONTAGEM) : '-';
                     
+                    // Define a badge do bloco
+                    let blocoTexto = '';
+                    let blocoClass = '';
+                    if (item.BLOCO === 'MOVIMENTACAO') {
+                        blocoTexto = 'Movimentação';
+                        blocoClass = 'bloco-movimentacao';
+                    } else if (item.BLOCO === 'BAIXA_ACURACIDADE') {
+                        blocoTexto = 'Baixa Acurac.';
+                        blocoClass = 'bloco-baixa-acuracidade';
+                    } else if (item.BLOCO === 'MAIOR_VALOR') {
+                        blocoTexto = 'Maior Valor';
+                        blocoClass = 'bloco-maior-valor';
+                    }
+                    
                     return `
                     <tr>
                         <td>${index + 1}</td>
+                        <td><span class="bloco-badge ${blocoClass}">${blocoTexto}</span></td>
                         <td><strong>${item.CODIGO}</strong></td>
                         <td>${item.DESCRICAO || 'N/A'}</td>
                         <td>${saldoSistema}</td>
