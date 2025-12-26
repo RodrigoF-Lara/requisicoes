@@ -1,0 +1,63 @@
+'INICIO DELETE DO STATUS NF - LOG
+    
+    If Rs.State = 1 Then Rs.Close
+    STR = "SELECT * FROM [dbo].[TB_LOG_NF] WHERE ID_NF_PROD='" & ID_PROD & "'"
+    Rs.Open STR, Cn
+    
+    If Rs.EOF Then
+    ID_PROD = 0
+    Else
+        XX_ID = Rs("ID_NF")
+        ID_PROD = Rs("ID_NF_PROD")
+        XX_NUM_NF = Rs("NF")
+        XX_COD_PROD = Rs("CODIGO")
+        XX_QNT = Rs("QNT")
+       
+    End If
+    
+
+    
+    XX_USER = NF.TEXT_NOME
+    X_DT = Format(Date, "YYYY-MM-DD")
+    X_HR = Format(Time, "HH:MM:SS")
+   
+    If Rs.State = 1 Then Rs.Close
+        STR = "INSERT INTO [dbo].[TB_LOG_NF] ([ID_NF],[ID_NF_PROD],[NF],[CODIGO],[USUARIO],[DT],[HH],[PROCESSO],[APP],[QNT]) VALUES(" & XX_ID & "," & ID_PROD & ",'" & XX_NUM_NF & "'," & XX_COD_PROD & ",'" & XX_USER & "','" & X_DT & "','" & X_HR & "','DELETE DO ITEM NA NF','KARDEX 2025 EMBALAGEM'," & XX_QNT & ")"
+        Rs.Open STR, Cn
+    
+'FIM DELETE DO STATUS NF - LOG
+
+'INICIO INSERT DO STATUS NF - LOG
+    
+    If Rs.State = 1 Then Rs.Close
+    STR = "SELECT MAX([PROD_ID_PROD]) FROM [dbo].[NF_PRODUTOS]"
+    Rs.Open STR, Cn
+    
+    If Rs.EOF Then
+    ID_PROD = 0
+    Else
+    ID_PROD = Rs(0)
+    End If
+    
+    XX_USER = NF.TEXT_NOME
+    X_DT = Format(Date, "YYYY-MM-DD")
+    X_HR = Format(Time, "HH:MM:SS")
+   
+    If Rs.State = 1 Then Rs.Close
+        STR = "INSERT INTO [dbo].[TB_LOG_NF] ([ID_NF],[ID_NF_PROD],[NF],[CODIGO],[USUARIO],[DT],[HH],[PROCESSO],[APP],[QNT]) VALUES(" & XX_ID & "," & ID_PROD & ",'" & XX_NUM_NF & "'," & XX_COD_PROD & ",'" & XX_USER & "','" & X_DT & "','" & X_HR & "','LANCAMENTO NF','KARDEX 2025 EMBALAGEM'," & XX_QNT & ")"
+        Rs.Open STR, Cn
+    
+'FIM INSERT DO STATUS NF - LOG
+
+'INICIO UPDATE DO STATUS NF - LOG
+    
+      
+    XX_USER = NF.TEXT_NOME
+    X_DT = Format(Date, "YYYY-MM-DD")
+    X_HR = Format(Time, "HH:MM:SS")
+   
+    If Rs.State = 1 Then Rs.Close
+        STR = "UPDATE [dbo].[TB_LOG_NF] SET [CODIGO]='" & XX_COD_PROD & "', [USUARIO]='" & XX_USER & "', [DT]='" & X_DT & "',[HH]='" & X_HR & "',[QNT]=" & XX_QNT & " WHERE [ID_NF_PROD]='" & PROD_ID_PROD & "'"
+        Rs.Open STR, Cn
+    
+'FIM UPDATE DO STATUS NF - LOG
