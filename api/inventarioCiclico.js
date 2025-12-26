@@ -276,18 +276,22 @@ async function salvarInventario(req, res) {
 
         await transaction.begin();
 
+        // Calcula valor total geral
+        const valorTotalGeral = inventario.itens.reduce((sum, item) => sum + (item.VALOR_TOTAL_ESTOQUE || 0), 0);
+
         // Insere o cabeçalho do inventário
         const headerResult = await transaction.request()
             .input('DT_GERACAO', sql.DateTime, new Date(inventario.dataGeracao))
             .input('CRITERIO', sql.NVarChar, inventario.criterio)
             .input('STATUS', sql.NVarChar, 'EM_ANDAMENTO')
             .input('TOTAL_ITENS', sql.Int, inventario.itens.length)
+            .input('VALOR_TOTAL_GERAL', sql.Float, valorTotalGeral)
             .input('USUARIO_CRIACAO', sql.NVarChar, usuario)
             .query(`
                 INSERT INTO [dbo].[TB_INVENTARIO_CICLICO] 
-                (DT_GERACAO, CRITERIO, STATUS, TOTAL_ITENS, USUARIO_CRIACAO, DT_CRIACAO)
+                (DT_GERACAO, CRITERIO, STATUS, TOTAL_ITENS, VALOR_TOTAL_GERAL, USUARIO_CRIACAO, DT_CRIACAO)
                 OUTPUT INSERTED.ID_INVENTARIO
-                VALUES (@DT_GERACAO, @CRITERIO, @STATUS, @TOTAL_ITENS, @USUARIO_CRIACAO, GETDATE());
+                VALUES (@DT_GERACAO, @CRITERIO, @STATUS, @TOTAL_ITENS, @VALOR_TOTAL_GERAL, @USUARIO_CRIACAO, GETDATE());
             `);
 
         const idInventario = headerResult.recordset[0].ID_INVENTARIO;
@@ -338,6 +342,7 @@ async function listarInventarios(req, res) {
                 STATUS,
                 TOTAL_ITENS,
                 ACURACIDADE,
+                VALOR_TOTAL_GERAL,
                 USUARIO_CRIACAO,
                 DT_CRIACAO,
                 USUARIO_FINALIZACAO,
@@ -393,6 +398,7 @@ async function abrirInventario(req, res) {
             dataGeracao: header.DT_GERACAO,
             criterio: header.CRITERIO,
             acuracidade: header.ACURACIDADE,
+            valorTotalGeral: header.VALOR_TOTAL_GERAL || 0,
             itens: itemsResult.recordset.map(item => ({
                 CODIGO: item.CODIGO,
                 DESCRICAO: item.DESCRICAO,
@@ -401,7 +407,9 @@ async function abrirInventario(req, res) {
                 TOTAL_MOVIMENTACOES: item.TOTAL_MOVIMENTACOES,
                 USUARIO_CONTAGEM: item.USUARIO_CONTAGEM,
                 DT_CONTAGEM: item.DT_CONTAGEM,
-                BLOCO: item.BLOCO
+                BLOCO: item.BLOCO,
+                CUSTO_UNITARIO: item.CUSTO_UNITARIO || 0,
+                VALOR_TOTAL_ESTOQUE: item.VALOR_TOTAL_ESTOQUE || 0
             }))
         };
 

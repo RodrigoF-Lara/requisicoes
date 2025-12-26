@@ -157,6 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <th>Criado Por</th>
                     <th>Data Criação</th>
                     <th>Total Itens</th>
+                    <th>Valor Total</th>
                     <th>Status</th>
                     <th>Acuracidade</th>
                     <th>Ações</th>
@@ -170,6 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <td><strong>${inv.USUARIO_CRIACAO || 'Sistema'}</strong></td>
                         <td>${formatarDataHora(inv.DT_CRIACAO)}</td>
                         <td>${inv.TOTAL_ITENS}</td>
+                        <td><strong>R$ ${(inv.VALOR_TOTAL_GERAL || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
                         <td><span class="status-badge status-${inv.STATUS.toLowerCase()}">${inv.STATUS}</span></td>
                         <td>${inv.ACURACIDADE ? inv.ACURACIDADE.toFixed(2) + '%' : '-'}</td>
                         <td>
