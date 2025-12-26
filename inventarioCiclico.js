@@ -616,20 +616,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (item.BLOCO === 'MOVIMENTACAO') { blocoTexto = 'Movimentação'; blocoClass = 'bloco-movimentacao'; }
                 else if (item.BLOCO === 'BAIXA_ACURACIDADE') { blocoTexto = 'Baixa Acurac.'; blocoClass = 'bloco-baixa-acuracidade'; }
                 else if (item.BLOCO === 'MAIOR_VALOR') { blocoTexto = 'Maior Valor'; blocoClass = 'bloco-maior-valor'; }
-                return \`<tr>
-                    <td class="text-center">\${index + 1}</td>
-                    <td><span class="bloco-badge \${blocoClass}">\${blocoTexto}</span></td>
-                    <td><strong>\${item.CODIGO}</strong></td>
-                    <td>\${item.DESCRICAO || 'N/A'}</td>
-                    <td class="text-right">\${saldoSistema.toLocaleString('pt-BR')}</td>
-                    <td class="text-right">R$ \${custoUnitario.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td class="text-right"><strong>R$ \${valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
-                    <td class="text-center"><div class="contagem-campo">\${item.CONTAGEM_FISICA || '______'}</div></td>
-                    <td>_____________________</td>
-                </tr>\`;
+                return '<tr>' +
+                    '<td class="text-center">' + (index + 1) + '</td>' +
+                    '<td><span class="bloco-badge ' + blocoClass + '">' + blocoTexto + '</span></td>' +
+                    '<td><strong>' + item.CODIGO + '</strong></td>' +
+                    '<td>' + (item.DESCRICAO || 'N/A') + '</td>' +
+                    '<td class="text-right">' + saldoSistema.toLocaleString('pt-BR') + '</td>' +
+                    '<td class="text-right">R$ ' + custoUnitario.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</td>' +
+                    '<td class="text-right"><strong>R$ ' + valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</strong></td>' +
+                    '<td class="text-center"><div class="contagem-campo">' + (item.CONTAGEM_FISICA || '______') + '</div></td>' +
+                    '<td>_____________________</td>' +
+                    '</tr>';
             }).join('')}
         </tbody>
-        ${valorTotalGeral !== undefined ? \`<tfoot><tr class="total-row"><td colspan="6" class="text-right"><strong>TOTAL GERAL:</strong></td><td class="text-right"><strong>R$ \${valorTotalGeral.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td><td colspan="2"></td></tr></tfoot>\` : ''}
+        ${valorTotalGeral !== undefined ? '<tfoot><tr class="total-row"><td colspan="6" class="text-right"><strong>TOTAL GERAL:</strong></td><td class="text-right"><strong>R$ ' + valorTotalGeral.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</strong></td><td colspan="2"></td></tr></tfoot>' : ''}
     </table>
     <div class="footer">
         <p><strong>Critério de Seleção:</strong> ${criterio}</p>
