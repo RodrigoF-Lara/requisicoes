@@ -95,6 +95,15 @@ async function gerarListaInventario(req, res) {
             } else {
                 const idUltimoInventario = ultimoInv.recordset[0].ID_INVENTARIO;
                 console.log(`📋 Buscando itens com acuracidade < 95% do inventário #${idUltimoInventario}`);
+                console.log(`📋 Códigos do Bloco 1 para excluir:`, codigosBloco1);
+                
+                // Vamos ver TODOS os itens do inventário primeiro
+                const todosItensInv = await pool.request().query(`
+                    SELECT CODIGO, DESCRICAO, ACURACIDADE, SALDO_SISTEMA
+                    FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM]
+                    WHERE ID_INVENTARIO = ${idUltimoInventario};
+                `);
+                console.log(`📊 TODOS os itens do inventário #${idUltimoInventario}:`, todosItensInv.recordset);
                 
                 const bloco2Query = `
                     WITH ItensBaixaAcuracidade AS (
@@ -105,7 +114,7 @@ async function gerarListaInventario(req, res) {
                             i.SALDO_SISTEMA
                         FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] i
                         WHERE i.ID_INVENTARIO = ${idUltimoInventario}
-                            AND ISNULL(i.ACURACIDADE, 0) < 95
+                            AND i.ACURACIDADE < 95
                             ${codigosBloco1.length > 0 ? `AND i.CODIGO NOT IN ('${codigosBloco1.join("','")}')` : ''}
                     ),
                     SaldoAtual AS (
