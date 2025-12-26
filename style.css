@@ -501,3 +501,39 @@ tbody tr:hover {
     padding: 15px 10px;
     font-size: 1.1em;
 }
+
+/* =================================================================== */
+/* PÁGINA DE CONFIGURAÇÕES                                            */
+/* =================================================================== */
+.config-section {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid var(--cor-principal);
+}
+
+.config-section h3 {
+    color: var(--cor-principal);
+    margin-bottom: 15px;
+    border: none;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+    justify-content: flex-start;
+}
+
+.form-actions button {
+    min-width: 180px;
+}
