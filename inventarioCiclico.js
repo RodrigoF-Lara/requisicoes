@@ -153,6 +153,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <tr>
                     <th>ID</th>
                     <th>Data Geração</th>
+                    <th>Criado Por</th>
+                    <th>Data Criação</th>
                     <th>Total Itens</th>
                     <th>Status</th>
                     <th>Acuracidade</th>
@@ -164,6 +166,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <tr>
                         <td><strong>#${inv.ID_INVENTARIO}</strong></td>
                         <td>${formatarDataHora(inv.DT_GERACAO)}</td>
+                        <td><strong>${inv.USUARIO_CRIACAO || 'Sistema'}</strong></td>
+                        <td>${formatarDataHora(inv.DT_CRIACAO)}</td>
                         <td>${inv.TOTAL_ITENS}</td>
                         <td><span class="status-badge status-${inv.STATUS.toLowerCase()}">${inv.STATUS}</span></td>
                         <td>${inv.ACURACIDADE ? inv.ACURACIDADE.toFixed(2) + '%' : '-'}</td>
