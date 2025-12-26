@@ -15,7 +15,7 @@ export default async function handler(req, res) {
         }
     }
 
-    // POST: Salvar ou Finalizar inventário
+    // POST: Salvar, Finalizar ou Salvar Contagem
     if (req.method === "POST") {
         const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
         const { acao } = body;
@@ -23,6 +23,8 @@ export default async function handler(req, res) {
             return await salvarInventario(req, res);
         } else if (acao === 'finalizar') {
             return await finalizarInventario(req, res);
+        } else if (acao === 'salvarContagem') {
+            return await salvarContagemIndividual(req, res);
         }
     }
 
@@ -213,7 +215,9 @@ async function abrirInventario(req, res) {
                 DESCRICAO: item.DESCRICAO,
                 SALDO_ATUAL: item.SALDO_SISTEMA,
                 CONTAGEM_FISICA: item.CONTAGEM_FISICA,
-                TOTAL_MOVIMENTACOES: item.TOTAL_MOVIMENTACOES
+                TOTAL_MOVIMENTACOES: item.TOTAL_MOVIMENTACOES,
+                USUARIO_CONTAGEM: item.USUARIO_CONTAGEM,
+                DT_CONTAGEM: item.DT_CONTAGEM
             }))
         };
 
@@ -302,6 +306,42 @@ async function finalizarInventario(req, res) {
         console.error("ERRO ao finalizar inventário:", err);
         return res.status(500).json({ 
             message: "Erro ao finalizar inventário", 
+            error: err.message 
+        });
+    }
+}
+
+// Salva contagem individual com usuário e data/hora
+async function salvarContagemIndividual(req, res) {
+    try {
+        const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        const { idInventario, codigo, contagemFisica, usuario } = body;
+        const pool = await getConnection();
+
+        await pool.request()
+            .input('ID_INVENTARIO', sql.Int, idInventario)
+            .input('CODIGO', sql.NVarChar, codigo)
+            .input('CONTAGEM_FISICA', sql.Float, contagemFisica)
+            .input('USUARIO_CONTAGEM', sql.NVarChar, usuario)
+            .input('DT_CONTAGEM', sql.DateTime, new Date())
+            .query(`
+                UPDATE [dbo].[TB_INVENTARIO_CICLICO_ITEM]
+                SET CONTAGEM_FISICA = @CONTAGEM_FISICA,
+                    USUARIO_CONTAGEM = @USUARIO_CONTAGEM,
+                    DT_CONTAGEM = @DT_CONTAGEM
+                WHERE ID_INVENTARIO = @ID_INVENTARIO AND CODIGO = @CODIGO;
+            `);
+
+        return res.status(200).json({ 
+            message: "Contagem salva com sucesso",
+            usuario: usuario,
+            dataContagem: new Date().toISOString()
+        });
+
+    } catch (err) {
+        console.error("ERRO ao salvar contagem individual:", err);
+        return res.status(500).json({ 
+            message: "Erro ao salvar contagem", 
             error: err.message 
         });
     }

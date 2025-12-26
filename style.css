@@ -434,3 +434,13 @@ tbody tr:hover {
     background-color: #d1e7dd;
     color: #0f5132;
 }
+
+.info-contagem {
+    font-size: 0.85em;
+    color: #666;
+}
+
+.info-contagem small {
+    display: block;
+    line-height: 1.3;
+}

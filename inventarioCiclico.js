@@ -246,6 +246,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <th>Contagem Física</th>
                     <th>Diferença</th>
                     <th>Acuracidade</th>
+                    <th>Contado Por</th>
                 </tr>
             </thead>
             <tbody>
@@ -254,6 +255,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     const saldoSistema = item.SALDO_ATUAL || 0;
                     const diferenca = contagemFisica - saldoSistema;
                     const acuracidade = saldoSistema > 0 ? ((Math.min(contagemFisica, saldoSistema) / Math.max(contagemFisica, saldoSistema)) * 100) : 0;
+                    
+                    const usuarioContagem = item.USUARIO_CONTAGEM || '-';
+                    const dataContagem = item.DT_CONTAGEM ? formatarDataHora(item.DT_CONTAGEM) : '-';
                     
                     return `
                     <tr>
@@ -279,6 +283,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                 ${acuracidade.toFixed(1)}%
                             </span>
                         </td>
+                        <td class="info-contagem">
+                            ${usuarioContagem !== '-' ? `<small><strong>${usuarioContagem}</strong><br>${dataContagem}</small>` : '-'}
+                        </td>
                     </tr>
                 `}).join('')}
             </tbody>
@@ -291,10 +298,51 @@ document.addEventListener('DOMContentLoaded', function() {
         // Event listener para atualizar contagens em tempo real
         if (podeEditar) {
             table.querySelectorAll('.contagem-input').forEach(input => {
-                input.addEventListener('change', function() {
-                    atualizarContagemLocal(this.dataset.codigo, parseFloat(this.value) || 0);
+                input.addEventListener('blur', function() {
+                    const novaContagem = parseFloat(this.value) || 0;
+                    atualizarContagemLocal(this.dataset.codigo, novaContagem);
+                    
+                    // Salva automaticamente no banco se o inventário já foi salvo
+                    if (inventarioAtual.id) {
+                        salvarContagemIndividual(inventarioAtual.id, this.dataset.codigo, novaContagem);
+                    }
                 });
             });
+        }
+    }
+
+    async function salvarContagemIndividual(idInventario, codigo, contagem) {
+        const usuario = localStorage.getItem('userName') || 'Sistema';
+
+        try {
+            const response = await fetch('/api/inventarioCiclico', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    acao: 'salvarContagem',
+                    idInventario: idInventario,
+                    codigo: codigo,
+                    contagemFisica: contagem,
+                    usuario: usuario
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                console.error('Erro ao salvar contagem:', data.message);
+            } else {
+                // Atualiza o item com os dados de quem contou
+                const item = inventarioAtual.itens.find(i => i.CODIGO === codigo);
+                if (item) {
+                    item.USUARIO_CONTAGEM = usuario;
+                    item.DT_CONTAGEM = new Date().toISOString();
+                    renderizarInventario(inventarioAtual);
+                }
+            }
+
+        } catch (error) {
+            console.error('Erro ao salvar contagem individual:', error);
         }
     }
 
@@ -304,7 +352,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const item = inventarioAtual.itens.find(i => i.CODIGO === codigo);
         if (item) {
             item.CONTAGEM_FISICA = contagem;
-            renderizarInventario(inventarioAtual);
         }
     }
 
