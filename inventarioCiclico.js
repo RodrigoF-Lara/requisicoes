@@ -1,11 +1,36 @@
 document.addEventListener('DOMContentLoaded', function() {
     const gerarListaBtn = document.getElementById('gerarListaBtn');
+    const carregarInventariosBtn = document.getElementById('carregarInventariosBtn');
+    const salvarInventarioBtn = document.getElementById('salvarInventarioBtn');
+    const finalizarInventarioBtn = document.getElementById('finalizarInventarioBtn');
     const listaInventarioContainer = document.getElementById('listaInventarioContainer');
+    const listaInventariosSalvos = document.getElementById('listaInventariosSalvos');
     const tabelaInventario = document.getElementById('tabelaInventario');
     const infoLista = document.getElementById('infoLista');
+    const tituloInventario = document.getElementById('tituloInventario');
     const statusMessage = document.getElementById('statusMessage');
+    const acuracidadeModal = document.getElementById('acuracidadeModal');
+    const acuracidadeContent = document.getElementById('acuracidadeContent');
+
+    let inventarioAtual = null;
 
     gerarListaBtn.addEventListener('click', gerarNovaLista);
+    carregarInventariosBtn.addEventListener('click', carregarInventariosSalvos);
+    salvarInventarioBtn.addEventListener('click', salvarInventario);
+    finalizarInventarioBtn.addEventListener('click', finalizarInventario);
+
+    // Event listeners para fechar modal
+    document.querySelectorAll('.close-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.getElementById(this.dataset.modal).style.display = 'none';
+        });
+    });
+
+    window.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal')) {
+            e.target.style.display = 'none';
+        }
+    });
 
     async function gerarNovaLista() {
         try {
@@ -21,10 +46,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(data.message || 'Erro ao gerar lista');
             }
 
-            renderizarLista(data);
+            inventarioAtual = {
+                id: null,
+                status: 'NOVO',
+                itens: data.itens,
+                dataGeracao: data.dataGeracao,
+                criterio: data.criterio
+            };
+
+            renderizarInventario(inventarioAtual);
+            salvarInventarioBtn.style.display = 'inline-block';
+            finalizarInventarioBtn.style.display = 'none';
+            
             statusMessage.style.color = 'green';
-            statusMessage.textContent = 'Lista gerada com sucesso!';
-            setTimeout(() => { statusMessage.textContent = ''; }, 3000);
+            statusMessage.textContent = 'Lista gerada com sucesso! Salve o inventário para continuar depois.';
+            setTimeout(() => { statusMessage.textContent = ''; }, 5000);
 
         } catch (error) {
             console.error('Erro ao gerar lista:', error);
@@ -36,8 +72,150 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function renderizarLista(data) {
-        const { itens, dataGeracao } = data;
+    async function salvarInventario() {
+        if (!inventarioAtual) {
+            alert('Nenhum inventário para salvar.');
+            return;
+        }
+
+        const usuario = localStorage.getItem('userName') || 'Sistema';
+
+        try {
+            statusMessage.style.color = '#222';
+            statusMessage.textContent = 'Salvando inventário...';
+            salvarInventarioBtn.disabled = true;
+
+            const response = await fetch('/api/inventarioCiclico', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    acao: 'salvar',
+                    inventario: inventarioAtual,
+                    usuario: usuario
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Erro ao salvar inventário');
+            }
+
+            inventarioAtual.id = data.idInventario;
+            inventarioAtual.status = 'EM_ANDAMENTO';
+
+            statusMessage.style.color = 'green';
+            statusMessage.textContent = `Inventário #${data.idInventario} salvo com sucesso!`;
+            setTimeout(() => { statusMessage.textContent = ''; }, 3000);
+
+            renderizarInventario(inventarioAtual);
+            salvarInventarioBtn.style.display = 'none';
+            finalizarInventarioBtn.style.display = 'inline-block';
+
+        } catch (error) {
+            console.error('Erro ao salvar inventário:', error);
+            statusMessage.style.color = '#c00';
+            statusMessage.textContent = `Erro: ${error.message}`;
+        } finally {
+            salvarInventarioBtn.disabled = false;
+        }
+    }
+
+    async function carregarInventariosSalvos() {
+        try {
+            listaInventariosSalvos.innerHTML = '<div class="loader"></div>';
+            
+            const response = await fetch('/api/inventarioCiclico?acao=listar');
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Erro ao carregar inventários');
+            }
+
+            if (!data.inventarios || data.inventarios.length === 0) {
+                listaInventariosSalvos.innerHTML = '<p class="info-message">Nenhum inventário salvo encontrado.</p>';
+                return;
+            }
+
+            renderizarListaInventarios(data.inventarios);
+
+        } catch (error) {
+            console.error('Erro ao carregar inventários:', error);
+            listaInventariosSalvos.innerHTML = `<p class="error-message">Erro: ${error.message}</p>`;
+        }
+    }
+
+    function renderizarListaInventarios(inventarios) {
+        const table = document.createElement('table');
+        table.className = 'consulta-table';
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Data Geração</th>
+                    <th>Total Itens</th>
+                    <th>Status</th>
+                    <th>Acuracidade</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${inventarios.map(inv => `
+                    <tr>
+                        <td><strong>#${inv.ID_INVENTARIO}</strong></td>
+                        <td>${formatarDataHora(inv.DT_GERACAO)}</td>
+                        <td>${inv.TOTAL_ITENS}</td>
+                        <td><span class="status-badge status-${inv.STATUS.toLowerCase()}">${inv.STATUS}</span></td>
+                        <td>${inv.ACURACIDADE ? inv.ACURACIDADE.toFixed(2) + '%' : '-'}</td>
+                        <td>
+                            <button class="btn-detalhes" onclick="abrirInventario(${inv.ID_INVENTARIO})">
+                                <i class="fa-solid fa-folder-open"></i> Abrir
+                            </button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        `;
+        listaInventariosSalvos.innerHTML = '';
+        listaInventariosSalvos.appendChild(table);
+    }
+
+    window.abrirInventario = async function(idInventario) {
+        try {
+            statusMessage.style.color = '#222';
+            statusMessage.textContent = 'Carregando inventário...';
+
+            const response = await fetch(`/api/inventarioCiclico?acao=abrir&id=${idInventario}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Erro ao carregar inventário');
+            }
+
+            inventarioAtual = data.inventario;
+            renderizarInventario(inventarioAtual);
+
+            if (inventarioAtual.status === 'EM_ANDAMENTO') {
+                salvarInventarioBtn.style.display = 'none';
+                finalizarInventarioBtn.style.display = 'inline-block';
+            } else {
+                salvarInventarioBtn.style.display = 'none';
+                finalizarInventarioBtn.style.display = 'none';
+            }
+
+            statusMessage.style.color = 'green';
+            statusMessage.textContent = `Inventário #${idInventario} carregado com sucesso!`;
+            setTimeout(() => { statusMessage.textContent = ''; }, 3000);
+
+        } catch (error) {
+            console.error('Erro ao abrir inventário:', error);
+            statusMessage.style.color = '#c00';
+            statusMessage.textContent = `Erro: ${error.message}`;
+        }
+    };
+
+    function renderizarInventario(inventario) {
+        const { itens, dataGeracao, criterio, id, status } = inventario;
 
         if (!itens || itens.length === 0) {
             infoLista.innerHTML = '<p class="info-message">Nenhum item encontrado para inventário.</p>';
@@ -45,46 +223,171 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        tituloInventario.textContent = id ? `Inventário #${id}` : 'Nova Lista de Inventário';
+
         infoLista.innerHTML = `
+            <p><strong>Status:</strong> <span class="status-badge status-${status.toLowerCase()}">${status.replace('_', ' ')}</span></p>
             <p><strong>Data de Geração:</strong> ${formatarDataHora(dataGeracao)}</p>
             <p><strong>Total de Itens:</strong> ${itens.length}</p>
-            <p><strong>Critério:</strong> Itens mais movimentados nos últimos 21 dias</p>
+            <p><strong>Critério:</strong> ${criterio}</p>
         `;
 
+        const podeEditar = status !== 'FINALIZADO';
+
         const table = document.createElement('table');
-        table.className = 'consulta-table';
+        table.className = 'consulta-table inventario-table';
         table.innerHTML = `
             <thead>
                 <tr>
                     <th>#</th>
                     <th>Código</th>
                     <th>Descrição</th>
-                    <th>Movimentações (7 dias)</th>
-                    <th>Saldo Atual</th>
-                    <th>Ações</th>
+                    <th>Saldo Sistema</th>
+                    <th>Contagem Física</th>
+                    <th>Diferença</th>
+                    <th>Acuracidade</th>
                 </tr>
             </thead>
             <tbody>
-                ${itens.map((item, index) => `
+                ${itens.map((item, index) => {
+                    const contagemFisica = item.CONTAGEM_FISICA || 0;
+                    const saldoSistema = item.SALDO_ATUAL || 0;
+                    const diferenca = contagemFisica - saldoSistema;
+                    const acuracidade = saldoSistema > 0 ? ((Math.min(contagemFisica, saldoSistema) / Math.max(contagemFisica, saldoSistema)) * 100) : 0;
+                    
+                    return `
                     <tr>
                         <td>${index + 1}</td>
-                        <td>${item.CODIGO}</td>
+                        <td><strong>${item.CODIGO}</strong></td>
                         <td>${item.DESCRICAO || 'N/A'}</td>
-                        <td><strong>${item.TOTAL_MOVIMENTACOES}</strong></td>
-                        <td>${item.SALDO_ATUAL || 0}</td>
+                        <td>${saldoSistema}</td>
                         <td>
-                            <button class="btn-detalhes" onclick="verDetalhes('${item.CODIGO}')">
-                                <i class="fa-solid fa-eye"></i> Ver Detalhes
-                            </button>
+                            ${podeEditar ? 
+                                `<input type="number" 
+                                        class="contagem-input" 
+                                        data-codigo="${item.CODIGO}" 
+                                        value="${contagemFisica}" 
+                                        min="0" 
+                                        step="1" />` 
+                                : contagemFisica}
+                        </td>
+                        <td class="${diferenca === 0 ? 'diferenca-zero' : diferenca > 0 ? 'diferenca-positiva' : 'diferenca-negativa'}">
+                            ${diferenca > 0 ? '+' : ''}${diferenca}
+                        </td>
+                        <td>
+                            <span class="acuracidade-badge ${acuracidade >= 95 ? 'acuracidade-alta' : acuracidade >= 85 ? 'acuracidade-media' : 'acuracidade-baixa'}">
+                                ${acuracidade.toFixed(1)}%
+                            </span>
                         </td>
                     </tr>
-                `).join('')}
+                `}).join('')}
             </tbody>
         `;
 
         tabelaInventario.innerHTML = '';
         tabelaInventario.appendChild(table);
         listaInventarioContainer.style.display = 'block';
+
+        // Event listener para atualizar contagens em tempo real
+        if (podeEditar) {
+            table.querySelectorAll('.contagem-input').forEach(input => {
+                input.addEventListener('change', function() {
+                    atualizarContagemLocal(this.dataset.codigo, parseFloat(this.value) || 0);
+                });
+            });
+        }
+    }
+
+    function atualizarContagemLocal(codigo, contagem) {
+        if (!inventarioAtual || !inventarioAtual.itens) return;
+        
+        const item = inventarioAtual.itens.find(i => i.CODIGO === codigo);
+        if (item) {
+            item.CONTAGEM_FISICA = contagem;
+            renderizarInventario(inventarioAtual);
+        }
+    }
+
+    async function finalizarInventario() {
+        if (!inventarioAtual || !inventarioAtual.id) {
+            alert('Salve o inventário antes de finalizar.');
+            return;
+        }
+
+        if (!confirm('Deseja finalizar este inventário? Esta ação não pode ser desfeita.')) {
+            return;
+        }
+
+        const usuario = localStorage.getItem('userName') || 'Sistema';
+
+        try {
+            statusMessage.style.color = '#222';
+            statusMessage.textContent = 'Finalizando inventário...';
+            finalizarInventarioBtn.disabled = true;
+
+            const response = await fetch('/api/inventarioCiclico', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    acao: 'finalizar',
+                    idInventario: inventarioAtual.id,
+                    itens: inventarioAtual.itens,
+                    usuario: usuario
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Erro ao finalizar inventário');
+            }
+
+            inventarioAtual.status = 'FINALIZADO';
+            inventarioAtual.acuracidade = data.acuracidadeGeral;
+
+            renderizarInventario(inventarioAtual);
+            mostrarResultadoAcuracidade(data);
+
+            statusMessage.style.color = 'green';
+            statusMessage.textContent = 'Inventário finalizado com sucesso!';
+            finalizarInventarioBtn.style.display = 'none';
+
+        } catch (error) {
+            console.error('Erro ao finalizar inventário:', error);
+            statusMessage.style.color = '#c00';
+            statusMessage.textContent = `Erro: ${error.message}`;
+        } finally {
+            finalizarInventarioBtn.disabled = false;
+        }
+    }
+
+    function mostrarResultadoAcuracidade(resultado) {
+        acuracidadeContent.innerHTML = `
+            <div class="resultado-acuracidade">
+                <h3>Acuracidade Geral: <span class="acuracidade-geral">${resultado.acuracidadeGeral.toFixed(2)}%</span></h3>
+                <div class="estatisticas-inventario">
+                    <div class="stat-card">
+                        <i class="fa-solid fa-box"></i>
+                        <p>Total de Itens</p>
+                        <strong>${resultado.totalItens}</strong>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fa-solid fa-check-circle"></i>
+                        <p>Itens Corretos</p>
+                        <strong>${resultado.itensCorretos}</strong>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fa-solid fa-exclamation-triangle"></i>
+                        <p>Com Divergência</p>
+                        <strong>${resultado.itensDivergentes}</strong>
+                    </div>
+                </div>
+                <button class="btn-destaque" onclick="document.getElementById('acuracidadeModal').style.display='none'">
+                    Fechar
+                </button>
+            </div>
+        `;
+        acuracidadeModal.style.display = 'block';
     }
 
     function formatarDataHora(dataString) {
@@ -92,9 +395,4 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = new Date(dataString);
         return data.toLocaleString('pt-BR');
     }
-
-    // Função global para ver detalhes (pode ser expandida futuramente)
-    window.verDetalhes = function(codigo) {
-        window.location.href = `estoque.html?codigo=${codigo}`;
-    };
 });

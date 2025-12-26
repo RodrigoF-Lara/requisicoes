@@ -277,3 +277,160 @@ tbody tr:hover {
     text-align: center;
     font-weight: bold;
 }
+
+/* Estilos para Inventário Cíclico */
+.inventario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.inventario-acoes {
+    display: flex;
+    gap: 10px;
+}
+
+.inventario-table .contagem-input {
+    width: 80px;
+    padding: 5px;
+    border: 1px solid var(--cor-cinza-borda);
+    border-radius: 4px;
+    text-align: center;
+}
+
+.diferenca-zero {
+    color: green;
+    font-weight: bold;
+}
+
+.diferenca-positiva {
+    color: blue;
+    font-weight: bold;
+}
+
+.diferenca-negativa {
+    color: red;
+    font-weight: bold;
+}
+
+.acuracidade-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.acuracidade-alta {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.acuracidade-media {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.acuracidade-baixa {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.btn-sucesso {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-sucesso:hover {
+    background-color: #218838;
+}
+
+.btn-secundario {
+    background-color: #6c757d;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-secundario:hover {
+    background-color: #5a6268;
+}
+
+.resultado-acuracidade {
+    padding: 20px;
+    text-align: center;
+}
+
+.acuracidade-geral {
+    font-size: 2em;
+    color: var(--cor-principal);
+}
+
+.estatisticas-inventario {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background-color: var(--cor-cinza-claro);
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-card i {
+    font-size: 2em;
+    color: var(--cor-principal);
+    margin-bottom: 10px;
+}
+
+.stat-card p {
+    margin: 5px 0;
+    color: #666;
+}
+
+.stat-card strong {
+    font-size: 1.5em;
+    color: var(--cor-texto);
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.85em;
+    text-transform: uppercase;
+}
+
+.status-novo {
+    background-color: #cfe2ff;
+    color: #084298;
+}
+
+.status-em_andamento {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-finalizado {
+    background-color: #d1e7dd;
+    color: #0f5132;
+}

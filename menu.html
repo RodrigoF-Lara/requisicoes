@@ -1,65 +1,68 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Menu Principal - Kardex</title>
     <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-</head>
-<body>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+  </head>
+  <body>
     <!-- O novo menu lateral será carregado aqui pelo layout.js -->
     <div id="sidebar-container" class="sidebar"></div>
 
     <!-- Todo o conteúdo da página fica dentro desta div -->
     <div class="main-content">
-        <div class="container">
-            <!-- O conteúdo específico da página de menu vai aqui -->
-            <div class="menu-header">
-                 <h1>Menu Principal</h1>
-                 <p id="welcomeMessage">Olá! Selecione uma opção para começar.</p>
-            </div>
-<!-- substitua a div .menu-options existente por isto -->
-<div class="menu-options">
-  <a href="nova-requisicao.html" class="menu-option-card">
-    <i class="fa-solid fa-file-circle-plus"></i>
-    <h2>Nova Requisição</h2>
-  </a>
-
-  <a href="consultar.html" class="menu-option-card">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <h2>Consultar Requisições</h2>
-  </a>
-
-  <a href="estoque.html" class="menu-option-card">
-    <i class="fa-solid fa-archive"></i>
-    <h2>Gerenciar Estoque</h2>
-  </a>
-
-  <a href="status-nf.html" class="menu-option-card">
-    <i class="fa-solid fa-barcode"></i>
-    <h2>Status NF</h2>
-  </a>
-
-  <a href="inventarioCiclico.html" class="menu-option-card">
-    <i class="fa-solid fa-clipboard-check"></i>
-    <h2>Inventário Cíclico</h2>
-  </a>
-</div>
+      <div class="container">
+        <!-- O conteúdo específico da página de menu vai aqui -->
+        <div class="menu-header">
+          <h1>Menu Principal</h1>
+          <p id="welcomeMessage">Olá! Selecione uma opção para começar.</p>
         </div>
+        <!-- substitua a div .menu-options existente por isto -->
+        <div class="menu-options">
+          <a href="nova-requisicao.html" class="menu-option-card">
+            <i class="fa-solid fa-file-circle-plus"></i>
+            <h2>Nova Requisição</h2>
+          </a>
+
+          <a href="consultar.html" class="menu-option-card">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <h2>Consultar Requisições</h2>
+          </a>
+
+          <a href="estoque.html" class="menu-option-card">
+            <i class="fa-solid fa-archive"></i>
+            <h2>Gerenciar Estoque</h2>
+          </a>
+
+          <a href="status-nf.html" class="menu-option-card">
+            <i class="fa-solid fa-barcode"></i>
+            <h2>Status NF</h2>
+          </a>
+
+          <a href="inventarioCiclico.html" class="menu-option-card">
+            <i class="fa-solid fa-clipboard-check"></i>
+            <h2>Inventário Cíclico</h2>
+          </a>
+        </div>
+      </div>
     </div>
 
     <!-- O novo script de layout que carrega o menu e o usuário -->
     <script src="layout.js"></script>
     <!-- Script adicional para personalizar a mensagem de boas-vindas -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const userName = localStorage.getItem('userName');
-            if (userName) {
-                const welcomeMessage = document.getElementById('welcomeMessage');
-                welcomeMessage.textContent = `Olá, ${userName}! Selecione uma opção para começar.`;
-            }
-        });
+      document.addEventListener("DOMContentLoaded", function () {
+        const userName = localStorage.getItem("userName");
+        if (userName) {
+          const welcomeMessage = document.getElementById("welcomeMessage");
+          welcomeMessage.textContent = `Olá, ${userName}! Selecione uma opção para começar.`;
+        }
+      });
     </script>
-</body>
+  </body>
 </html>

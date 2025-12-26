@@ -17,6 +17,16 @@
       <div class="container">
         <h1>Inventário Cíclico</h1>
 
+        <!-- Seção de Inventários Existentes -->
+        <div class="card">
+          <h2>Inventários Salvos</h2>
+          <button id="carregarInventariosBtn" class="btn-secundario">
+            <i class="fa-solid fa-list"></i> Carregar Inventários
+          </button>
+          <div id="listaInventariosSalvos" style="margin-top: 15px;"></div>
+        </div>
+
+        <!-- Seção de Gerar Novo Inventário -->
         <div class="card">
           <h2>Gerar Nova Lista de Inventário</h2>
           <p>
@@ -28,15 +38,39 @@
           </button>
         </div>
 
+        <!-- Container do Inventário Gerado/Carregado -->
         <div id="listaInventarioContainer" style="display: none">
           <div class="card">
-            <h2>Lista de Inventário Gerada</h2>
-            <div id="infoLista" class="info-lista"></div>
+            <div class="inventario-header">
+              <div>
+                <h2 id="tituloInventario">Lista de Inventário</h2>
+                <div id="infoLista" class="info-lista"></div>
+              </div>
+              <div class="inventario-acoes">
+                <button id="salvarInventarioBtn" class="btn-destaque" style="display: none;">
+                  <i class="fa-solid fa-save"></i> Salvar Inventário
+                </button>
+                <button id="finalizarInventarioBtn" class="btn-sucesso" style="display: none;">
+                  <i class="fa-solid fa-check-circle"></i> Finalizar Inventário
+                </button>
+              </div>
+            </div>
             <div id="tabelaInventario"></div>
           </div>
         </div>
 
         <div id="statusMessage" class="status-message"></div>
+      </div>
+    </div>
+
+    <!-- Modal de Acuracidade -->
+    <div id="acuracidadeModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Resultado do Inventário</h2>
+          <span class="close-btn" data-modal="acuracidadeModal">&times;</span>
+        </div>
+        <div id="acuracidadeContent"></div>
       </div>
     </div>
 
