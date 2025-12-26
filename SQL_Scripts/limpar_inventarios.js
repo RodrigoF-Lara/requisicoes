@@ -1,17 +1,35 @@
 const sql = require('mssql');
 
+// Carrega as variáveis de ambiente do arquivo .env
+try {
+    require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+} catch (e) {
+    console.log('⚠️ dotenv não encontrado, usando variáveis de ambiente do sistema');
+}
+
 const config = {
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    server: process.env.DB_SERVER,
-    database: process.env.DB_NAME,
+    user: process.env.AZURE_SQL_USER || process.env.DB_USER,
+    password: process.env.AZURE_SQL_PASSWORD || process.env.DB_PASS,
+    database: process.env.AZURE_SQL_DATABASE || process.env.DB_NAME,
+    server: process.env.AZURE_SQL_SERVER || process.env.DB_SERVER,
     options: {
         encrypt: true,
-        trustServerCertificate: true
+        trustServerCertificate: false
     }
 };
 
+console.log('🔍 Config:', {
+    server: config.server,
+    database: config.database,
+    user: config.user
+});
+
 async function limparInventarios() {
+    if (!config.server) {
+        console.error('❌ ERRO: Variáveis de ambiente não configuradas!');
+        console.log('Configure as variáveis no arquivo .env ou nas variáveis de ambiente do sistema.');
+        return;
+    }
     try {
         const pool = await sql.connect(config);
         
