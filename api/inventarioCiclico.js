@@ -149,31 +149,55 @@ async function gerarListaInventario(req, res) {
         // BLOCO 3: TOP 3 itens com maior valor em estoque
         try {
             const bloco3 = await pool.request().query(`
-                WITH SaldoValorizado AS (
+                WITH UltimaNFPorProduto AS (
+                    -- Para cada produto, pega a nota fiscal mais recente
                     SELECT 
-                        ke.CODIGO,
-                        ISNULL(SUM(ke.SALDO), 0) AS SALDO_ATUAL,
-                        ISNULL(cp.PRECO_UNIT, 0) AS PRECO_UNITARIO,
-                        ISNULL(SUM(ke.SALDO), 0) * ISNULL(cp.PRECO_UNIT, 0) AS VALOR_TOTAL_ESTOQUE
-                    FROM [dbo].[KARDEX_2025_EMBALAGEM] ke
-                    LEFT JOIN [dbo].[CAD_PROD] cp ON ke.CODIGO = cp.CODIGO
-                    WHERE ke.D_E_L_E_T_ <> '*'
-                        ${codigosBloco2.length > 0 ? `AND ke.CODIGO NOT IN ('${codigosBloco2.join("','")}')` : ''}
-                    GROUP BY ke.CODIGO, cp.PRECO_UNIT
-                    HAVING ISNULL(SUM(ke.SALDO), 0) > 0
+                        np.PROD_COD_PROD AS CODIGO,
+                        np.PROD_CUSTO_FISCAL_MEDIO_NOVO AS CUSTO_UNITARIO,
+                        nc.CAB_DT_EMISSAO,
+                        ROW_NUMBER() OVER (PARTITION BY np.PROD_COD_PROD ORDER BY nc.CAB_DT_EMISSAO DESC) AS RN
+                    FROM [dbo].[NF_PRODUTOS] np
+                    INNER JOIN [dbo].[NF_CABECALHO] nc ON np.PROD_ID_NF = nc.CAB_ID_NF
+                    WHERE np.PROD_CUSTO_FISCAL_MEDIO_NOVO IS NOT NULL 
+                        AND np.PROD_CUSTO_FISCAL_MEDIO_NOVO > 0
+                ),
+                CustoMaisRecente AS (
+                    SELECT CODIGO, CUSTO_UNITARIO
+                    FROM UltimaNFPorProduto
+                    WHERE RN = 1
+                ),
+                SaldoAtual AS (
+                    SELECT 
+                        CODIGO,
+                        ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
+                    FROM [dbo].[KARDEX_2025_EMBALAGEM]
+                    WHERE D_E_L_E_T_ <> '*'
+                    GROUP BY CODIGO
+                    HAVING ISNULL(SUM(SALDO), 0) > 0
+                ),
+                SaldoValorizado AS (
+                    SELECT 
+                        s.CODIGO,
+                        s.SALDO_ATUAL,
+                        ISNULL(c.CUSTO_UNITARIO, 0) AS CUSTO_UNITARIO,
+                        s.SALDO_ATUAL * ISNULL(c.CUSTO_UNITARIO, 0) AS VALOR_TOTAL_ESTOQUE
+                    FROM SaldoAtual s
+                    LEFT JOIN CustoMaisRecente c ON s.CODIGO = c.CODIGO
+                    WHERE c.CUSTO_UNITARIO IS NOT NULL
+                        ${codigosBloco2.length > 0 ? `AND s.CODIGO NOT IN ('${codigosBloco2.join("','")}')` : ''}
                 )
                 SELECT TOP 3
                     sv.CODIGO,
                     ISNULL(cp.DESCRICAO, 'SEM DESCRIÇÃO') AS DESCRICAO,
                     sv.SALDO_ATUAL,
-                    sv.PRECO_UNITARIO,
+                    sv.CUSTO_UNITARIO AS PRECO_UNITARIO,
                     sv.VALOR_TOTAL_ESTOQUE,
                     'MAIOR_VALOR' AS BLOCO
                 FROM SaldoValorizado sv
                 LEFT JOIN [dbo].[CAD_PROD] cp ON sv.CODIGO = cp.CODIGO
                 ORDER BY sv.VALOR_TOTAL_ESTOQUE DESC;
             `);
-            console.log(`✅ Bloco 3 retornou ${bloco3.recordset.length} itens`);
+            console.log(`✅ Bloco 3 retornou ${bloco3.recordset.length} itens:`, bloco3.recordset);
             todosItens.push(...bloco3.recordset);
         } catch (err) {
             console.error('❌ Erro ao buscar bloco 3:', err);
