@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     function renderizarInventario(inventario) {
-        const { itens, dataGeracao, criterio, id, status, blocos } = inventario;
+        const { itens, dataGeracao, criterio, id, status, blocos, valorTotalGeral } = inventario;
 
         if (!itens || itens.length === 0) {
             infoLista.innerHTML = '<p class="info-message">Nenhum item encontrado para inventário.</p>';
@@ -242,12 +242,18 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }
 
+        let valorInfo = '';
+        if (valorTotalGeral !== undefined) {
+            valorInfo = `<p><strong>💰 Valor Total em Estoque:</strong> <span class="valor-total-geral">R$ ${valorTotalGeral.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></p>`;
+        }
+
         infoLista.innerHTML = `
             <p><strong>Status:</strong> <span class="status-badge status-${status.toLowerCase()}">${status.replace('_', ' ')}</span></p>
             <p><strong>Data de Geração:</strong> ${formatarDataHora(dataGeracao)}</p>
             <p><strong>Total de Itens:</strong> ${itens.length}</p>
             <p><strong>Critério:</strong> ${criterio}</p>
             ${blocosInfo}
+            ${valorInfo}
         `;
 
         const podeEditar = status !== 'FINALIZADO';
@@ -262,6 +268,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <th>Código</th>
                     <th>Descrição</th>
                     <th>Saldo Sistema</th>
+                    <th>Valor Unit.</th>
+                    <th>Valor Total</th>
                     <th>Contagem Física</th>
                     <th>Diferença</th>
                     <th>Acuracidade</th>
@@ -277,6 +285,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     const usuarioContagem = item.USUARIO_CONTAGEM || '-';
                     const dataContagem = item.DT_CONTAGEM ? formatarDataHora(item.DT_CONTAGEM) : '-';
+                    
+                    const custoUnitario = item.CUSTO_UNITARIO || 0;
+                    const valorTotal = item.VALOR_TOTAL_ESTOQUE || 0;
                     
                     // Define a badge do bloco
                     let blocoTexto = '';
@@ -299,6 +310,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <td><strong>${item.CODIGO}</strong></td>
                         <td>${item.DESCRICAO || 'N/A'}</td>
                         <td>${saldoSistema}</td>
+                        <td>R$ ${custoUnitario.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td><strong>R$ ${valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
                         <td>
                             ${podeEditar ? 
                                 `<input type="number" 
@@ -323,6 +336,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     </tr>
                 `}).join('')}
             </tbody>
+            ${valorTotalGeral !== undefined ? `
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="6" style="text-align: right;"><strong>TOTAL GERAL:</strong></td>
+                    <td><strong>R$ ${valorTotalGeral.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
+                    <td colspan="4"></td>
+                </tr>
+            </tfoot>
+            ` : ''}
         `;
 
         tabelaInventario.innerHTML = '';

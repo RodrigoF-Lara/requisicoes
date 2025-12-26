@@ -483,3 +483,21 @@ tbody tr:hover {
     background-color: #d1e7dd;
     color: #0f5132;
 }
+
+/* Estilos para valor total */
+.valor-total-geral {
+    font-size: 1.3em;
+    color: #28a745;
+    font-weight: bold;
+}
+
+.total-row {
+    background-color: #f0f8ff;
+    font-weight: bold;
+    border-top: 3px solid var(--cor-principal);
+}
+
+.total-row td {
+    padding: 15px 10px;
+    font-size: 1.1em;
+}

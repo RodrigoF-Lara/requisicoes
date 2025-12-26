@@ -58,6 +58,16 @@ async function gerarListaInventario(req, res) {
                     FROM [dbo].[KARDEX_2025_EMBALAGEM]
                     WHERE D_E_L_E_T_ <> '*'
                     GROUP BY CODIGO
+                ),
+                CustoUnitario AS (
+                    SELECT 
+                        np.PROD_COD_PROD AS CODIGO,
+                        np.PROD_CUSTO_FISCAL_MEDIO_NOVO AS CUSTO_UNIT,
+                        ROW_NUMBER() OVER (PARTITION BY np.PROD_COD_PROD ORDER BY nc.CAB_DT_EMISSAO DESC) AS RN
+                    FROM [dbo].[NF_PRODUTOS] np
+                    INNER JOIN [dbo].[NF_CABECALHO] nc ON np.PROD_ID_NF = nc.CAB_ID_NF
+                    WHERE np.PROD_CUSTO_FISCAL_MEDIO_NOVO IS NOT NULL 
+                        AND np.PROD_CUSTO_FISCAL_MEDIO_NOVO > 0
                 )
                 SELECT TOP 10
                     m.CODIGO,
@@ -65,10 +75,13 @@ async function gerarListaInventario(req, res) {
                     m.TOTAL_MOVIMENTACOES,
                     m.TOTAL_QUANTIDADE_MOVIMENTADA,
                     ISNULL(s.SALDO_ATUAL, 0) AS SALDO_ATUAL,
+                    ISNULL(cu.CUSTO_UNIT, 0) AS CUSTO_UNITARIO,
+                    ISNULL(s.SALDO_ATUAL, 0) * ISNULL(cu.CUSTO_UNIT, 0) AS VALOR_TOTAL_ESTOQUE,
                     'MOVIMENTACAO' AS BLOCO
                 FROM Movimentacoes m
                 LEFT JOIN [dbo].[CAD_PROD] cp ON m.CODIGO = cp.CODIGO
                 LEFT JOIN SaldoAtual s ON m.CODIGO = s.CODIGO
+                LEFT JOIN CustoUnitario cu ON m.CODIGO = cu.CODIGO AND cu.RN = 1
                 ORDER BY m.TOTAL_MOVIMENTACOES DESC, m.TOTAL_QUANTIDADE_MOVIMENTADA DESC;
             `);
             todosItens.push(...bloco1.recordset);
@@ -123,15 +136,28 @@ async function gerarListaInventario(req, res) {
                         FROM [dbo].[KARDEX_2025_EMBALAGEM]
                         WHERE D_E_L_E_T_ <> '*'
                         GROUP BY CODIGO
+                    ),
+                    CustoUnitario AS (
+                        SELECT 
+                            np.PROD_COD_PROD AS CODIGO,
+                            np.PROD_CUSTO_FISCAL_MEDIO_NOVO AS CUSTO_UNIT,
+                            ROW_NUMBER() OVER (PARTITION BY np.PROD_COD_PROD ORDER BY nc.CAB_DT_EMISSAO DESC) AS RN
+                        FROM [dbo].[NF_PRODUTOS] np
+                        INNER JOIN [dbo].[NF_CABECALHO] nc ON np.PROD_ID_NF = nc.CAB_ID_NF
+                        WHERE np.PROD_CUSTO_FISCAL_MEDIO_NOVO IS NOT NULL 
+                            AND np.PROD_CUSTO_FISCAL_MEDIO_NOVO > 0
                     )
                     SELECT 
                         iba.CODIGO,
                         iba.DESCRICAO,
                         iba.ACURACIDADE AS ACURACIDADE_ANTERIOR,
                         ISNULL(s.SALDO_ATUAL, 0) AS SALDO_ATUAL,
+                        ISNULL(cu.CUSTO_UNIT, 0) AS CUSTO_UNITARIO,
+                        ISNULL(s.SALDO_ATUAL, 0) * ISNULL(cu.CUSTO_UNIT, 0) AS VALOR_TOTAL_ESTOQUE,
                         'BAIXA_ACURACIDADE' AS BLOCO
                     FROM ItensBaixaAcuracidade iba
                     LEFT JOIN SaldoAtual s ON iba.CODIGO = s.CODIGO
+                    LEFT JOIN CustoUnitario cu ON iba.CODIGO = cu.CODIGO AND cu.RN = 1
                     ORDER BY iba.ACURACIDADE ASC;
                 `;
 
@@ -216,13 +242,18 @@ async function gerarListaInventario(req, res) {
             });
         }
 
+        // Calcula valor total geral
+        const valorTotalGeral = todosItens.reduce((sum, item) => sum + (item.VALOR_TOTAL_ESTOQUE || 0), 0);
+
         console.log('📊 Resumo dos blocos:', blocosCont);
+        console.log('💰 Valor total em estoque:', valorTotalGeral.toFixed(2));
 
         return res.status(200).json({
             itens: todosItens,
             dataGeracao: new Date().toISOString(),
             criterio: `Bloco 1: ${blocosCont.movimentacao} mais movimentados | Bloco 2: ${blocosCont.baixaAcuracidade} com baixa acuracidade | Bloco 3: ${blocosCont.maiorValor} maior valor`,
-            blocos: blocosCont
+            blocos: blocosCont,
+            valorTotalGeral: valorTotalGeral
         });
 
     } catch (err) {
