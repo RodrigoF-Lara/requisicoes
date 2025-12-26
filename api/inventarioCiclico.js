@@ -78,19 +78,22 @@ async function gerarListaInventario(req, res) {
 
         const codigosBloco1 = todosItens.map(item => item.CODIGO);
         
-        // BLOCO 2: Itens com acuracidade < 95% no último inventário
+        // BLOCO 2: Itens com acuracidade < 95% do último inventário FINALIZADO
         try {
-            const bloco2 = await pool.request().query(`
+            const bloco2Query = `
+                -- Busca o último inventário finalizado
                 WITH UltimoInventario AS (
                     SELECT TOP 1 ID_INVENTARIO
                     FROM [dbo].[TB_INVENTARIO_CICLICO]
                     WHERE STATUS = 'FINALIZADO'
-                    ORDER BY ID_INVENTARIO DESC
+                    ORDER BY DT_FINALIZACAO DESC
                 ),
                 ItensBaixaAcuracidade AS (
                     SELECT 
                         i.CODIGO,
-                        i.ACURACIDADE
+                        i.DESCRICAO,
+                        i.ACURACIDADE,
+                        i.SALDO_SISTEMA
                     FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] i
                     INNER JOIN UltimoInventario u ON i.ID_INVENTARIO = u.ID_INVENTARIO
                     WHERE ISNULL(i.ACURACIDADE, 0) < 95
@@ -106,18 +109,22 @@ async function gerarListaInventario(req, res) {
                 )
                 SELECT 
                     iba.CODIGO,
-                    ISNULL(cp.DESCRICAO, 'SEM DESCRIÇÃO') AS DESCRICAO,
+                    iba.DESCRICAO,
                     iba.ACURACIDADE AS ACURACIDADE_ANTERIOR,
                     ISNULL(s.SALDO_ATUAL, 0) AS SALDO_ATUAL,
                     'BAIXA_ACURACIDADE' AS BLOCO
                 FROM ItensBaixaAcuracidade iba
-                LEFT JOIN [dbo].[CAD_PROD] cp ON iba.CODIGO = cp.CODIGO
                 LEFT JOIN SaldoAtual s ON iba.CODIGO = s.CODIGO
                 ORDER BY iba.ACURACIDADE ASC;
-            `);
+            `;
+
+            console.log('🔍 Executando query Bloco 2...');
+            const bloco2 = await pool.request().query(bloco2Query);
+            console.log(`✅ Bloco 2 retornou ${bloco2.recordset.length} itens:`, bloco2.recordset);
+            
             todosItens.push(...bloco2.recordset);
         } catch (err) {
-            console.warn('Erro ao buscar bloco 2 (baixa acuracidade):', err.message);
+            console.error('❌ Erro COMPLETO ao buscar bloco 2:', err);
         }
 
         const codigosBloco2 = todosItens.map(item => item.CODIGO);
@@ -149,9 +156,10 @@ async function gerarListaInventario(req, res) {
                 LEFT JOIN [dbo].[CAD_PROD] cp ON sv.CODIGO = cp.CODIGO
                 ORDER BY sv.VALOR_TOTAL_ESTOQUE DESC;
             `);
+            console.log(`✅ Bloco 3 retornou ${bloco3.recordset.length} itens`);
             todosItens.push(...bloco3.recordset);
         } catch (err) {
-            console.warn('Erro ao buscar bloco 3 (maior valor):', err.message);
+            console.error('❌ Erro ao buscar bloco 3:', err);
         }
 
         // Conta itens por bloco
@@ -166,6 +174,8 @@ async function gerarListaInventario(req, res) {
                 message: "Nenhum item encontrado para inventário. Verifique se há dados no sistema." 
             });
         }
+
+        console.log('📊 Resumo dos blocos:', blocosCont);
 
         return res.status(200).json({
             itens: todosItens,
