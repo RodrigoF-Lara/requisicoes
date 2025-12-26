@@ -80,49 +80,58 @@ async function gerarListaInventario(req, res) {
         
         // BLOCO 2: Itens com acuracidade < 95% do último inventário FINALIZADO
         try {
-            const bloco2Query = `
-                -- Busca o último inventário finalizado
-                WITH UltimoInventario AS (
-                    SELECT TOP 1 ID_INVENTARIO
-                    FROM [dbo].[TB_INVENTARIO_CICLICO]
-                    WHERE STATUS = 'FINALIZADO'
-                    ORDER BY DT_FINALIZACAO DESC
-                ),
-                ItensBaixaAcuracidade AS (
-                    SELECT 
-                        i.CODIGO,
-                        i.DESCRICAO,
-                        i.ACURACIDADE,
-                        i.SALDO_SISTEMA
-                    FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] i
-                    INNER JOIN UltimoInventario u ON i.ID_INVENTARIO = u.ID_INVENTARIO
-                    WHERE ISNULL(i.ACURACIDADE, 0) < 95
-                        ${codigosBloco1.length > 0 ? `AND i.CODIGO NOT IN ('${codigosBloco1.join("','")}')` : ''}
-                ),
-                SaldoAtual AS (
-                    SELECT 
-                        CODIGO,
-                        ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
-                    FROM [dbo].[KARDEX_2025_EMBALAGEM]
-                    WHERE D_E_L_E_T_ <> '*'
-                    GROUP BY CODIGO
-                )
-                SELECT 
-                    iba.CODIGO,
-                    iba.DESCRICAO,
-                    iba.ACURACIDADE AS ACURACIDADE_ANTERIOR,
-                    ISNULL(s.SALDO_ATUAL, 0) AS SALDO_ATUAL,
-                    'BAIXA_ACURACIDADE' AS BLOCO
-                FROM ItensBaixaAcuracidade iba
-                LEFT JOIN SaldoAtual s ON iba.CODIGO = s.CODIGO
-                ORDER BY iba.ACURACIDADE ASC;
-            `;
-
-            console.log('🔍 Executando query Bloco 2...');
-            const bloco2 = await pool.request().query(bloco2Query);
-            console.log(`✅ Bloco 2 retornou ${bloco2.recordset.length} itens:`, bloco2.recordset);
+            // Primeiro, vamos verificar qual é o último inventário finalizado
+            const ultimoInv = await pool.request().query(`
+                SELECT TOP 1 ID_INVENTARIO, STATUS, DT_CRIACAO
+                FROM [dbo].[TB_INVENTARIO_CICLICO]
+                WHERE STATUS = 'FINALIZADO'
+                ORDER BY ID_INVENTARIO DESC;
+            `);
             
-            todosItens.push(...bloco2.recordset);
+            console.log('🔍 Último inventário FINALIZADO encontrado:', ultimoInv.recordset);
+            
+            if (ultimoInv.recordset.length === 0) {
+                console.log('⚠️ Nenhum inventário FINALIZADO encontrado. Pulando Bloco 2.');
+            } else {
+                const idUltimoInventario = ultimoInv.recordset[0].ID_INVENTARIO;
+                console.log(`📋 Buscando itens com acuracidade < 95% do inventário #${idUltimoInventario}`);
+                
+                const bloco2Query = `
+                    WITH ItensBaixaAcuracidade AS (
+                        SELECT 
+                            i.CODIGO,
+                            i.DESCRICAO,
+                            i.ACURACIDADE,
+                            i.SALDO_SISTEMA
+                        FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] i
+                        WHERE i.ID_INVENTARIO = ${idUltimoInventario}
+                            AND ISNULL(i.ACURACIDADE, 0) < 95
+                            ${codigosBloco1.length > 0 ? `AND i.CODIGO NOT IN ('${codigosBloco1.join("','")}')` : ''}
+                    ),
+                    SaldoAtual AS (
+                        SELECT 
+                            CODIGO,
+                            ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
+                        FROM [dbo].[KARDEX_2025_EMBALAGEM]
+                        WHERE D_E_L_E_T_ <> '*'
+                        GROUP BY CODIGO
+                    )
+                    SELECT 
+                        iba.CODIGO,
+                        iba.DESCRICAO,
+                        iba.ACURACIDADE AS ACURACIDADE_ANTERIOR,
+                        ISNULL(s.SALDO_ATUAL, 0) AS SALDO_ATUAL,
+                        'BAIXA_ACURACIDADE' AS BLOCO
+                    FROM ItensBaixaAcuracidade iba
+                    LEFT JOIN SaldoAtual s ON iba.CODIGO = s.CODIGO
+                    ORDER BY iba.ACURACIDADE ASC;
+                `;
+
+                const bloco2 = await pool.request().query(bloco2Query);
+                console.log(`✅ Bloco 2 retornou ${bloco2.recordset.length} itens:`, bloco2.recordset);
+                
+                todosItens.push(...bloco2.recordset);
+            }
         } catch (err) {
             console.error('❌ Erro COMPLETO ao buscar bloco 2:', err);
         }
