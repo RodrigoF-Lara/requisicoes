@@ -1,84 +1,127 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Configurações de Inventário - Kardex</title>
     <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-</head>
-<body>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+  </head>
+  <body>
     <div id="sidebar-container" class="sidebar"></div>
 
     <div class="main-content">
-        <div class="container">
-            <h1>Configurações de Inventário Cíclico</h1>
-            
-            <div class="card">
-                <h2>Parâmetros dos Blocos de Inventário</h2>
-                
-                <form id="configForm">
-                    <div class="config-section">
-                        <h3><i class="fa-solid fa-chart-line"></i> Bloco 1: Mais Movimentados</h3>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="bloco1Qtd">Quantidade de Itens:</label>
-                                <input type="number" id="bloco1Qtd" min="1" max="100" required />
-                            </div>
-                            <div class="form-group">
-                                <label for="bloco1Dias">Período de Análise (dias):</label>
-                                <input type="number" id="bloco1Dias" min="1" max="365" required />
-                            </div>
-                        </div>
-                    </div>
+      <div class="container">
+        <h1>Configurações de Inventário Cíclico</h1>
 
-                    <div class="config-section">
-                        <h3><i class="fa-solid fa-triangle-exclamation"></i> Bloco 2: Baixa Acuracidade</h3>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="bloco2Qtd">Quantidade de Itens:</label>
-                                <input type="number" id="bloco2Qtd" min="1" max="100" required />
-                            </div>
-                            <div class="form-group">
-                                <label for="bloco2Acuracidade">Acuracidade Mínima (%):</label>
-                                <input type="number" id="bloco2Acuracidade" min="0" max="100" step="0.1" required />
-                            </div>
-                        </div>
-                    </div>
+        <div class="card">
+          <h2>Parâmetros dos Blocos de Inventário</h2>
 
-                    <div class="config-section">
-                        <h3><i class="fa-solid fa-sack-dollar"></i> Bloco 3: Maior Valor em Estoque</h3>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="bloco3Qtd">Quantidade de Itens:</label>
-                                <input type="number" id="bloco3Qtd" min="1" max="100" required />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="submit" class="btn-destaque">
-                            <i class="fa-solid fa-floppy-disk"></i> Salvar Configurações
-                        </button>
-                        <button type="button" id="resetBtn" class="btn-secundario">
-                            <i class="fa-solid fa-rotate-left"></i> Restaurar Padrão
-                        </button>
-                    </div>
-                </form>
-
-                <div id="statusMessage" style="margin-top: 20px;"></div>
-            </div>
-
-            <div class="card">
-                <h2>Configuração Atual</h2>
-                <div id="configAtual" class="info-lista">
-                    <p>Carregando...</p>
+          <form id="configForm">
+            <div class="config-section">
+              <h3>
+                <i class="fa-solid fa-chart-line"></i> Bloco 1: Mais
+                Movimentados
+              </h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="bloco1Qtd">Quantidade de Itens:</label>
+                  <input
+                    type="number"
+                    id="bloco1Qtd"
+                    min="1"
+                    max="100"
+                    required
+                  />
                 </div>
+                <div class="form-group">
+                  <label for="bloco1Dias">Período de Análise (dias):</label>
+                  <input
+                    type="number"
+                    id="bloco1Dias"
+                    min="1"
+                    max="365"
+                    required
+                  />
+                </div>
+              </div>
             </div>
+
+            <div class="config-section">
+              <h3>
+                <i class="fa-solid fa-triangle-exclamation"></i> Bloco 2: Baixa
+                Acuracidade
+              </h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="bloco2Qtd">Quantidade de Itens:</label>
+                  <input
+                    type="number"
+                    id="bloco2Qtd"
+                    min="1"
+                    max="100"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="bloco2Acuracidade">Acuracidade Mínima (%):</label>
+                  <input
+                    type="number"
+                    id="bloco2Acuracidade"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="config-section">
+              <h3>
+                <i class="fa-solid fa-sack-dollar"></i> Bloco 3: Maior Valor em
+                Estoque
+              </h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="bloco3Qtd">Quantidade de Itens:</label>
+                  <input
+                    type="number"
+                    id="bloco3Qtd"
+                    min="1"
+                    max="100"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-destaque">
+                <i class="fa-solid fa-floppy-disk"></i> Salvar Configurações
+              </button>
+              <button type="button" id="resetBtn" class="btn-secundario">
+                <i class="fa-solid fa-rotate-left"></i> Restaurar Padrão
+              </button>
+            </div>
+          </form>
+
+          <div id="statusMessage" style="margin-top: 20px"></div>
         </div>
+
+        <div class="card">
+          <h2>Configuração Atual</h2>
+          <div id="configAtual" class="info-lista">
+            <p>Carregando...</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="configInventario.js"></script>
     <script src="layout.js"></script>
-</body>
+  </body>
 </html>

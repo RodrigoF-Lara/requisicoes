@@ -37,9 +37,40 @@ async function gerarListaInventario(req, res) {
         const pool = await getConnection();
         const todosItens = [];
         
-        // BLOCO 1: TOP 10 mais movimentados nos últimos 21 dias
+        // BUSCA AS CONFIGURAÇÕES SALVAS
+        const configResult = await pool.request().query(`
+            SELECT TOP 1 *
+            FROM [dbo].[TB_CONFIG_INVENTARIO]
+            ORDER BY ID_CONFIG DESC;
+        `);
+
+        if (configResult.recordset.length === 0) {
+            return res.status(500).json({ 
+                message: "Configurações de inventário não encontradas. Configure primeiro em Configurações." 
+            });
+        }
+
+        const config = configResult.recordset[0];
+        const BLOCO1_QTD = config.BLOCO1_QTD_ITENS;
+        const BLOCO1_DIAS = config.BLOCO1_DIAS_MOVIMENTACAO;
+        const BLOCO2_QTD = config.BLOCO2_QTD_ITENS;
+        const BLOCO2_ACURACIDADE = config.BLOCO2_ACURACIDADE_MIN;
+        const BLOCO3_QTD = config.BLOCO3_QTD_ITENS;
+
+        console.log('📋 Configurações carregadas:', {
+            BLOCO1_QTD,
+            BLOCO1_DIAS,
+            BLOCO2_QTD,
+            BLOCO2_ACURACIDADE,
+            BLOCO3_QTD
+        });
+        
+        // BLOCO 1: Mais movimentados (usando configuração)
         try {
-            const bloco1 = await pool.request().query(`
+            const bloco1 = await pool.request()
+                .input('DIAS', sql.Int, BLOCO1_DIAS)
+                .input('QTD_ITENS', sql.Int, BLOCO1_QTD)
+                .query(`
                 WITH Movimentacoes AS (
                     SELECT 
                         k.CODIGO,
@@ -47,7 +78,7 @@ async function gerarListaInventario(req, res) {
                         SUM(ABS(k.QNT)) AS TOTAL_QUANTIDADE_MOVIMENTADA
                     FROM [dbo].[KARDEX_2025] k
                     WHERE 
-                        k.DT >= DATEADD(DAY, -21, GETDATE())
+                        k.DT >= DATEADD(DAY, -@DIAS, GETDATE())
                         AND k.D_E_L_E_T_ <> '*'
                     GROUP BY k.CODIGO
                 ),
@@ -69,7 +100,7 @@ async function gerarListaInventario(req, res) {
                     WHERE np.PROD_CUSTO_FISCAL_MEDIO_NOVO IS NOT NULL 
                         AND np.PROD_CUSTO_FISCAL_MEDIO_NOVO > 0
                 )
-                SELECT TOP 10
+                SELECT TOP (@QTD_ITENS)
                     m.CODIGO,
                     ISNULL(cp.DESCRICAO, 'SEM DESCRIÇÃO') AS DESCRICAO,
                     m.TOTAL_MOVIMENTACOES,
@@ -84,6 +115,7 @@ async function gerarListaInventario(req, res) {
                 LEFT JOIN CustoUnitario cu ON m.CODIGO = cu.CODIGO AND cu.RN = 1
                 ORDER BY m.TOTAL_MOVIMENTACOES DESC, m.TOTAL_QUANTIDADE_MOVIMENTADA DESC;
             `);
+            console.log(`✅ Bloco 1 retornou ${bloco1.recordset.length} itens`);
             todosItens.push(...bloco1.recordset);
         } catch (err) {
             console.warn('Erro ao buscar bloco 1 (movimentação):', err.message);
@@ -107,18 +139,13 @@ async function gerarListaInventario(req, res) {
                 console.log('⚠️ Nenhum inventário FINALIZADO encontrado. Pulando Bloco 2.');
             } else {
                 const idUltimoInventario = ultimoInv.recordset[0].ID_INVENTARIO;
-                console.log(`📋 Buscando itens com acuracidade < 95% do inventário #${idUltimoInventario}`);
-                console.log(`📋 Códigos do Bloco 1 para excluir:`, codigosBloco1);
+                console.log(`📋 Buscando itens com acuracidade < ${BLOCO2_ACURACIDADE}% do inventário #${idUltimoInventario}`);
                 
-                // Vamos ver TODOS os itens do inventário primeiro
-                const todosItensInv = await pool.request().query(`
-                    SELECT CODIGO, DESCRICAO, ACURACIDADE, SALDO_SISTEMA
-                    FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM]
-                    WHERE ID_INVENTARIO = ${idUltimoInventario};
-                `);
-                console.log(`📊 TODOS os itens do inventário #${idUltimoInventario}:`, todosItensInv.recordset);
-                
-                const bloco2Query = `
+                const bloco2 = await pool.request()
+                    .input('ID_INV', sql.Int, idUltimoInventario)
+                    .input('ACURACIDADE_MIN', sql.Float, BLOCO2_ACURACIDADE)
+                    .input('QTD_ITENS', sql.Int, BLOCO2_QTD)
+                    .query(`
                     WITH ItensBaixaAcuracidade AS (
                         SELECT 
                             i.CODIGO,
@@ -126,8 +153,9 @@ async function gerarListaInventario(req, res) {
                             i.ACURACIDADE,
                             i.SALDO_SISTEMA
                         FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] i
-                        WHERE i.ID_INVENTARIO = ${idUltimoInventario}
-                            AND i.ACURACIDADE < 95
+                        WHERE i.ID_INVENTARIO = @ID_INV
+                            AND i.ACURACIDADE < @ACURACIDADE_MIN
+                            ${codigosBloco1.length > 0 ? `AND i.CODIGO NOT IN ('${codigosBloco1.join("','")}')` : ''}
                     ),
                     SaldoAtual AS (
                         SELECT 
@@ -147,7 +175,7 @@ async function gerarListaInventario(req, res) {
                         WHERE np.PROD_CUSTO_FISCAL_MEDIO_NOVO IS NOT NULL 
                             AND np.PROD_CUSTO_FISCAL_MEDIO_NOVO > 0
                     )
-                    SELECT 
+                    SELECT TOP (@QTD_ITENS)
                         iba.CODIGO,
                         iba.DESCRICAO,
                         iba.ACURACIDADE AS ACURACIDADE_ANTERIOR,
@@ -159,11 +187,9 @@ async function gerarListaInventario(req, res) {
                     LEFT JOIN SaldoAtual s ON iba.CODIGO = s.CODIGO
                     LEFT JOIN CustoUnitario cu ON iba.CODIGO = cu.CODIGO AND cu.RN = 1
                     ORDER BY iba.ACURACIDADE ASC;
-                `;
+                `);
 
-                const bloco2 = await pool.request().query(bloco2Query);
-                console.log(`✅ Bloco 2 retornou ${bloco2.recordset.length} itens:`, bloco2.recordset);
-                
+                console.log(`✅ Bloco 2 retornou ${bloco2.recordset.length} itens`);
                 todosItens.push(...bloco2.recordset);
             }
         } catch (err) {
@@ -172,11 +198,12 @@ async function gerarListaInventario(req, res) {
 
         const codigosBloco2 = todosItens.map(item => item.CODIGO);
 
-        // BLOCO 3: TOP 3 itens com maior valor em estoque
+        // BLOCO 3: Maior valor em estoque (usando configuração)
         try {
-            const bloco3 = await pool.request().query(`
+            const bloco3 = await pool.request()
+                .input('QTD_ITENS', sql.Int, BLOCO3_QTD)
+                .query(`
                 WITH UltimaNFPorProduto AS (
-                    -- Para cada produto, pega a nota fiscal mais recente
                     SELECT 
                         np.PROD_COD_PROD AS CODIGO,
                         np.PROD_CUSTO_FISCAL_MEDIO_NOVO AS CUSTO_UNITARIO,
@@ -212,7 +239,7 @@ async function gerarListaInventario(req, res) {
                     WHERE c.CUSTO_UNITARIO IS NOT NULL
                         ${codigosBloco2.length > 0 ? `AND s.CODIGO NOT IN ('${codigosBloco2.join("','")}')` : ''}
                 )
-                SELECT TOP 3
+                SELECT TOP (@QTD_ITENS)
                     sv.CODIGO,
                     ISNULL(cp.DESCRICAO, 'SEM DESCRIÇÃO') AS DESCRICAO,
                     sv.SALDO_ATUAL,
@@ -223,7 +250,8 @@ async function gerarListaInventario(req, res) {
                 LEFT JOIN [dbo].[CAD_PROD] cp ON sv.CODIGO = cp.CODIGO
                 ORDER BY sv.VALOR_TOTAL_ESTOQUE DESC;
             `);
-            console.log(`✅ Bloco 3 retornou ${bloco3.recordset.length} itens:`, bloco3.recordset);
+            
+            console.log(`✅ Bloco 3 retornou ${bloco3.recordset.length} itens`);
             todosItens.push(...bloco3.recordset);
         } catch (err) {
             console.error('❌ Erro ao buscar bloco 3:', err);
@@ -251,9 +279,16 @@ async function gerarListaInventario(req, res) {
         return res.status(200).json({
             itens: todosItens,
             dataGeracao: new Date().toISOString(),
-            criterio: `Bloco 1: ${blocosCont.movimentacao} mais movimentados | Bloco 2: ${blocosCont.baixaAcuracidade} com baixa acuracidade | Bloco 3: ${blocosCont.maiorValor} maior valor`,
+            criterio: `Bloco 1: ${blocosCont.movimentacao} mais movimentados (${BLOCO1_DIAS} dias) | Bloco 2: ${blocosCont.baixaAcuracidade} com acuracidade < ${BLOCO2_ACURACIDADE}% | Bloco 3: ${blocosCont.maiorValor} maior valor`,
             blocos: blocosCont,
-            valorTotalGeral: valorTotalGeral
+            valorTotalGeral: valorTotalGeral,
+            configuracao: {
+                bloco1Qtd: BLOCO1_QTD,
+                bloco1Dias: BLOCO1_DIAS,
+                bloco2Qtd: BLOCO2_QTD,
+                bloco2Acuracidade: BLOCO2_ACURACIDADE,
+                bloco3Qtd: BLOCO3_QTD
+            }
         });
 
     } catch (err) {
