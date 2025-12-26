@@ -35,132 +35,151 @@ export default async function handler(req, res) {
 async function gerarListaInventario(req, res) {
     try {
         const pool = await getConnection();
+        const todosItens = [];
         
         // BLOCO 1: TOP 10 mais movimentados nos últimos 21 dias
-        const bloco1 = await pool.request().query(`
-            WITH Movimentacoes AS (
-                SELECT 
-                    k.CODIGO,
-                    COUNT(*) AS TOTAL_MOVIMENTACOES,
-                    SUM(ABS(k.QNT)) AS TOTAL_QUANTIDADE_MOVIMENTADA
-                FROM [dbo].[KARDEX_2025] k
-                WHERE 
-                    k.DT >= DATEADD(DAY, -21, GETDATE())
-                    AND k.D_E_L_E_T_ <> '*'
-                GROUP BY k.CODIGO
-            ),
-            SaldoAtual AS (
-                SELECT 
-                    CODIGO,
-                    ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
-                FROM [dbo].[KARDEX_2025_EMBALAGEM]
-                WHERE D_E_L_E_T_ <> '*'
-                GROUP BY CODIGO
-            )
-            SELECT TOP 10
-                m.CODIGO,
-                cp.DESCRICAO,
-                m.TOTAL_MOVIMENTACOES,
-                m.TOTAL_QUANTIDADE_MOVIMENTADA,
-                ISNULL(s.SALDO_ATUAL, 0) AS SALDO_ATUAL,
-                'MOVIMENTACAO' AS BLOCO
-            FROM Movimentacoes m
-            LEFT JOIN [dbo].[CAD_PROD] cp ON m.CODIGO = cp.CODIGO
-            LEFT JOIN SaldoAtual s ON m.CODIGO = s.CODIGO
-            ORDER BY m.TOTAL_MOVIMENTACOES DESC, m.TOTAL_QUANTIDADE_MOVIMENTADA DESC;
-        `);
+        try {
+            const bloco1 = await pool.request().query(`
+                WITH Movimentacoes AS (
+                    SELECT 
+                        k.CODIGO,
+                        COUNT(*) AS TOTAL_MOVIMENTACOES,
+                        SUM(ABS(k.QNT)) AS TOTAL_QUANTIDADE_MOVIMENTADA
+                    FROM [dbo].[KARDEX_2025] k
+                    WHERE 
+                        k.DT >= DATEADD(DAY, -21, GETDATE())
+                        AND k.D_E_L_E_T_ <> '*'
+                    GROUP BY k.CODIGO
+                ),
+                SaldoAtual AS (
+                    SELECT 
+                        CODIGO,
+                        ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
+                    FROM [dbo].[KARDEX_2025_EMBALAGEM]
+                    WHERE D_E_L_E_T_ <> '*'
+                    GROUP BY CODIGO
+                )
+                SELECT TOP 10
+                    m.CODIGO,
+                    ISNULL(cp.DESCRICAO, 'SEM DESCRIÇÃO') AS DESCRICAO,
+                    m.TOTAL_MOVIMENTACOES,
+                    m.TOTAL_QUANTIDADE_MOVIMENTADA,
+                    ISNULL(s.SALDO_ATUAL, 0) AS SALDO_ATUAL,
+                    'MOVIMENTACAO' AS BLOCO
+                FROM Movimentacoes m
+                LEFT JOIN [dbo].[CAD_PROD] cp ON m.CODIGO = cp.CODIGO
+                LEFT JOIN SaldoAtual s ON m.CODIGO = s.CODIGO
+                ORDER BY m.TOTAL_MOVIMENTACOES DESC, m.TOTAL_QUANTIDADE_MOVIMENTADA DESC;
+            `);
+            todosItens.push(...bloco1.recordset);
+        } catch (err) {
+            console.warn('Erro ao buscar bloco 1 (movimentação):', err.message);
+        }
 
-        const codigosBloco1 = bloco1.recordset.map(item => item.CODIGO);
+        const codigosBloco1 = todosItens.map(item => item.CODIGO);
         
         // BLOCO 2: Itens com acuracidade < 95% no último inventário
-        const bloco2 = await pool.request().query(`
-            WITH UltimoInventario AS (
-                SELECT MAX(ID_INVENTARIO) AS ID_INVENTARIO
-                FROM [dbo].[TB_INVENTARIO_CICLICO]
-                WHERE STATUS = 'FINALIZADO'
-            ),
-            ItensBaixaAcuracidade AS (
+        try {
+            const bloco2 = await pool.request().query(`
+                WITH UltimoInventario AS (
+                    SELECT TOP 1 ID_INVENTARIO
+                    FROM [dbo].[TB_INVENTARIO_CICLICO]
+                    WHERE STATUS = 'FINALIZADO'
+                    ORDER BY ID_INVENTARIO DESC
+                ),
+                ItensBaixaAcuracidade AS (
+                    SELECT 
+                        i.CODIGO,
+                        i.ACURACIDADE
+                    FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] i
+                    INNER JOIN UltimoInventario u ON i.ID_INVENTARIO = u.ID_INVENTARIO
+                    WHERE ISNULL(i.ACURACIDADE, 0) < 95
+                        ${codigosBloco1.length > 0 ? `AND i.CODIGO NOT IN ('${codigosBloco1.join("','")}')` : ''}
+                ),
+                SaldoAtual AS (
+                    SELECT 
+                        CODIGO,
+                        ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
+                    FROM [dbo].[KARDEX_2025_EMBALAGEM]
+                    WHERE D_E_L_E_T_ <> '*'
+                    GROUP BY CODIGO
+                )
                 SELECT 
-                    i.CODIGO,
-                    i.ACURACIDADE
-                FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] i
-                INNER JOIN UltimoInventario u ON i.ID_INVENTARIO = u.ID_INVENTARIO
-                WHERE i.ACURACIDADE < 95
-                    AND i.CODIGO NOT IN (${codigosBloco1.length > 0 ? "'" + codigosBloco1.join("','") + "'" : "''"})
-            ),
-            SaldoAtual AS (
-                SELECT 
-                    CODIGO,
-                    ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
-                FROM [dbo].[KARDEX_2025_EMBALAGEM]
-                WHERE D_E_L_E_T_ <> '*'
-                GROUP BY CODIGO
-            )
-            SELECT 
-                iba.CODIGO,
-                cp.DESCRICAO,
-                iba.ACURACIDADE AS ACURACIDADE_ANTERIOR,
-                ISNULL(s.SALDO_ATUAL, 0) AS SALDO_ATUAL,
-                'BAIXA_ACURACIDADE' AS BLOCO
-            FROM ItensBaixaAcuracidade iba
-            LEFT JOIN [dbo].[CAD_PROD] cp ON iba.CODIGO = cp.CODIGO
-            LEFT JOIN SaldoAtual s ON iba.CODIGO = s.CODIGO
-            ORDER BY iba.ACURACIDADE ASC;
-        `);
+                    iba.CODIGO,
+                    ISNULL(cp.DESCRICAO, 'SEM DESCRIÇÃO') AS DESCRICAO,
+                    iba.ACURACIDADE AS ACURACIDADE_ANTERIOR,
+                    ISNULL(s.SALDO_ATUAL, 0) AS SALDO_ATUAL,
+                    'BAIXA_ACURACIDADE' AS BLOCO
+                FROM ItensBaixaAcuracidade iba
+                LEFT JOIN [dbo].[CAD_PROD] cp ON iba.CODIGO = cp.CODIGO
+                LEFT JOIN SaldoAtual s ON iba.CODIGO = s.CODIGO
+                ORDER BY iba.ACURACIDADE ASC;
+            `);
+            todosItens.push(...bloco2.recordset);
+        } catch (err) {
+            console.warn('Erro ao buscar bloco 2 (baixa acuracidade):', err.message);
+        }
 
-        const codigosBloco2 = bloco2.recordset.map(item => item.CODIGO);
-        const codigosExcluir = [...codigosBloco1, ...codigosBloco2];
+        const codigosBloco2 = todosItens.map(item => item.CODIGO);
 
         // BLOCO 3: TOP 3 itens com maior valor em estoque
-        const bloco3 = await pool.request().query(`
-            WITH SaldoValorizado AS (
-                SELECT 
-                    ke.CODIGO,
-                    ISNULL(SUM(ke.SALDO), 0) AS SALDO_ATUAL,
-                    ISNULL(cp.PRECO_UNIT, 0) AS PRECO_UNITARIO,
-                    ISNULL(SUM(ke.SALDO), 0) * ISNULL(cp.PRECO_UNIT, 0) AS VALOR_TOTAL_ESTOQUE
-                FROM [dbo].[KARDEX_2025_EMBALAGEM] ke
-                LEFT JOIN [dbo].[CAD_PROD] cp ON ke.CODIGO = cp.CODIGO
-                WHERE ke.D_E_L_E_T_ <> '*'
-                    AND ke.CODIGO NOT IN (${codigosExcluir.length > 0 ? "'" + codigosExcluir.join("','") + "'" : "''"})
-                GROUP BY ke.CODIGO, cp.PRECO_UNIT
-                HAVING ISNULL(SUM(ke.SALDO), 0) > 0
-            )
-            SELECT TOP 3
-                sv.CODIGO,
-                cp.DESCRICAO,
-                sv.SALDO_ATUAL,
-                sv.PRECO_UNITARIO,
-                sv.VALOR_TOTAL_ESTOQUE,
-                'MAIOR_VALOR' AS BLOCO
-            FROM SaldoValorizado sv
-            LEFT JOIN [dbo].[CAD_PROD] cp ON sv.CODIGO = cp.CODIGO
-            ORDER BY sv.VALOR_TOTAL_ESTOQUE DESC;
-        `);
+        try {
+            const bloco3 = await pool.request().query(`
+                WITH SaldoValorizado AS (
+                    SELECT 
+                        ke.CODIGO,
+                        ISNULL(SUM(ke.SALDO), 0) AS SALDO_ATUAL,
+                        ISNULL(cp.PRECO_UNIT, 0) AS PRECO_UNITARIO,
+                        ISNULL(SUM(ke.SALDO), 0) * ISNULL(cp.PRECO_UNIT, 0) AS VALOR_TOTAL_ESTOQUE
+                    FROM [dbo].[KARDEX_2025_EMBALAGEM] ke
+                    LEFT JOIN [dbo].[CAD_PROD] cp ON ke.CODIGO = cp.CODIGO
+                    WHERE ke.D_E_L_E_T_ <> '*'
+                        ${codigosBloco2.length > 0 ? `AND ke.CODIGO NOT IN ('${codigosBloco2.join("','")}')` : ''}
+                    GROUP BY ke.CODIGO, cp.PRECO_UNIT
+                    HAVING ISNULL(SUM(ke.SALDO), 0) > 0
+                )
+                SELECT TOP 3
+                    sv.CODIGO,
+                    ISNULL(cp.DESCRICAO, 'SEM DESCRIÇÃO') AS DESCRICAO,
+                    sv.SALDO_ATUAL,
+                    sv.PRECO_UNITARIO,
+                    sv.VALOR_TOTAL_ESTOQUE,
+                    'MAIOR_VALOR' AS BLOCO
+                FROM SaldoValorizado sv
+                LEFT JOIN [dbo].[CAD_PROD] cp ON sv.CODIGO = cp.CODIGO
+                ORDER BY sv.VALOR_TOTAL_ESTOQUE DESC;
+            `);
+            todosItens.push(...bloco3.recordset);
+        } catch (err) {
+            console.warn('Erro ao buscar bloco 3 (maior valor):', err.message);
+        }
 
-        // Combina os 3 blocos
-        const todosItens = [
-            ...bloco1.recordset,
-            ...bloco2.recordset,
-            ...bloco3.recordset
-        ];
+        // Conta itens por bloco
+        const blocosCont = {
+            movimentacao: todosItens.filter(i => i.BLOCO === 'MOVIMENTACAO').length,
+            baixaAcuracidade: todosItens.filter(i => i.BLOCO === 'BAIXA_ACURACIDADE').length,
+            maiorValor: todosItens.filter(i => i.BLOCO === 'MAIOR_VALOR').length
+        };
+
+        if (todosItens.length === 0) {
+            return res.status(400).json({ 
+                message: "Nenhum item encontrado para inventário. Verifique se há dados no sistema." 
+            });
+        }
 
         return res.status(200).json({
             itens: todosItens,
             dataGeracao: new Date().toISOString(),
-            criterio: `Bloco 1: ${bloco1.recordset.length} mais movimentados | Bloco 2: ${bloco2.recordset.length} com baixa acuracidade | Bloco 3: ${bloco3.recordset.length} maior valor`,
-            blocos: {
-                movimentacao: bloco1.recordset.length,
-                baixaAcuracidade: bloco2.recordset.length,
-                maiorValor: bloco3.recordset.length
-            }
+            criterio: `Bloco 1: ${blocosCont.movimentacao} mais movimentados | Bloco 2: ${blocosCont.baixaAcuracidade} com baixa acuracidade | Bloco 3: ${blocosCont.maiorValor} maior valor`,
+            blocos: blocosCont
         });
 
     } catch (err) {
-        console.error("ERRO ao gerar lista:", err);
+        console.error("ERRO DETALHADO ao gerar lista:", err);
         return res.status(500).json({ 
             message: "Erro ao gerar lista de inventário", 
-            error: err.message 
+            error: err.message,
+            stack: err.stack 
         });
     }
 }
