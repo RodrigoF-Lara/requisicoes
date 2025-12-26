@@ -115,7 +115,6 @@ async function gerarListaInventario(req, res) {
                         FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] i
                         WHERE i.ID_INVENTARIO = ${idUltimoInventario}
                             AND i.ACURACIDADE < 95
-                            ${codigosBloco1.length > 0 ? `AND i.CODIGO NOT IN ('${codigosBloco1.join("','")}')` : ''}
                     ),
                     SaldoAtual AS (
                         SELECT 
