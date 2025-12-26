@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const carregarInventariosBtn = document.getElementById('carregarInventariosBtn');
     const salvarInventarioBtn = document.getElementById('salvarInventarioBtn');
     const imprimirInventarioBtn = document.getElementById('imprimirInventarioBtn');
+    const exportarExcelBtn = document.getElementById('exportarExcelBtn');
     const finalizarInventarioBtn = document.getElementById('finalizarInventarioBtn');
     const listaInventarioContainer = document.getElementById('listaInventarioContainer');
     const listaInventariosSalvos = document.getElementById('listaInventariosSalvos');
@@ -19,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     carregarInventariosBtn.addEventListener('click', carregarInventariosSalvos);
     salvarInventarioBtn.addEventListener('click', salvarInventario);
     imprimirInventarioBtn.addEventListener('click', imprimirInventario);
+    exportarExcelBtn.addEventListener('click', exportarParaExcel);
     finalizarInventarioBtn.addEventListener('click', finalizarInventario);
 
     // Event listeners para fechar modal
@@ -54,12 +56,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 itens: data.itens,
                 dataGeracao: data.dataGeracao,
                 criterio: data.criterio,
-                blocos: data.blocos
+                blocos: data.blocos,
+                valorTotalGeral: data.valorTotalGeral
             };
 
             renderizarInventario(inventarioAtual);
             salvarInventarioBtn.style.display = 'inline-block';
             imprimirInventarioBtn.style.display = 'inline-block';
+            exportarExcelBtn.style.display = 'inline-block';
             finalizarInventarioBtn.style.display = 'none';
             
             statusMessage.style.color = 'green';
@@ -208,14 +212,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (inventarioAtual.status === 'FINALIZADO') {
                 salvarInventarioBtn.style.display = 'none';
                 imprimirInventarioBtn.style.display = 'inline-block';
+                exportarExcelBtn.style.display = 'inline-block';
                 finalizarInventarioBtn.style.display = 'none';
             } else if (inventarioAtual.status === 'EM_ANDAMENTO') {
                 salvarInventarioBtn.style.display = 'none';
                 imprimirInventarioBtn.style.display = 'inline-block';
+                exportarExcelBtn.style.display = 'inline-block';
                 finalizarInventarioBtn.style.display = 'inline-block';
             } else {
                 salvarInventarioBtn.style.display = 'inline-block';
                 imprimirInventarioBtn.style.display = 'inline-block';
+                exportarExcelBtn.style.display = 'inline-block';
                 finalizarInventarioBtn.style.display = 'none';
             }
 
@@ -641,6 +648,118 @@ document.addEventListener('DOMContentLoaded', function() {
         janelaImpressao.document.write(htmlImpressao);
         janelaImpressao.document.close();
         setTimeout(() => { janelaImpressao.focus(); }, 250);
+    }
+
+    function exportarParaExcel() {
+        if (!inventarioAtual || !inventarioAtual.itens || inventarioAtual.itens.length === 0) {
+            alert('Nenhum inventário carregado para exportar');
+            return;
+        }
+
+        const { itens, dataGeracao, criterio, id, status, blocos, valorTotalGeral } = inventarioAtual;
+        
+        const dadosExcel = itens.map((item, index) => {
+            const saldoSistema = item.SALDO_ATUAL || item.SALDO_SISTEMA || 0;
+            const contagemFisica = item.CONTAGEM_FISICA || '';
+            const diferenca = contagemFisica !== '' ? contagemFisica - saldoSistema : '';
+            const acuracidade = contagemFisica !== '' && saldoSistema > 0 
+                ? ((Math.min(contagemFisica, saldoSistema) / Math.max(contagemFisica, saldoSistema)) * 100)
+                : '';
+            
+            let blocoTexto = '';
+            if (item.BLOCO === 'MOVIMENTACAO') blocoTexto = 'Movimentação';
+            else if (item.BLOCO === 'BAIXA_ACURACIDADE') blocoTexto = 'Baixa Acuracidade';
+            else if (item.BLOCO === 'MAIOR_VALOR') blocoTexto = 'Maior Valor';
+
+            return {
+                '#': index + 1,
+                'Bloco': blocoTexto,
+                'Código': item.CODIGO,
+                'Descrição': item.DESCRICAO || 'N/A',
+                'Saldo Sistema': saldoSistema,
+                'Custo Unitário': item.CUSTO_UNITARIO || 0,
+                'Valor Total': item.VALOR_TOTAL_ESTOQUE || 0,
+                'Contagem Física': contagemFisica,
+                'Diferença': diferenca,
+                'Acuracidade (%)': acuracidade !== '' ? acuracidade.toFixed(2) : '',
+                'Contado Por': item.USUARIO_CONTAGEM || '',
+                'Data Contagem': item.DT_CONTAGEM ? formatarDataHora(item.DT_CONTAGEM) : ''
+            };
+        });
+
+        if (valorTotalGeral !== undefined) {
+            dadosExcel.push({
+                '#': '',
+                'Bloco': '',
+                'Código': '',
+                'Descrição': '',
+                'Saldo Sistema': '',
+                'Custo Unitário': 'TOTAL GERAL:',
+                'Valor Total': valorTotalGeral,
+                'Contagem Física': '',
+                'Diferença': '',
+                'Acuracidade (%)': '',
+                'Contado Por': '',
+                'Data Contagem': ''
+            });
+        }
+
+        const ws = XLSX.utils.json_to_sheet(dadosExcel);
+
+        const colWidths = [
+            { wch: 5 }, { wch: 18 }, { wch: 12 }, { wch: 40 }, { wch: 12 }, { wch: 14 },
+            { wch: 14 }, { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 20 }, { wch: 18 }
+        ];
+        ws['!cols'] = colWidths;
+
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+            const cellRefF = XLSX.utils.encode_cell({ r: R, c: 5 });
+            if (ws[cellRefF] && typeof ws[cellRefF].v === 'number') {
+                ws[cellRefF].z = 'R$ #,##0.00';
+            }
+            const cellRefG = XLSX.utils.encode_cell({ r: R, c: 6 });
+            if (ws[cellRefG] && typeof ws[cellRefG].v === 'number') {
+                ws[cellRefG].z = 'R$ #,##0.00';
+            }
+        }
+
+        const infoData = [
+            { 'Campo': 'ID Inventário', 'Valor': id || 'Novo' },
+            { 'Campo': 'Status', 'Valor': status || 'NOVO' },
+            { 'Campo': 'Data de Geração', 'Valor': formatarDataHora(dataGeracao) },
+            { 'Campo': 'Total de Itens', 'Valor': itens.length },
+            { 'Campo': 'Critério', 'Valor': criterio },
+            { 'Campo': '', 'Valor': '' },
+            { 'Campo': 'BLOCOS', 'Valor': '' },
+            { 'Campo': 'Movimentação', 'Valor': blocos?.movimentacao || 0 },
+            { 'Campo': 'Baixa Acuracidade', 'Valor': blocos?.baixaAcuracidade || 0 },
+            { 'Campo': 'Maior Valor', 'Valor': blocos?.maiorValor || 0 },
+            { 'Campo': '', 'Valor': '' },
+            { 'Campo': 'Valor Total em Estoque', 'Valor': valorTotalGeral || 0 }
+        ];
+
+        const wsInfo = XLSX.utils.json_to_sheet(infoData);
+        wsInfo['!cols'] = [{ wch: 25 }, { wch: 50 }];
+
+        const valorTotalCell = XLSX.utils.encode_cell({ r: 11, c: 1 });
+        if (wsInfo[valorTotalCell] && typeof wsInfo[valorTotalCell].v === 'number') {
+            wsInfo[valorTotalCell].z = 'R$ #,##0.00';
+        }
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Inventário');
+        XLSX.utils.book_append_sheet(wb, wsInfo, 'Informações');
+
+        const nomeArquivo = id 
+            ? 'Inventario_' + id + '_' + new Date().toISOString().slice(0,10) + '.xlsx'
+            : 'Inventario_Nova_Lista_' + new Date().toISOString().slice(0,10) + '.xlsx';
+
+        XLSX.writeFile(wb, nomeArquivo);
+
+        statusMessage.style.color = 'green';
+        statusMessage.textContent = 'Arquivo Excel exportado com sucesso!';
+        setTimeout(() => { statusMessage.textContent = ''; }, 3000);
     }
 
     function formatarDataHora(dataString) {
