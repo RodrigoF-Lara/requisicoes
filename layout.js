@@ -44,6 +44,7 @@ function inicializarSidebar() {
     'consultar': 'nav-consultar',
     'estoque': 'nav-estoque',
     'status-nf': 'nav-status-nf',
+    'inventariociclico': 'nav-inventario-ciclico',
     'index': 'nav-menu'
   };
   const navId = idMap[pageKey] || `nav-${pageKey}`;
