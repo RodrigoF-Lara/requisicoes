@@ -12,7 +12,7 @@ export default async function handler(req, res) {
         try {
             const pool = await getConnection();
             
-            // Busca os 10 itens mais movimentados nos últimos 7 dias
+            // Busca os 10 itens mais movimentados nos últimos 21 dias
             const result = await pool.request()
                 .query(`
                     WITH Movimentacoes AS (
@@ -22,7 +22,7 @@ export default async function handler(req, res) {
                             SUM(ABS(k.QNT)) AS TOTAL_QUANTIDADE_MOVIMENTADA
                         FROM [dbo].[KARDEX_2025] k
                         WHERE 
-                            k.DT >= DATEADD(DAY, -7, GETDATE())
+                            k.DT >= DATEADD(DAY, -21, GETDATE())
                             AND k.D_E_L_E_T_ <> '*'
                         GROUP BY k.CODIGO
                     ),
@@ -49,7 +49,7 @@ export default async function handler(req, res) {
             return res.status(200).json({
                 itens: result.recordset,
                 dataGeracao: new Date().toISOString(),
-                criterio: 'TOP 10 mais movimentados nos últimos 7 dias'
+                criterio: 'TOP 10 mais movimentados nos últimos 21 dias'
             });
 
         } catch (err) {

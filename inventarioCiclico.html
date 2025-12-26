@@ -19,13 +19,16 @@
 
         <div class="card">
           <h2>Gerar Nova Lista de Inventário</h2>
-          <p>O sistema irá selecionar automaticamente os itens mais movimentados nos últimos 7 dias.</p>
+          <p>
+            O sistema irá selecionar automaticamente os itens mais movimentados
+            nos últimos 21 dias.
+          </p>
           <button id="gerarListaBtn" class="btn-destaque">
             <i class="fa-solid fa-clipboard-list"></i> Gerar Nova Lista
           </button>
         </div>
 
-        <div id="listaInventarioContainer" style="display: none;">
+        <div id="listaInventarioContainer" style="display: none">
           <div class="card">
             <h2>Lista de Inventário Gerada</h2>
             <div id="infoLista" class="info-lista"></div>

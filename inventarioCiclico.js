@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
         infoLista.innerHTML = `
             <p><strong>Data de Geração:</strong> ${formatarDataHora(dataGeracao)}</p>
             <p><strong>Total de Itens:</strong> ${itens.length}</p>
-            <p><strong>Critério:</strong> Itens mais movimentados nos últimos 7 dias</p>
+            <p><strong>Critério:</strong> Itens mais movimentados nos últimos 21 dias</p>
         `;
 
         const table = document.createElement('table');
