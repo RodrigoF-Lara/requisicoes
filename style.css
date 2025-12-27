@@ -599,6 +599,26 @@ tbody tr:hover {
     flex: 0 1 auto;
 }
 
+/* Botão de excluir item */
+.btn-excluir-item {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.3s;
+}
+
+.btn-excluir-item:hover {
+    background-color: #c0392b;
+}
+
+.btn-excluir-item i {
+    pointer-events: none;
+}
+
 /* Oculta elementos na impressão */
 @media print {
     .sidebar,
@@ -607,6 +627,7 @@ tbody tr:hover {
     .btn-secundario,
     .btn-success,
     .btn-sucesso,
+    .btn-excluir-item,
     #statusMessage {
         display: none !important;
     }

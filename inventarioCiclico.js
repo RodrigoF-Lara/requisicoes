@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const gerarListaBtn = document.getElementById('gerarListaBtn');
     const carregarInventariosBtn = document.getElementById('carregarInventariosBtn');
+    const adicionarItemBtn = document.getElementById('adicionarItemBtn');
     const salvarInventarioBtn = document.getElementById('salvarInventarioBtn');
     const imprimirInventarioBtn = document.getElementById('imprimirInventarioBtn');
     const exportarExcelBtn = document.getElementById('exportarExcelBtn');
@@ -61,6 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             renderizarInventario(inventarioAtual);
+            adicionarItemBtn.style.display = 'inline-block';
             salvarInventarioBtn.style.display = 'inline-block';
             imprimirInventarioBtn.style.display = 'inline-block';
             exportarExcelBtn.style.display = 'inline-block';
@@ -210,16 +212,19 @@ document.addEventListener('DOMContentLoaded', function() {
             renderizarInventario(inventarioAtual);
 
             if (inventarioAtual.status === 'FINALIZADO') {
+                adicionarItemBtn.style.display = 'none';
                 salvarInventarioBtn.style.display = 'none';
                 imprimirInventarioBtn.style.display = 'inline-block';
                 exportarExcelBtn.style.display = 'inline-block';
                 finalizarInventarioBtn.style.display = 'none';
             } else if (inventarioAtual.status === 'EM_ANDAMENTO') {
+                adicionarItemBtn.style.display = 'inline-block';
                 salvarInventarioBtn.style.display = 'none';
                 imprimirInventarioBtn.style.display = 'inline-block';
                 exportarExcelBtn.style.display = 'inline-block';
                 finalizarInventarioBtn.style.display = 'inline-block';
             } else {
+                adicionarItemBtn.style.display = 'inline-block';
                 salvarInventarioBtn.style.display = 'inline-block';
                 imprimirInventarioBtn.style.display = 'inline-block';
                 exportarExcelBtn.style.display = 'inline-block';
@@ -292,6 +297,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <th>Diferença</th>
                     <th>Acuracidade</th>
                     <th>Contado Por</th>
+                    ${podeEditar ? '<th>Ações</th>' : ''}
                 </tr>
             </thead>
             <tbody>
@@ -322,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     
                     return `
-                    <tr>
+                    <tr data-codigo="${item.CODIGO}">
                         <td>${index + 1}</td>
                         <td><span class="bloco-badge ${blocoClass}">${blocoTexto}</span></td>
                         <td><strong>${item.CODIGO}</strong></td>
@@ -351,15 +357,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         <td class="info-contagem">
                             ${usuarioContagem !== '-' ? `<small><strong>${usuarioContagem}</strong><br>${dataContagem}</small>` : '-'}
                         </td>
+                        ${podeEditar ? `
+                        <td>
+                            <button class="btn-excluir-item" data-codigo="${item.CODIGO}" title="Excluir item">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                        ` : ''}
                     </tr>
                 `}).join('')}
             </tbody>
             ${valorTotalGeral !== undefined ? `
             <tfoot>
                 <tr class="total-row">
-                    <td colspan="6" style="text-align: right;"><strong>TOTAL GERAL:</strong></td>
+                    <td colspan="${podeEditar ? '6' : '6'}" style="text-align: right;"><strong>TOTAL GERAL:</strong></td>
                     <td><strong>R$ ${valorTotalGeral.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
-                    <td colspan="4"></td>
+                    <td colspan="${podeEditar ? '5' : '4'}"></td>
                 </tr>
             </tfoot>
             ` : ''}
@@ -380,6 +393,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (inventarioAtual.id) {
                         salvarContagemIndividual(inventarioAtual.id, this.dataset.codigo, novaContagem);
                     }
+                });
+            });
+
+            // Event listener para excluir itens
+            table.querySelectorAll('.btn-excluir-item').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const codigo = this.dataset.codigo;
+                    excluirItemInventario(codigo);
                 });
             });
         }
@@ -428,6 +449,112 @@ document.addEventListener('DOMContentLoaded', function() {
             item.CONTAGEM_FISICA = contagem;
         }
     }
+
+    function excluirItemInventario(codigo) {
+        if (!confirm(`Deseja realmente excluir o item ${codigo} do inventário?`)) {
+            return;
+        }
+
+        // Remove o item da lista
+        inventarioAtual.itens = inventarioAtual.itens.filter(item => item.CODIGO !== codigo);
+        
+        // Recalcula o valor total geral
+        inventarioAtual.valorTotalGeral = inventarioAtual.itens.reduce((sum, item) => {
+            const saldo = item.SALDO_ATUAL || item.SALDO_SISTEMA || 0;
+            const custo = item.CUSTO_UNITARIO || item.PRECO_UNITARIO || 0;
+            return sum + (saldo * custo);
+        }, 0);
+
+        // Atualiza a contagem de blocos
+        if (inventarioAtual.blocos) {
+            inventarioAtual.blocos = {
+                movimentacao: inventarioAtual.itens.filter(i => i.BLOCO === 'MOVIMENTACAO').length,
+                baixaAcuracidade: inventarioAtual.itens.filter(i => i.BLOCO === 'BAIXA_ACURACIDADE').length,
+                maiorValor: inventarioAtual.itens.filter(i => i.BLOCO === 'MAIOR_VALOR').length
+            };
+        }
+
+        renderizarInventario(inventarioAtual);
+        
+        statusMessage.style.color = 'green';
+        statusMessage.textContent = `Item ${codigo} excluído com sucesso!`;
+        setTimeout(() => { statusMessage.textContent = ''; }, 3000);
+    }
+
+    async function adicionarNovoItem() {
+        const codigo = prompt('Digite o código do produto a adicionar:');
+        
+        if (!codigo || codigo.trim() === '') {
+            return;
+        }
+
+        const codigoLimpo = codigo.trim().toUpperCase();
+
+        // Verifica se o código já existe na lista
+        if (inventarioAtual.itens.some(item => item.CODIGO === codigoLimpo)) {
+            alert('Este código já está na lista!');
+            return;
+        }
+
+        try {
+            statusMessage.style.color = '#222';
+            statusMessage.textContent = 'Buscando produto...';
+
+            // Busca informações do produto no banco
+            const response = await fetch(`/api/inventarioCiclico?acao=buscarProduto&codigo=${codigoLimpo}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Produto não encontrado');
+            }
+
+            const novoProduto = data.produto;
+
+            // Adiciona o novo item à lista
+            inventarioAtual.itens.push({
+                CODIGO: novoProduto.CODIGO,
+                DESCRICAO: novoProduto.DESCRICAO,
+                SALDO_ATUAL: novoProduto.SALDO_ATUAL || 0,
+                SALDO_SISTEMA: novoProduto.SALDO_ATUAL || 0,
+                CUSTO_UNITARIO: novoProduto.CUSTO_UNITARIO || 0,
+                PRECO_UNITARIO: novoProduto.CUSTO_UNITARIO || 0,
+                VALOR_TOTAL_ESTOQUE: (novoProduto.SALDO_ATUAL || 0) * (novoProduto.CUSTO_UNITARIO || 0),
+                CONTAGEM_FISICA: 0,
+                BLOCO: 'MANUAL',
+                TOTAL_MOVIMENTACOES: 0
+            });
+
+            // Recalcula o valor total geral
+            inventarioAtual.valorTotalGeral = inventarioAtual.itens.reduce((sum, item) => {
+                const saldo = item.SALDO_ATUAL || item.SALDO_SISTEMA || 0;
+                const custo = item.CUSTO_UNITARIO || item.PRECO_UNITARIO || 0;
+                return sum + (saldo * custo);
+            }, 0);
+
+            // Atualiza a contagem de blocos
+            if (inventarioAtual.blocos) {
+                inventarioAtual.blocos = {
+                    movimentacao: inventarioAtual.itens.filter(i => i.BLOCO === 'MOVIMENTACAO').length,
+                    baixaAcuracidade: inventarioAtual.itens.filter(i => i.BLOCO === 'BAIXA_ACURACIDADE').length,
+                    maiorValor: inventarioAtual.itens.filter(i => i.BLOCO === 'MAIOR_VALOR').length
+                };
+            }
+
+            renderizarInventario(inventarioAtual);
+
+            statusMessage.style.color = 'green';
+            statusMessage.textContent = `Produto ${codigoLimpo} adicionado com sucesso!`;
+            setTimeout(() => { statusMessage.textContent = ''; }, 3000);
+
+        } catch (error) {
+            console.error('Erro ao adicionar produto:', error);
+            statusMessage.style.color = '#c00';
+            statusMessage.textContent = `Erro: ${error.message}`;
+        }
+    }
+
+    // Adiciona o botão de adicionar item no HTML
+    window.adicionarNovoItem = adicionarNovoItem;
 
     async function finalizarInventario() {
         if (!inventarioAtual || !inventarioAtual.id) {

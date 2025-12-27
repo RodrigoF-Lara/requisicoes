@@ -44,6 +44,14 @@
               </div>
               <div class="inventario-acoes">
                 <button
+                  id="adicionarItemBtn"
+                  class="btn-success"
+                  onclick="adicionarNovoItem()"
+                  style="display: none"
+                >
+                  <i class="fa-solid fa-plus"></i> Adicionar Item
+                </button>
+                <button
                   id="salvarInventarioBtn"
                   class="btn-destaque"
                   style="display: none"
@@ -94,7 +102,7 @@
 
     <!-- Biblioteca para exportar Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    
+
     <script src="inventarioCiclico.js"></script>
     <script src="layout.js"></script>
   </body>

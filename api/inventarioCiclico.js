@@ -12,6 +12,8 @@ export default async function handler(req, res) {
             return await listarInventarios(req, res);
         } else if (acao === 'abrir') {
             return await abrirInventario(req, res);
+        } else if (acao === 'buscarProduto') {
+            return await buscarProduto(req, res);
         }
     }
 
@@ -569,6 +571,61 @@ async function salvarContagemIndividual(req, res) {
         console.error("ERRO ao salvar contagem individual:", err);
         return res.status(500).json({ 
             message: "Erro ao salvar contagem", 
+            error: err.message 
+        });
+    }
+}
+
+// Busca informações de um produto específico
+async function buscarProduto(req, res) {
+    try {
+        const { codigo } = req.query;
+        const pool = await getConnection();
+
+        const result = await pool.request()
+            .input('CODIGO', sql.NVarChar, codigo)
+            .query(`
+                WITH UltimaNFPorProduto AS (
+                    SELECT 
+                        np.PROD_COD_PROD AS CODIGO,
+                        np.PROD_CUSTO_FISCAL_MEDIO_NOVO AS CUSTO_UNITARIO,
+                        nc.CAB_DT_EMISSAO,
+                        ROW_NUMBER() OVER (PARTITION BY np.PROD_COD_PROD ORDER BY nc.CAB_DT_EMISSAO DESC) AS RN
+                    FROM [dbo].[NF_PRODUTOS] np
+                    INNER JOIN [dbo].[NF_CABECALHO] nc ON np.PROD_ID_NF = nc.CAB_ID_NF
+                    WHERE np.PROD_CUSTO_FISCAL_MEDIO_NOVO IS NOT NULL 
+                        AND np.PROD_CUSTO_FISCAL_MEDIO_NOVO > 0
+                        AND np.PROD_COD_PROD = @CODIGO
+                ),
+                SaldoAtual AS (
+                    SELECT 
+                        CODIGO,
+                        ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
+                    FROM [dbo].[KARDEX_2025_EMBALAGEM]
+                    WHERE D_E_L_E_T_ <> '*' AND CODIGO = @CODIGO
+                    GROUP BY CODIGO
+                )
+                SELECT 
+                    @CODIGO AS CODIGO,
+                    ISNULL(cp.DESCRICAO, 'SEM DESCRIÇÃO') AS DESCRICAO,
+                    ISNULL(s.SALDO_ATUAL, 0) AS SALDO_ATUAL,
+                    ISNULL(u.CUSTO_UNITARIO, 0) AS CUSTO_UNITARIO
+                FROM (SELECT @CODIGO AS CODIGO) base
+                LEFT JOIN [dbo].[CAD_PROD] cp ON base.CODIGO = cp.CODIGO
+                LEFT JOIN SaldoAtual s ON base.CODIGO = s.CODIGO
+                LEFT JOIN UltimaNFPorProduto u ON base.CODIGO = u.CODIGO AND u.RN = 1;
+            `);
+
+        if (result.recordset.length === 0 || result.recordset[0].DESCRICAO === 'SEM DESCRIÇÃO') {
+            return res.status(404).json({ message: "Produto não encontrado no cadastro" });
+        }
+
+        return res.status(200).json({ produto: result.recordset[0] });
+
+    } catch (err) {
+        console.error("ERRO ao buscar produto:", err);
+        return res.status(500).json({ 
+            message: "Erro ao buscar produto", 
             error: err.message 
         });
     }
