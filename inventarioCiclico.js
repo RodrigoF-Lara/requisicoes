@@ -716,7 +716,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <body>
     <button class="btn-imprimir no-print" onclick="window.print()">🖨️ Imprimir</button>
     <div class="header">
-        <h1>KARDEX SYSTEM</h1>
+        <h1>SGC - Sistema de Gestão Customic</h1>
         <h2>Inventário Cíclico ${id ? '#' + id : '- Nova Lista'}</h2>
     </div>
     <div class="info-section">
