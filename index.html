@@ -46,10 +46,10 @@
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ usuario, pw })
             });
-            
+
             console.log("📡 Status da resposta:", res.status);
             console.log("📡 Headers:", res.headers.get('content-type'));
-            
+
             // Verifica se a resposta é JSON antes de tentar fazer parse
             const contentType = res.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
@@ -59,10 +59,10 @@
               status.textContent = "Erro: A API não está respondendo corretamente. Verifique a configuração.";
               return;
             }
-            
+
             const data = await res.json();
             console.log("📦 Dados recebidos:", data);
-            
+
             if (res.ok && data.usuario) {
               // --- LINHAS ATUALIZADAS AQUI ---
               const loginTime = new Date().toLocaleString('pt-BR');
