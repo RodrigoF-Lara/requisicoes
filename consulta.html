@@ -1,62 +1,55 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Consulta de Requisições - SGC Customic</title>
+    <title>Consulta de Requisições - Kardex</title>
     <link rel="stylesheet" href="style.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-    />
-  </head>
-  <body>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+</head>
+<body>
     <!-- O novo menu lateral será carregado aqui pelo layout.js -->
     <div id="sidebar-container" class="sidebar"></div>
 
     <!-- Todo o conteúdo da página fica dentro desta div -->
     <div class="main-content">
-      <div class="container">
-        <h1>Consultar Requisições</h1>
+        <div class="container">
+            <h1>Consultar Requisições</h1>
+            
+            <div id="summary-container">
+                <!-- Os cards de resumo serão inseridos aqui pelo JavaScript -->
+            </div>
 
-        <div id="summary-container">
-          <!-- Os cards de resumo serão inseridos aqui pelo JavaScript -->
-        </div>
+            <div class="filter-container">
+                <input type="number" id="filterId" placeholder="Filtrar por ID...">
+                <input type="text" id="filterSolicitante" placeholder="Filtrar por solicitante...">
+                <select id="filterStatus">
+                    <option value="">Todos os Status</option>
+                    <!-- Opções de status serão inseridas aqui pelo JavaScript -->
+                </select>
+                <select id="filterPrioridade">
+                    <option value="">Todas as Prioridades</option>
+                    <option value="NORMAL">Normal</option>
+                    <option value="ALTA">Alta</option>
+                    <option value="BAIXA">Baixa</option>
+                </select>
+                <div class="form-group">
+                    <label for="filterDataNecessidade">Data de Necessidade:</label>
+                    <input type="date" id="filterDataNecessidade">
+                </div>
+            </div>
 
-        <div class="filter-container">
-          <input type="number" id="filterId" placeholder="Filtrar por ID..." />
-          <input
-            type="text"
-            id="filterSolicitante"
-            placeholder="Filtrar por solicitante..."
-          />
-          <select id="filterStatus">
-            <option value="">Todos os Status</option>
-            <!-- Opções de status serão inseridas aqui pelo JavaScript -->
-          </select>
-          <select id="filterPrioridade">
-            <option value="">Todas as Prioridades</option>
-            <option value="NORMAL">Normal</option>
-            <option value="ALTA">Alta</option>
-            <option value="BAIXA">Baixa</option>
-          </select>
-          <div class="form-group">
-            <label for="filterDataNecessidade">Data de Necessidade:</label>
-            <input type="date" id="filterDataNecessidade" />
-          </div>
+            <div id="requisicoes-container">
+                <div class="loader-container">
+                    <div class="loader"></div>
+                    <p>Buscando requisições...</p>
+                </div>
+            </div>
         </div>
-
-        <div id="requisicoes-container">
-          <div class="loader-container">
-            <div class="loader"></div>
-            <p>Buscando requisições...</p>
-          </div>
-        </div>
-      </div>
     </div>
 
     <script src="consulta.js"></script>
     <!-- O novo script de layout que carrega o menu e o usuário -->
     <script src="layout.js"></script>
-  </body>
+</body>
 </html>

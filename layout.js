@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
       console.error('Falha ao carregar menu-lateral.html:', err);
       // Fallback sincronizado com nomes existentes no projeto
       sidebarContainer.innerHTML = `
-        <div class="sidebar-header"><h3>SGC - Sistema de Gestão Customic</h3></div>
+        <div class="sidebar-header"><h3>Kardex System</h3></div>
         <div class="sidebar-user-info"><span id="sidebar-username">Usuário</span></div>
         <nav class="sidebar-nav">
           <a href="menu.html" id="nav-menu"><i class="fa fa-home"></i> Menu Principal</a>

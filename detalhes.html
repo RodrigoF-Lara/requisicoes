@@ -1,68 +1,61 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Detalhes da Requisição - SGC Customic</title>
+    <title>Detalhes da Requisição - Kardex</title>
     <link rel="stylesheet" href="style.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-    />
-  </head>
-  <body>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+</head>
+<body>
     <!-- O novo menu lateral será carregado aqui pelo layout.js -->
     <div id="sidebar-container" class="sidebar"></div>
 
     <!-- Todo o conteúdo da página fica dentro desta div -->
     <div class="main-content">
-      <div class="container">
-        <h1>Detalhes da Requisição</h1>
+        <div class="container">
+            <h1>Detalhes da Requisição</h1>
+            
+            <div id="detalhe-header-container">
+                <!-- O cabeçalho da requisição será inserido aqui -->
+            </div>
+            
+            <h2>Itens da Requisição</h2> 
+            
+            <div id="bulk-actions-container" class="bulk-actions-bar" style="display: none;">
+                <span id="bulk-counter">0 itens selecionados</span>
+                <select id="bulk-status-select">
+                    <option value="">Alterar status para...</option>
+                    <option value="Pendente">Pendente</option>
+                    <option value="Em separação">Em separação</option>
+                    <option value="Separado">Separado</option>
+                    <option value="Aguarda coleta">Aguarda coleta</option>
+                    <option value="Finalizado">Finalizado</option>
+                </select>
+                <button id="bulk-apply-btn" class="btn-destaque">Aplicar</button>
+            </div>
 
-        <div id="detalhe-header-container">
-          <!-- O cabeçalho da requisição será inserido aqui -->
+            <div id="detalhe-itens-container">
+                <!-- A tabela de itens será inserida aqui -->
+            </div>
         </div>
-
-        <h2>Itens da Requisição</h2>
-
-        <div
-          id="bulk-actions-container"
-          class="bulk-actions-bar"
-          style="display: none"
-        >
-          <span id="bulk-counter">0 itens selecionados</span>
-          <select id="bulk-status-select">
-            <option value="">Alterar status para...</option>
-            <option value="Pendente">Pendente</option>
-            <option value="Em separação">Em separação</option>
-            <option value="Separado">Separado</option>
-            <option value="Aguarda coleta">Aguarda coleta</option>
-            <option value="Finalizado">Finalizado</option>
-          </select>
-          <button id="bulk-apply-btn" class="btn-destaque">Aplicar</button>
-        </div>
-
-        <div id="detalhe-itens-container">
-          <!-- A tabela de itens será inserida aqui -->
-        </div>
-      </div>
     </div>
 
     <!-- Modal de Histórico/Log -->
     <div id="logModal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Histórico do Item</h2>
-          <span class="close-btn">&times;</span>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Histórico do Item</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div id="logContent">
+                <!-- O histórico será inserido aqui pelo JavaScript -->
+            </div>
         </div>
-        <div id="logContent">
-          <!-- O histórico será inserido aqui pelo JavaScript -->
-        </div>
-      </div>
     </div>
 
     <script src="detalhes.js"></script>
     <!-- O novo script de layout que carrega o menu e o usuário -->
     <script src="layout.js"></script>
-  </body>
+</body>
 </html>

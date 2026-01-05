@@ -1,89 +1,76 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nova Requisição - SGC Customic</title>
+    <title>Nova Requisição - Kardex</title>
     <link rel="stylesheet" href="style.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-    />
-  </head>
-  <body>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+</head>
+<body>
     <!-- O novo menu lateral será carregado aqui pelo layout.js -->
     <div id="sidebar-container" class="sidebar"></div>
 
     <!-- Todo o conteúdo da página fica dentro desta div -->
     <div class="main-content">
-      <div class="container">
-        <h1>Nova Requisição</h1>
+        <div class="container">
+            <h1>Nova Requisição</h1>
 
-        <div id="novaRequisicaoContainer" class="card">
-          <h2>Dados da Requisição</h2>
-          <form id="csvForm">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="dtNecessidade">Data de Necessidade:</label>
-                <input type="date" id="dtNecessidade" required />
-              </div>
-              <div class="form-group">
-                <label for="prioridade">Prioridade:</label>
-                <select id="prioridade" required>
-                  <option value="NORMAL">Normal</option>
-                  <option value="ALTA">Alta</option>
-                  <option value="BAIXA">Baixa</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Arquivo CSV:</label>
-                <div class="input-file-wrapper">
-                  <button type="button" class="btn-upload">
-                    Selecionar Arquivo
-                  </button>
-                  <input
-                    type="file"
-                    id="csvFile"
-                    name="csvFile"
-                    accept=".csv"
-                    required
-                  />
-                </div>
-              </div>
-              <div class="form-group">
-                <button type="submit" class="btn-destaque">
-                  Gerar Requisição
-                </button>
-              </div>
+            <div id="novaRequisicaoContainer" class="card">
+                <h2>Dados da Requisição</h2>
+                <form id="csvForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dtNecessidade">Data de Necessidade:</label>
+                            <input type="date" id="dtNecessidade" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="prioridade">Prioridade:</label>
+                            <select id="prioridade" required>
+                                <option value="NORMAL">Normal</option>
+                                <option value="ALTA">Alta</option>
+                                <option value="BAIXA">Baixa</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Arquivo CSV:</label>
+                            <div class="input-file-wrapper">
+                                <button type="button" class="btn-upload">Selecionar Arquivo</button>
+                                <input type="file" id="csvFile" name="csvFile" accept=".csv" required />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn-destaque">Gerar Requisição</button>
+                        </div>
+                    </div>
+                </form>
+                <div id="status"></div>
+                <div id="aguardeAnimacao"></div>
             </div>
-          </form>
-          <div id="status"></div>
-          <div id="aguardeAnimacao"></div>
-        </div>
 
-        <div id="resumo-container" style="display: none">
-          <h2>Resumo da Requisição Gerada</h2>
-          <table id="resumoRequisicao">
-            <thead>
-              <tr>
-                <th>ID Requisição</th>
-                <th>Data de Necessidade</th>
-                <th>Prioridade</th>
-                <th>Código</th>
-                <th>Quantidade</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Os dados serão inseridos aqui pelo JavaScript -->
-            </tbody>
-          </table>
+            <div id="resumo-container" style="display: none;">
+                <h2>Resumo da Requisição Gerada</h2>
+                <table id="resumoRequisicao">
+                    <thead>
+                        <tr>
+                            <th>ID Requisição</th>
+                            <th>Data de Necessidade</th>
+                            <th>Prioridade</th>
+                            <th>Código</th>
+                            <th>Quantidade</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Os dados serão inseridos aqui pelo JavaScript -->
+                    </tbody>
+                </table>
+            </div>
         </div>
-      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="script.js"></script>
     <!-- O novo script de layout que carrega o menu e o usuário -->
     <script src="layout.js"></script>
-  </body>
+</body>
 </html>

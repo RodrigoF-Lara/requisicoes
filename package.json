@@ -1,7 +1,4 @@
 {
-  "name": "requisicoes",
-  "version": "1.0.0",
-  "type": "module",
   "dependencies": {
     "mssql": "^12.2.0"
   }
