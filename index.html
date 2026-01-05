@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login - Upload CSV para Azure</title>
+  <title>Login - SGC Customic</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  <body class="login-body">
+<body class="login-body">
   <div class="login-container">
     <div class="login-card">
-      <h2>Bem-vindo ao Kardex</h2>
+      <h2>SGC - Sistema de Gestão Customic</h2>
       <form id="loginForm">
         <div class="form-group">
           <input type="text" id="usuario" placeholder="Usuário" required />
@@ -18,17 +17,6 @@
         <div class="form-group">
           <input type="password" id="pw" placeholder="Senha" required />
         </div>
-        <button type="submit" class="btn-login">Entrar</button>
-      </form>
-      <div class="login-status" id="loginStatus"></div>
-    </div>
-  </div>
-  <div class="login-container">
-    <div class="login-card">
-      <h2>Bem-vindo ao Kardex</h2>
-      <form id="loginForm">
-        <input type="text" id="usuario" placeholder="Usuário" required />
-        <input type="password" id="pw" placeholder="Senha" required />
         <button type="submit" class="btn-login">Entrar</button>
       </form>
       <div class="login-status" id="loginStatus"></div>
@@ -44,16 +32,15 @@
       status.textContent = "Verificando...";
 
       try {
-        const res = await fetch("https://requisicoes-five.vercel.app/api/login", {
+        const res = await fetch("/api/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ usuario, pw })
         });
         const data = await res.json();
         if (res.ok && data.usuario) {
-          // --- LINHAS ATUALIZADAS AQUI ---
           const loginTime = new Date().toLocaleString('pt-BR');
-          localStorage.setItem('loginTime', loginTime); // Salva a data/hora do login
+          localStorage.setItem('loginTime', loginTime);
           localStorage.setItem('userName', `${data.usuario.F_NAME} ${data.usuario.L_NAME}`);
           window.location.href = "menu.html";
         } else {
@@ -65,8 +52,6 @@
         status.textContent = "Erro de conexão. Tente novamente.";
       }
     });
-</script>
+  </script>
 </body>
 </html>
-
-// Revertendo para a versão estável de 7810b78
