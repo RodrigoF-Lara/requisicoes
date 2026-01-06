@@ -222,27 +222,40 @@ document.addEventListener('DOMContentLoaded', function() {
                     <th>Valor Total</th>
                     <th>Status</th>
                     <th>Acuracidade</th>
+                    <th>Divergências</th>
                     <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
-                ${inventarios.map(inv => `
+                ${inventarios.map(inv => {
+                    const totalItens = inv.TOTAL_ITENS || 0;
+                    const acuracidade = inv.ACURACIDADE || 0;
+                    const itensDivergentes = inv.STATUS === 'FINALIZADO' && totalItens > 0
+                        ? Math.round(totalItens * (1 - acuracidade / 100))
+                        : '-';
+                    
+                    return `
                     <tr>
                         <td><strong>#${inv.ID_INVENTARIO}</strong></td>
                         <td>${formatarDataHora(inv.DT_GERACAO)}</td>
                         <td><strong>${inv.USUARIO_CRIACAO || 'Sistema'}</strong></td>
                         <td>${formatarDataHora(inv.DT_CRIACAO)}</td>
-                        <td>${inv.TOTAL_ITENS}</td>
+                        <td>${totalItens}</td>
                         <td><strong>R$ ${(inv.VALOR_TOTAL_GERAL || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
                         <td><span class="status-badge status-${inv.STATUS.toLowerCase()}">${inv.STATUS}</span></td>
                         <td>${inv.ACURACIDADE ? inv.ACURACIDADE.toFixed(2) + '%' : '-'}</td>
+                        <td>
+                            ${itensDivergentes !== '-' 
+                                ? `<span class="badge-divergencia">${itensDivergentes}</span>` 
+                                : '-'}
+                        </td>
                         <td>
                             <button class="btn-detalhes" onclick="abrirInventario(${inv.ID_INVENTARIO})">
                                 <i class="fa-solid fa-folder-open"></i> Abrir
                             </button>
                         </td>
                     </tr>
-                `).join('')}
+                `}).join('')}
             </tbody>
         `;
         listaInventariosSalvos.innerHTML = '';
