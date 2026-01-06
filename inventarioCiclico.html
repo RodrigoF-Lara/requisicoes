@@ -20,9 +20,23 @@
         <!-- Seção de Inventários Existentes -->
         <div class="card">
           <h2>Inventários Salvos</h2>
-          <button id="carregarInventariosBtn" class="btn-secundario">
-            <i class="fa-solid fa-list"></i> Carregar Inventários
-          </button>
+          <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button id="carregarInventariosBtn" class="btn-secundario">
+              <i class="fa-solid fa-list"></i> Carregar Inventários
+            </button>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <label for="filtroMesInventario" style="white-space: nowrap;">Filtrar por Mês:</label>
+              <input 
+                type="month" 
+                id="filtroMesInventario" 
+                class="form-control" 
+                style="max-width: 200px;"
+              />
+              <button id="limparFiltroMesBtn" class="btn-secundario" style="display: none;">
+                <i class="fa-solid fa-times"></i> Limpar
+              </button>
+            </div>
+          </div>
           <div id="listaInventariosSalvos" style="margin-top: 15px"></div>
         </div>
 

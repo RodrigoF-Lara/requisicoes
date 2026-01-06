@@ -163,6 +163,21 @@ input:focus, select:focus {
     box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.2);
 }
 
+/* Estilos para input de tipo month */
+input[type="month"] {
+    padding: 8px 12px;
+    border: 1px solid var(--cor-cinza-borda);
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+input[type="month"]:focus {
+    outline: none;
+    border-color: var(--cor-principal);
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+}
+
 button, .btn-destaque, .btn-login, .btn-detalhes {
     background-color: var(--cor-principal);
     color: #fff;

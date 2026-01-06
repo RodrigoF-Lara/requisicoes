@@ -14,8 +14,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusMessage = document.getElementById('statusMessage');
     const acuracidadeModal = document.getElementById('acuracidadeModal');
     const acuracidadeContent = document.getElementById('acuracidadeContent');
+    const filtroMesInventario = document.getElementById('filtroMesInventario');
+    const limparFiltroMesBtn = document.getElementById('limparFiltroMesBtn');
 
     let inventarioAtual = null;
+    let todosInventarios = [];
 
     gerarListaBtn.addEventListener('click', gerarNovaLista);
     carregarInventariosBtn.addEventListener('click', carregarInventariosSalvos);
@@ -23,6 +26,8 @@ document.addEventListener('DOMContentLoaded', function() {
     imprimirInventarioBtn.addEventListener('click', imprimirInventario);
     exportarExcelBtn.addEventListener('click', exportarParaExcel);
     finalizarInventarioBtn.addEventListener('click', finalizarInventario);
+    filtroMesInventario.addEventListener('change', aplicarFiltroMes);
+    limparFiltroMesBtn.addEventListener('click', limparFiltroMes);
 
     // Event listeners para fechar modal
     document.querySelectorAll('.close-btn').forEach(btn => {
@@ -133,6 +138,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function carregarInventariosSalvos() {
         try {
+            statusMessage.style.color = '#222';
+            statusMessage.textContent = 'Carregando inventários...';
+            carregarInventariosBtn.disabled = true;
             listaInventariosSalvos.innerHTML = '<div class="loader"></div>';
             
             const response = await fetch('/api/inventarioCiclico?acao=listar');
@@ -142,17 +150,62 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(data.message || 'Erro ao carregar inventários');
             }
 
-            if (!data.inventarios || data.inventarios.length === 0) {
+            todosInventarios = data.inventarios || [];
+            
+            if (todosInventarios.length === 0) {
                 listaInventariosSalvos.innerHTML = '<p class="info-message">Nenhum inventário salvo encontrado.</p>';
+                statusMessage.textContent = '';
                 return;
             }
 
-            renderizarListaInventarios(data.inventarios);
+            renderizarListaInventarios(todosInventarios);
+            
+            statusMessage.style.color = 'green';
+            statusMessage.textContent = `${todosInventarios.length} inventário(s) carregado(s)`;
+            setTimeout(() => { statusMessage.textContent = ''; }, 3000);
 
         } catch (error) {
             console.error('Erro ao carregar inventários:', error);
-            listaInventariosSalvos.innerHTML = `<p class="error-message">Erro: ${error.message}</p>`;
+            statusMessage.style.color = 'red';
+            statusMessage.textContent = `Erro: ${error.message}`;
+            listaInventariosSalvos.innerHTML = `<p class="error-message">Erro ao carregar inventários salvos</p>`;
+        } finally {
+            carregarInventariosBtn.disabled = false;
         }
+    }
+
+    function aplicarFiltroMes() {
+        const mesAnoSelecionado = filtroMesInventario.value;
+        
+        if (!mesAnoSelecionado) {
+            renderizarListaInventarios(todosInventarios);
+            limparFiltroMesBtn.style.display = 'none';
+            return;
+        }
+
+        limparFiltroMesBtn.style.display = 'inline-block';
+
+        const inventariosFiltrados = todosInventarios.filter(inv => {
+            const dataGeracao = new Date(inv.DT_GERACAO);
+            const mesAnoInventario = `${dataGeracao.getFullYear()}-${String(dataGeracao.getMonth() + 1).padStart(2, '0')}`;
+            return mesAnoInventario === mesAnoSelecionado;
+        });
+
+        renderizarListaInventarios(inventariosFiltrados);
+        
+        statusMessage.style.color = '#2196F3';
+        statusMessage.textContent = `${inventariosFiltrados.length} inventário(s) encontrado(s) para ${mesAnoSelecionado}`;
+        setTimeout(() => { statusMessage.textContent = ''; }, 3000);
+    }
+
+    function limparFiltroMes() {
+        filtroMesInventario.value = '';
+        limparFiltroMesBtn.style.display = 'none';
+        renderizarListaInventarios(todosInventarios);
+        
+        statusMessage.style.color = 'green';
+        statusMessage.textContent = 'Filtro removido';
+        setTimeout(() => { statusMessage.textContent = ''; }, 3000);
     }
 
     function renderizarListaInventarios(inventarios) {
