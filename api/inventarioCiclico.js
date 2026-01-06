@@ -373,19 +373,24 @@ async function listarInventarios(req, res) {
         
         const result = await pool.request().query(`
             SELECT 
-                ID_INVENTARIO,
-                DT_GERACAO,
-                CRITERIO,
-                STATUS,
-                TOTAL_ITENS,
-                ACURACIDADE,
-                VALOR_TOTAL_GERAL,
-                USUARIO_CRIACAO,
-                DT_CRIACAO,
-                USUARIO_FINALIZACAO,
-                DT_FINALIZACAO
-            FROM [dbo].[TB_INVENTARIO_CICLICO]
-            ORDER BY ID_INVENTARIO DESC;
+                ic.ID_INVENTARIO,
+                ic.DT_GERACAO,
+                ic.CRITERIO,
+                ic.STATUS,
+                ic.TOTAL_ITENS,
+                ic.ACURACIDADE,
+                ic.VALOR_TOTAL_GERAL,
+                ic.USUARIO_CRIACAO,
+                ic.DT_CRIACAO,
+                ic.USUARIO_FINALIZACAO,
+                ic.DT_FINALIZACAO,
+                -- Calcula itens com divergência (diferença != 0)
+                (SELECT COUNT(*) 
+                 FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] ici
+                 WHERE ici.ID_INVENTARIO = ic.ID_INVENTARIO 
+                 AND ici.DIFERENCA != 0) AS ITENS_DIVERGENTES
+            FROM [dbo].[TB_INVENTARIO_CICLICO] ic
+            ORDER BY ic.ID_INVENTARIO DESC;
         `);
 
         return res.status(200).json({ inventarios: result.recordset });

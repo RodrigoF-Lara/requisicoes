@@ -228,10 +228,9 @@ document.addEventListener('DOMContentLoaded', function() {
             </thead>
             <tbody>
                 ${inventarios.map(inv => {
-                    const totalItens = inv.TOTAL_ITENS || 0;
-                    const acuracidade = inv.ACURACIDADE || 0;
-                    const itensDivergentes = inv.STATUS === 'FINALIZADO' && totalItens > 0
-                        ? Math.round(totalItens * (1 - acuracidade / 100))
+                    // Usa o campo ITENS_DIVERGENTES que vem do backend quando finalizado
+                    const itensDivergentes = inv.STATUS === 'FINALIZADO' && inv.ITENS_DIVERGENTES !== undefined
+                        ? inv.ITENS_DIVERGENTES
                         : '-';
                     
                     return `
@@ -240,7 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <td>${formatarDataHora(inv.DT_GERACAO)}</td>
                         <td><strong>${inv.USUARIO_CRIACAO || 'Sistema'}</strong></td>
                         <td>${formatarDataHora(inv.DT_CRIACAO)}</td>
-                        <td>${totalItens}</td>
+                        <td>${inv.TOTAL_ITENS || 0}</td>
                         <td><strong>R$ ${(inv.VALOR_TOTAL_GERAL || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
                         <td><span class="status-badge status-${inv.STATUS.toLowerCase()}">${inv.STATUS}</span></td>
                         <td>${inv.ACURACIDADE ? inv.ACURACIDADE.toFixed(2) + '%' : '-'}</td>
