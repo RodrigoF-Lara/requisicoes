@@ -15,13 +15,13 @@ export default async function handler(req, res) {
 
       const saldoRes = await pool.request()
         .input("CODIGO", sql.VarChar(10), codigo)
-        .query("SELECT ISNULL(SUM(SALDO),0) AS SALDO FROM [dbo].[KARDEX_2025_EMBALAGEM] WHERE CODIGO = @CODIGO AND D_E_L_E_T_ <> '*'");
+        .query("SELECT ISNULL(SUM(SALDO),0) AS SALDO FROM [dbo].[KARDEX_2026_EMBALAGEM] WHERE CODIGO = @CODIGO AND D_E_L_E_T_ <> '*'");
 
       const mov = await pool.request()
         .input("CODIGO", sql.VarChar(10), codigo)
         .query(`
           SELECT TOP 50 ID, CODIGO, OPERACAO, QNT, USUARIO, convert(varchar, DT, 23) AS DT, convert(varchar, HR, 8) AS HR, MOTIVO, ID_TB_RESUMO
-          FROM [dbo].[KARDEX_2025]
+          FROM [dbo].[KARDEX_2026]
           WHERE CODIGO = @CODIGO AND D_E_L_E_T_ <> '*'
           ORDER BY DT DESC, HR DESC
         `);
@@ -63,8 +63,8 @@ export default async function handler(req, res) {
         const now = new Date();
         const dtParam = now;
         const hrParam = now.toTimeString().split(" ")[0];
-        const KARDEX_CONST_INT = 2025;    // para KARDEX_2025_EMBALAGEM (int)
-        const KARDEX_CONST_STR = "2025"; // para KARDEX_2025 (varchar)
+        const KARDEX_CONST_INT = 2026;    // para KARDEX_2026_EMBALAGEM (int)
+        const KARDEX_CONST_STR = "2026"; // para KARDEX_2026 (varchar)
 
         let resumoId = null;
 
@@ -82,7 +82,7 @@ export default async function handler(req, res) {
             .input("MOTIVO2", sql.VarChar(30), motivo || "")
             .input("KARDEX2", sql.Int, KARDEX_CONST_INT)
             .query(`
-              INSERT INTO [dbo].[KARDEX_2025_EMBALAGEM]
+              INSERT INTO [dbo].[KARDEX_2026_EMBALAGEM]
                 ([D_E_L_E_T_],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[USUARIO],[DT],[HR],[MOTIVO],[KARDEX])
               OUTPUT INSERTED.ID AS NEWID
               VALUES
@@ -92,7 +92,7 @@ export default async function handler(req, res) {
           if (insertEmbResult && insertEmbResult.recordset && insertEmbResult.recordset[0]) {
             resumoId = insertEmbResult.recordset[0].NEWID;
           } else {
-            throw new Error("Falha ao obter ID inserido em KARDEX_2025_EMBALAGEM");
+            throw new Error("Falha ao obter ID inserido em KARDEX_2026_EMBALAGEM");
           }
         }
 
@@ -115,7 +115,7 @@ export default async function handler(req, res) {
         else insertKardexReq.input("ID_TB_RESUMO", sql.Int, null);
 
         await insertKardexReq.query(`
-          INSERT INTO [dbo].[KARDEX_2025]
+          INSERT INTO [dbo].[KARDEX_2026]
             ([D_E_L_E_T_],[APLICATIVO],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[OPERACAO],[USUARIO],[DT],[HR],[MOTIVO],[KARDEX],[ID_TB_RESUMO])
           VALUES
             (@D_E_L_E_T_, @APLICATIVO, @CODIGO, @ENDERECO, @ARMAZEM, @QNT, @OPERACAO, @USUARIO, @DT, @HR, @MOTIVO, @KARDEX, @ID_TB_RESUMO);

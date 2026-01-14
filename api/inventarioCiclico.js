@@ -78,7 +78,7 @@ async function gerarListaInventario(req, res) {
                         k.CODIGO,
                         COUNT(*) AS TOTAL_MOVIMENTACOES,
                         SUM(ABS(k.QNT)) AS TOTAL_QUANTIDADE_MOVIMENTADA
-                    FROM [dbo].[KARDEX_2025] k
+                    FROM [dbo].[KARDEX_2026] k
                     WHERE 
                         k.DT >= DATEADD(DAY, -@DIAS, GETDATE())
                         AND k.D_E_L_E_T_ <> '*'
@@ -88,7 +88,7 @@ async function gerarListaInventario(req, res) {
                     SELECT 
                         CODIGO,
                         ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
-                    FROM [dbo].[KARDEX_2025_EMBALAGEM]
+                    FROM [dbo].[KARDEX_2026_EMBALAGEM]
                     WHERE D_E_L_E_T_ <> '*'
                     GROUP BY CODIGO
                 ),
@@ -163,7 +163,7 @@ async function gerarListaInventario(req, res) {
                         SELECT 
                             CODIGO,
                             ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
-                        FROM [dbo].[KARDEX_2025_EMBALAGEM]
+                        FROM [dbo].[KARDEX_2026_EMBALAGEM]
                         WHERE D_E_L_E_T_ <> '*'
                         GROUP BY CODIGO
                     ),
@@ -225,7 +225,7 @@ async function gerarListaInventario(req, res) {
                     SELECT 
                         CODIGO,
                         ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
-                    FROM [dbo].[KARDEX_2025_EMBALAGEM]
+                    FROM [dbo].[KARDEX_2026_EMBALAGEM]
                     WHERE D_E_L_E_T_ <> '*'
                     GROUP BY CODIGO
                     HAVING ISNULL(SUM(SALDO), 0) > 0
@@ -606,7 +606,7 @@ async function buscarProduto(req, res) {
                     SELECT 
                         CODIGO,
                         ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
-                    FROM [dbo].[KARDEX_2025_EMBALAGEM]
+                    FROM [dbo].[KARDEX_2026_EMBALAGEM]
                     WHERE D_E_L_E_T_ <> '*' AND CODIGO = @CODIGO
                     GROUP BY CODIGO
                 )
