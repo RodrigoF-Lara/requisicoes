@@ -289,20 +289,21 @@ async function gerarListaInventario(req, res) {
                     FROM [dbo].[KARDEX_2026_EMBALAGEM]
                     WHERE D_E_L_E_T_ <> '*'
                     GROUP BY CODIGO
-                    HAVING ISNULL(SUM(SALDO), 0) > 0
                 )
                 SELECT TOP (@QTD_ITENS)
                     c.CODIGO,
                     ISNULL(cp.DESCRICAO, 'SEM DESCRIÇÃO') AS DESCRICAO,
                     ISNULL(s.SALDO_ATUAL, 0) AS SALDO_ATUAL,
+                    c.CUSTO_UNITARIO AS CUSTO_UNITARIO,
                     c.CUSTO_UNITARIO AS PRECO_UNITARIO,
                     ISNULL(s.SALDO_ATUAL, 0) * c.CUSTO_UNITARIO AS VALOR_TOTAL_ESTOQUE,
                     'MAIOR_VALOR_UNITARIO' AS BLOCO,
                     0 AS TOTAL_MOVIMENTACOES
                 FROM CustoMaisRecente c
-                INNER JOIN SaldoAtual s ON c.CODIGO = s.CODIGO
+                LEFT JOIN SaldoAtual s ON c.CODIGO = s.CODIGO
                 LEFT JOIN [dbo].[CAD_PROD] cp ON c.CODIGO = cp.CODIGO
                 WHERE ${codigosBloco3.length > 0 ? `c.CODIGO NOT IN ('${codigosBloco3.join("','")}')` : '1=1'}
+                    AND ISNULL(s.SALDO_ATUAL, 0) > 0
                 ORDER BY c.CUSTO_UNITARIO DESC;
             `);
             
