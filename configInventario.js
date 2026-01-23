@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const bloco2Qtd = document.getElementById('bloco2Qtd');
     const bloco2Acuracidade = document.getElementById('bloco2Acuracidade');
     const bloco3Qtd = document.getElementById('bloco3Qtd');
+    const bloco4Qtd = document.getElementById('bloco4Qtd');
+    const bloco5Qtd = document.getElementById('bloco5Qtd');
+    const bloco5Inventarios = document.getElementById('bloco5Inventarios');
 
     // Carrega as configurações atuais ao abrir a página
     carregarConfiguracoes();
@@ -39,6 +42,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 bloco2Qtd.value = config.BLOCO2_QTD_ITENS;
                 bloco2Acuracidade.value = config.BLOCO2_ACURACIDADE_MIN;
                 bloco3Qtd.value = config.BLOCO3_QTD_ITENS;
+                bloco4Qtd.value = config.BLOCO4_QTD_ITENS || 5;
+                bloco5Qtd.value = config.BLOCO5_QTD_ITENS || 10;
+                bloco5Inventarios.value = config.BLOCO5_INVENTARIOS_ATRAS || 3;
 
                 // Atualiza o resumo
                 atualizarResumo(config);
@@ -60,6 +66,9 @@ document.addEventListener('DOMContentLoaded', function() {
             bloco2QtdItens: parseInt(bloco2Qtd.value),
             bloco2AcuracidadeMin: parseFloat(bloco2Acuracidade.value),
             bloco3QtdItens: parseInt(bloco3Qtd.value),
+            bloco4QtdItens: parseInt(bloco4Qtd.value),
+            bloco5QtdItens: parseInt(bloco5Qtd.value),
+            bloco5InventariosAtras: parseInt(bloco5Inventarios.value),
             usuario: usuario
         };
 
@@ -101,6 +110,9 @@ document.addEventListener('DOMContentLoaded', function() {
         bloco2Qtd.value = 10;
         bloco2Acuracidade.value = 95;
         bloco3Qtd.value = 3;
+        bloco4Qtd.value = 5;
+        bloco5Qtd.value = 10;
+        bloco5Inventarios.value = 3;
     }
 
     function atualizarResumo(config) {
@@ -113,6 +125,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <p><strong>Bloco 1:</strong> ${config.BLOCO1_QTD_ITENS} itens mais movimentados nos últimos ${config.BLOCO1_DIAS_MOVIMENTACAO} dias</p>
             <p><strong>Bloco 2:</strong> ${config.BLOCO2_QTD_ITENS} itens com acuracidade inferior a ${config.BLOCO2_ACURACIDADE_MIN}%</p>
             <p><strong>Bloco 3:</strong> ${config.BLOCO3_QTD_ITENS} itens com maior valor em estoque</p>
+            <p><strong>Bloco 4:</strong> ${config.BLOCO4_QTD_ITENS || 5} itens com maior valor unitário</p>
+            <p><strong>Bloco 5:</strong> ${config.BLOCO5_QTD_ITENS || 10} itens não contados nos últimos ${config.BLOCO5_INVENTARIOS_ATRAS || 3} inventários</p>
             <hr style="margin: 15px 0; border: none; border-top: 1px solid #e0e0e0;">
             <p style="font-size: 0.9em; color: #666;">
                 <strong>Última alteração:</strong> ${dataAlteracao}<br>

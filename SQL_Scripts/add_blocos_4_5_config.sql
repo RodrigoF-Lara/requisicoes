@@ -1,0 +1,72 @@
+-- Adiciona configurações para os Blocos 4 e 5
+-- Execute este script no SSMS
+
+-- Adiciona coluna BLOCO4_QTD_ITENS
+IF NOT EXISTS (
+    SELECT * FROM sys.columns 
+    WHERE object_id = OBJECT_ID(N'[dbo].[TB_CONFIG_INVENTARIO]') 
+    AND name = 'BLOCO4_QTD_ITENS'
+)
+BEGIN
+    ALTER TABLE [dbo].[TB_CONFIG_INVENTARIO]
+    ADD [BLOCO4_QTD_ITENS] INT DEFAULT 5;
+    PRINT 'Coluna BLOCO4_QTD_ITENS adicionada!';
+END
+ELSE
+BEGIN
+    PRINT 'Coluna BLOCO4_QTD_ITENS já existe';
+END
+GO
+
+-- Adiciona coluna BLOCO5_QTD_ITENS
+IF NOT EXISTS (
+    SELECT * FROM sys.columns 
+    WHERE object_id = OBJECT_ID(N'[dbo].[TB_CONFIG_INVENTARIO]') 
+    AND name = 'BLOCO5_QTD_ITENS'
+)
+BEGIN
+    ALTER TABLE [dbo].[TB_CONFIG_INVENTARIO]
+    ADD [BLOCO5_QTD_ITENS] INT DEFAULT 10;
+    PRINT 'Coluna BLOCO5_QTD_ITENS adicionada!';
+END
+ELSE
+BEGIN
+    PRINT 'Coluna BLOCO5_QTD_ITENS já existe';
+END
+GO
+
+-- Adiciona coluna BLOCO5_INVENTARIOS_ATRAS
+IF NOT EXISTS (
+    SELECT * FROM sys.columns 
+    WHERE object_id = OBJECT_ID(N'[dbo].[TB_CONFIG_INVENTARIO]') 
+    AND name = 'BLOCO5_INVENTARIOS_ATRAS'
+)
+BEGIN
+    ALTER TABLE [dbo].[TB_CONFIG_INVENTARIO]
+    ADD [BLOCO5_INVENTARIOS_ATRAS] INT DEFAULT 3;
+    PRINT 'Coluna BLOCO5_INVENTARIOS_ATRAS adicionada!';
+END
+ELSE
+BEGIN
+    PRINT 'Coluna BLOCO5_INVENTARIOS_ATRAS já existe';
+END
+GO
+
+-- Atualiza registros existentes com valores padrão (apenas se forem NULL)
+UPDATE [dbo].[TB_CONFIG_INVENTARIO]
+SET BLOCO4_QTD_ITENS = 5
+WHERE BLOCO4_QTD_ITENS IS NULL;
+
+UPDATE [dbo].[TB_CONFIG_INVENTARIO]
+SET BLOCO5_QTD_ITENS = 10
+WHERE BLOCO5_QTD_ITENS IS NULL;
+
+UPDATE [dbo].[TB_CONFIG_INVENTARIO]
+SET BLOCO5_INVENTARIOS_ATRAS = 3
+WHERE BLOCO5_INVENTARIOS_ATRAS IS NULL;
+
+PRINT 'Valores padrão aplicados!';
+GO
+
+-- Mostra o resultado final
+SELECT * FROM [dbo].[TB_CONFIG_INVENTARIO];

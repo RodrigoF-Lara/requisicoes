@@ -326,6 +326,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <li><span class="bloco-badge bloco-movimentacao">Movimentação:</span> ${blocos.movimentacao} itens</li>
                     <li><span class="bloco-badge bloco-baixa-acuracidade">Baixa Acuracidade:</span> ${blocos.baixaAcuracidade} itens</li>
                     <li><span class="bloco-badge bloco-maior-valor">Maior Valor:</span> ${blocos.maiorValor} itens</li>
+                    <li><span class="bloco-badge bloco-maior-valor-unitario">Maior Vlr Unit.:</span> ${blocos.maiorValorUnitario || 0} itens</li>
+                    <li><span class="bloco-badge bloco-nao-contado">Não Contados:</span> ${blocos.naoContado || 0} itens</li>
                 </ul>
             `;
         }
@@ -390,6 +392,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else if (item.BLOCO === 'MAIOR_VALOR') {
                         blocoTexto = 'Maior Valor';
                         blocoClass = 'bloco-maior-valor';
+                    } else if (item.BLOCO === 'MAIOR_VALOR_UNITARIO') {
+                        blocoTexto = 'Maior Vlr Unit.';
+                        blocoClass = 'bloco-maior-valor-unitario';
+                    } else if (item.BLOCO === 'NAO_CONTADO') {
+                        blocoTexto = 'Não Contado';
+                        blocoClass = 'bloco-nao-contado';
                     }
                     
                     return `
@@ -535,7 +543,9 @@ document.addEventListener('DOMContentLoaded', function() {
             inventarioAtual.blocos = {
                 movimentacao: inventarioAtual.itens.filter(i => i.BLOCO === 'MOVIMENTACAO').length,
                 baixaAcuracidade: inventarioAtual.itens.filter(i => i.BLOCO === 'BAIXA_ACURACIDADE').length,
-                maiorValor: inventarioAtual.itens.filter(i => i.BLOCO === 'MAIOR_VALOR').length
+                maiorValor: inventarioAtual.itens.filter(i => i.BLOCO === 'MAIOR_VALOR').length,
+                maiorValorUnitario: inventarioAtual.itens.filter(i => i.BLOCO === 'MAIOR_VALOR_UNITARIO').length,
+                naoContado: inventarioAtual.itens.filter(i => i.BLOCO === 'NAO_CONTADO').length
             };
         }
 
@@ -728,6 +738,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="bloco-item maior-valor">
                         <strong>Maior Valor:</strong> ${blocos.maiorValor} itens
                     </div>
+                    <div class="bloco-item maior-valor-unitario">
+                        <strong>Maior Vlr Unit.:</strong> ${blocos.maiorValorUnitario || 0} itens
+                    </div>
+                    <div class="bloco-item nao-contado">
+                        <strong>Não Contados:</strong> ${blocos.naoContado || 0} itens
+                    </div>
                 </div>
             `;
         }
@@ -862,6 +878,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (item.BLOCO === 'MOVIMENTACAO') blocoTexto = 'Movimentação';
             else if (item.BLOCO === 'BAIXA_ACURACIDADE') blocoTexto = 'Baixa Acuracidade';
             else if (item.BLOCO === 'MAIOR_VALOR') blocoTexto = 'Maior Valor';
+            else if (item.BLOCO === 'MAIOR_VALOR_UNITARIO') blocoTexto = 'Maior Vlr Unitário';
+            else if (item.BLOCO === 'NAO_CONTADO') blocoTexto = 'Não Contado';
 
             return {
                 '#': index + 1,
@@ -927,6 +945,8 @@ document.addEventListener('DOMContentLoaded', function() {
             { 'Campo': 'Movimentação', 'Valor': blocos?.movimentacao || 0 },
             { 'Campo': 'Baixa Acuracidade', 'Valor': blocos?.baixaAcuracidade || 0 },
             { 'Campo': 'Maior Valor', 'Valor': blocos?.maiorValor || 0 },
+            { 'Campo': 'Maior Vlr Unitário', 'Valor': blocos?.maiorValorUnitario || 0 },
+            { 'Campo': 'Não Contados', 'Valor': blocos?.naoContado || 0 },
             { 'Campo': '', 'Valor': '' },
             { 'Campo': 'Valor Total em Estoque', 'Valor': valorTotalGeral || 0 }
         ];
@@ -934,7 +954,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const wsInfo = XLSX.utils.json_to_sheet(infoData);
         wsInfo['!cols'] = [{ wch: 25 }, { wch: 50 }];
 
-        const valorTotalCell = XLSX.utils.encode_cell({ r: 11, c: 1 });
+        const valorTotalCell = XLSX.utils.encode_cell({ r: 13, c: 1 });
         if (wsInfo[valorTotalCell] && typeof wsInfo[valorTotalCell].v === 'number') {
             wsInfo[valorTotalCell].z = 'R$ #,##0.00';
         }

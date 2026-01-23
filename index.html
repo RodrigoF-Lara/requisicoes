@@ -1,57 +1,63 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login - SGC Customic</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body class="login-body">
-  <div class="login-container">
-    <div class="login-card">
-      <h2>SGC - Sistema de Gestão Customic</h2>
-      <form id="loginForm">
-        <div class="form-group">
-          <input type="text" id="usuario" placeholder="Usuário" required />
-        </div>
-        <div class="form-group">
-          <input type="password" id="pw" placeholder="Senha" required />
-        </div>
-        <button type="submit" class="btn-login">Entrar</button>
-      </form>
-      <div class="login-status" id="loginStatus"></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - SGC Customic</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="login-body">
+    <div class="login-container">
+      <div class="login-card">
+        <h2>SGC - Sistema de Gestão Customic</h2>
+        <form id="loginForm">
+          <div class="form-group">
+            <input type="text" id="usuario" placeholder="Usuário" required />
+          </div>
+          <div class="form-group">
+            <input type="password" id="pw" placeholder="Senha" required />
+          </div>
+          <button type="submit" class="btn-login">Entrar</button>
+        </form>
+        <div class="login-status" id="loginStatus"></div>
+      </div>
     </div>
-  </div>
-  <script>
-    document.getElementById('loginForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const usuario = document.getElementById('usuario').value;
-      const pw = document.getElementById('pw').value;
-      const status = document.getElementById('loginStatus');
-      status.style.color = "#222";
-      status.textContent = "Verificando...";
+    <script>
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          const usuario = document.getElementById("usuario").value;
+          const pw = document.getElementById("pw").value;
+          const status = document.getElementById("loginStatus");
+          status.style.color = "#222";
+          status.textContent = "Verificando...";
 
-      try {
-        const res = await fetch("/api/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ usuario, pw })
+          try {
+            const res = await fetch("/api/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ usuario, pw }),
+            });
+            const data = await res.json();
+            if (res.ok && data.usuario) {
+              const loginTime = new Date().toLocaleString("pt-BR");
+              localStorage.setItem("loginTime", loginTime);
+              localStorage.setItem(
+                "userName",
+                `${data.usuario.F_NAME} ${data.usuario.L_NAME}`
+              );
+              window.location.href = "menu.html";
+            } else {
+              status.style.color = "#c00";
+              status.textContent =
+                data.message || "Usuário ou senha inválidos.";
+            }
+          } catch (err) {
+            status.style.color = "#c00";
+            status.textContent = "Erro de conexão. Tente novamente.";
+          }
         });
-        const data = await res.json();
-        if (res.ok && data.usuario) {
-          const loginTime = new Date().toLocaleString('pt-BR');
-          localStorage.setItem('loginTime', loginTime);
-          localStorage.setItem('userName', `${data.usuario.F_NAME} ${data.usuario.L_NAME}`);
-          window.location.href = "menu.html";
-        } else {
-          status.style.color = "#c00";
-          status.textContent = data.message || "Usuário ou senha inválidos.";
-        }
-      } catch (err) {
-        status.style.color = "#c00";
-        status.textContent = "Erro de conexão. Tente novamente.";
-      }
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>

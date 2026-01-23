@@ -499,6 +499,16 @@ tbody tr:hover {
     color: #0f5132;
 }
 
+.bloco-maior-valor-unitario {
+    background-color: #cff4fc;
+    color: #055160;
+}
+
+.bloco-nao-contado {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
 /* Estilos para valor total */
 .valor-total-geral {
     font-size: 1.3em;

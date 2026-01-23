@@ -58,13 +58,13 @@ async function gerarListaInventario(req, res) {
         const BLOCO2_QTD = config.BLOCO2_QTD_ITENS;
         const BLOCO2_ACURACIDADE = config.BLOCO2_ACURACIDADE_MIN;
         const BLOCO3_QTD = config.BLOCO3_QTD_ITENS;
+        const BLOCO4_QTD = config.BLOCO4_QTD_ITENS || 5;
+        const BLOCO5_QTD = config.BLOCO5_QTD_ITENS || 10;
+        const BLOCO5_INV_ATRAS = config.BLOCO5_INVENTARIOS_ATRAS || 3;
 
         console.log('📋 Configurações carregadas:', {
-            BLOCO1_QTD,
-            BLOCO1_DIAS,
-            BLOCO2_QTD,
-            BLOCO2_ACURACIDADE,
-            BLOCO3_QTD
+            BLOCO1_QTD, BLOCO1_DIAS, BLOCO2_QTD, BLOCO2_ACURACIDADE, 
+            BLOCO3_QTD, BLOCO4_QTD, BLOCO5_QTD, BLOCO5_INV_ATRAS
         });
         
         // BLOCO 1: Mais movimentados (usando configuração)
@@ -259,11 +259,128 @@ async function gerarListaInventario(req, res) {
             console.error('❌ Erro ao buscar bloco 3:', err);
         }
 
+        const codigosBloco3 = todosItens.map(item => item.CODIGO);
+
+        // BLOCO 4: Maior valor unitário
+        try {
+            const bloco4 = await pool.request()
+                .input('QTD_ITENS', sql.Int, BLOCO4_QTD)
+                .query(`
+                WITH UltimaNFPorProduto AS (
+                    SELECT 
+                        np.PROD_COD_PROD AS CODIGO,
+                        np.PROD_CUSTO_FISCAL_MEDIO_NOVO AS CUSTO_UNITARIO,
+                        nc.CAB_DT_EMISSAO,
+                        ROW_NUMBER() OVER (PARTITION BY np.PROD_COD_PROD ORDER BY nc.CAB_DT_EMISSAO DESC) AS RN
+                    FROM [dbo].[NF_PRODUTOS] np
+                    INNER JOIN [dbo].[NF_CABECALHO] nc ON np.PROD_ID_NF = nc.CAB_ID_NF
+                    WHERE np.PROD_CUSTO_FISCAL_MEDIO_NOVO IS NOT NULL 
+                        AND np.PROD_CUSTO_FISCAL_MEDIO_NOVO > 0
+                ),
+                CustoMaisRecente AS (
+                    SELECT CODIGO, CUSTO_UNITARIO
+                    FROM UltimaNFPorProduto
+                    WHERE RN = 1
+                ),
+                SaldoAtual AS (
+                    SELECT 
+                        CODIGO,
+                        ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
+                    FROM [dbo].[KARDEX_2026_EMBALAGEM]
+                    WHERE D_E_L_E_T_ <> '*'
+                    GROUP BY CODIGO
+                    HAVING ISNULL(SUM(SALDO), 0) > 0
+                )
+                SELECT TOP (@QTD_ITENS)
+                    c.CODIGO,
+                    ISNULL(cp.DESCRICAO, 'SEM DESCRIÇÃO') AS DESCRICAO,
+                    ISNULL(s.SALDO_ATUAL, 0) AS SALDO_ATUAL,
+                    c.CUSTO_UNITARIO AS PRECO_UNITARIO,
+                    ISNULL(s.SALDO_ATUAL, 0) * c.CUSTO_UNITARIO AS VALOR_TOTAL_ESTOQUE,
+                    'MAIOR_VALOR_UNITARIO' AS BLOCO,
+                    0 AS TOTAL_MOVIMENTACOES
+                FROM CustoMaisRecente c
+                INNER JOIN SaldoAtual s ON c.CODIGO = s.CODIGO
+                LEFT JOIN [dbo].[CAD_PROD] cp ON c.CODIGO = cp.CODIGO
+                WHERE ${codigosBloco3.length > 0 ? `c.CODIGO NOT IN ('${codigosBloco3.join("','")}')` : '1=1'}
+                ORDER BY c.CUSTO_UNITARIO DESC;
+            `);
+            
+            console.log(`✅ Bloco 4 retornou ${bloco4.recordset.length} itens`);
+            todosItens.push(...bloco4.recordset);
+        } catch (err) {
+            console.error('❌ Erro ao buscar bloco 4:', err);
+        }
+
+        const codigosBloco4 = todosItens.map(item => item.CODIGO);
+
+        // BLOCO 5: Não contados nos últimos N inventários
+        try {
+            const bloco5 = await pool.request()
+                .input('QTD_ITENS', sql.Int, BLOCO5_QTD)
+                .input('INVENTARIOS_ATRAS', sql.Int, BLOCO5_INV_ATRAS)
+                .query(`
+                WITH UltimosInventarios AS (
+                    SELECT TOP (@INVENTARIOS_ATRAS) ID_INVENTARIO
+                    FROM [dbo].[TB_INVENTARIO_CICLICO]
+                    WHERE STATUS = 'FINALIZADO'
+                    ORDER BY ID_INVENTARIO DESC
+                ),
+                ItensContadosRecentemente AS (
+                    SELECT DISTINCT ici.CODIGO
+                    FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] ici
+                    WHERE ici.ID_INVENTARIO IN (SELECT ID_INVENTARIO FROM UltimosInventarios)
+                        AND ici.CONTAGEM_FISICA IS NOT NULL
+                        AND ici.CONTAGEM_FISICA >= 0
+                ),
+                SaldoAtual AS (
+                    SELECT 
+                        CODIGO,
+                        ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
+                    FROM [dbo].[KARDEX_2026_EMBALAGEM]
+                    WHERE D_E_L_E_T_ <> '*'
+                    GROUP BY CODIGO
+                    HAVING ISNULL(SUM(SALDO), 0) > 0
+                ),
+                CustoUnitario AS (
+                    SELECT 
+                        np.PROD_COD_PROD AS CODIGO,
+                        np.PROD_CUSTO_FISCAL_MEDIO_NOVO AS CUSTO_UNIT,
+                        ROW_NUMBER() OVER (PARTITION BY np.PROD_COD_PROD ORDER BY nc.CAB_DT_EMISSAO DESC) AS RN
+                    FROM [dbo].[NF_PRODUTOS] np
+                    INNER JOIN [dbo].[NF_CABECALHO] nc ON np.PROD_ID_NF = nc.CAB_ID_NF
+                    WHERE np.PROD_CUSTO_FISCAL_MEDIO_NOVO IS NOT NULL 
+                        AND np.PROD_CUSTO_FISCAL_MEDIO_NOVO > 0
+                )
+                SELECT TOP (@QTD_ITENS)
+                    s.CODIGO,
+                    ISNULL(cp.DESCRICAO, 'SEM DESCRIÇÃO') AS DESCRICAO,
+                    s.SALDO_ATUAL,
+                    ISNULL(cu.CUSTO_UNIT, 0) AS PRECO_UNITARIO,
+                    s.SALDO_ATUAL * ISNULL(cu.CUSTO_UNIT, 0) AS VALOR_TOTAL_ESTOQUE,
+                    'NAO_CONTADO' AS BLOCO,
+                    0 AS TOTAL_MOVIMENTACOES
+                FROM SaldoAtual s
+                LEFT JOIN [dbo].[CAD_PROD] cp ON s.CODIGO = cp.CODIGO
+                LEFT JOIN CustoUnitario cu ON s.CODIGO = cu.CODIGO AND cu.RN = 1
+                WHERE s.CODIGO NOT IN (SELECT CODIGO FROM ItensContadosRecentemente)
+                    AND ${codigosBloco4.length > 0 ? `s.CODIGO NOT IN ('${codigosBloco4.join("','")}')` : '1=1'}
+                ORDER BY s.SALDO_ATUAL * ISNULL(cu.CUSTO_UNIT, 0) DESC;
+            `);
+            
+            console.log(`✅ Bloco 5 retornou ${bloco5.recordset.length} itens`);
+            todosItens.push(...bloco5.recordset);
+        } catch (err) {
+            console.error('❌ Erro ao buscar bloco 5:', err);
+        }
+
         // Conta itens por bloco
         const blocosCont = {
             movimentacao: todosItens.filter(i => i.BLOCO === 'MOVIMENTACAO').length,
             baixaAcuracidade: todosItens.filter(i => i.BLOCO === 'BAIXA_ACURACIDADE').length,
-            maiorValor: todosItens.filter(i => i.BLOCO === 'MAIOR_VALOR').length
+            maiorValor: todosItens.filter(i => i.BLOCO === 'MAIOR_VALOR').length,
+            maiorValorUnitario: todosItens.filter(i => i.BLOCO === 'MAIOR_VALOR_UNITARIO').length,
+            naoContado: todosItens.filter(i => i.BLOCO === 'NAO_CONTADO').length
         };
 
         if (todosItens.length === 0) {
@@ -281,7 +398,7 @@ async function gerarListaInventario(req, res) {
         return res.status(200).json({
             itens: todosItens,
             dataGeracao: new Date().toISOString(),
-            criterio: `Bloco 1: ${blocosCont.movimentacao} mais movimentados (${BLOCO1_DIAS} dias) | Bloco 2: ${blocosCont.baixaAcuracidade} com acuracidade < ${BLOCO2_ACURACIDADE}% | Bloco 3: ${blocosCont.maiorValor} maior valor`,
+            criterio: `Bloco 1: ${blocosCont.movimentacao} movimentados | Bloco 2: ${blocosCont.baixaAcuracidade} acurac.<${BLOCO2_ACURACIDADE}% | Bloco 3: ${blocosCont.maiorValor} maior valor | Bloco 4: ${blocosCont.maiorValorUnitario} maior vlr unit. | Bloco 5: ${blocosCont.naoContado} não contados`,
             blocos: blocosCont,
             valorTotalGeral: valorTotalGeral,
             configuracao: {
@@ -289,7 +406,10 @@ async function gerarListaInventario(req, res) {
                 bloco1Dias: BLOCO1_DIAS,
                 bloco2Qtd: BLOCO2_QTD,
                 bloco2Acuracidade: BLOCO2_ACURACIDADE,
-                bloco3Qtd: BLOCO3_QTD
+                bloco3Qtd: BLOCO3_QTD,
+                bloco4Qtd: BLOCO4_QTD,
+                bloco5Qtd: BLOCO5_QTD,
+                bloco5InventariosAtras: BLOCO5_INV_ATRAS
             }
         });
 

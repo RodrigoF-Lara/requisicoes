@@ -47,6 +47,9 @@ async function atualizarConfiguracao(req, res) {
             bloco2QtdItens, 
             bloco2AcuracidadeMin, 
             bloco3QtdItens,
+            bloco4QtdItens,
+            bloco5QtdItens,
+            bloco5InventariosAtras,
             usuario 
         } = body;
 
@@ -58,6 +61,9 @@ async function atualizarConfiguracao(req, res) {
             .input('BLOCO2_QTD', sql.Int, bloco2QtdItens)
             .input('BLOCO2_ACUR', sql.Float, bloco2AcuracidadeMin)
             .input('BLOCO3_QTD', sql.Int, bloco3QtdItens)
+            .input('BLOCO4_QTD', sql.Int, bloco4QtdItens)
+            .input('BLOCO5_QTD', sql.Int, bloco5QtdItens)
+            .input('BLOCO5_INV', sql.Int, bloco5InventariosAtras)
             .input('USUARIO', sql.NVarChar, usuario)
             .query(`
                 UPDATE [dbo].[TB_CONFIG_INVENTARIO]
@@ -67,6 +73,9 @@ async function atualizarConfiguracao(req, res) {
                     BLOCO2_QTD_ITENS = @BLOCO2_QTD,
                     BLOCO2_ACURACIDADE_MIN = @BLOCO2_ACUR,
                     BLOCO3_QTD_ITENS = @BLOCO3_QTD,
+                    BLOCO4_QTD_ITENS = @BLOCO4_QTD,
+                    BLOCO5_QTD_ITENS = @BLOCO5_QTD,
+                    BLOCO5_INVENTARIOS_ATRAS = @BLOCO5_INV,
                     USUARIO_ALTERACAO = @USUARIO,
                     DT_ALTERACAO = GETDATE()
                 WHERE ID_CONFIG = (SELECT TOP 1 ID_CONFIG FROM [dbo].[TB_CONFIG_INVENTARIO] ORDER BY ID_CONFIG DESC);
