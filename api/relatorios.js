@@ -40,13 +40,17 @@ async function relatorioBaixaPorPeriodo(req, res) {
 
         const pool = await getConnection();
         
-        // Adiciona um dia ao dataFim para incluir todo o dia
-        const dataFimAjustada = new Date(dataFim);
+        // Converte strings para Date corretamente
+        const dataInicioObj = new Date(dataInicio + 'T00:00:00Z');
+        const dataFimObj = new Date(dataFim + 'T00:00:00Z');
+        
+        // Adiciona um dia ao dataFim para incluir todo o dia (23:59:59)
+        const dataFimAjustada = new Date(dataFimObj);
         dataFimAjustada.setDate(dataFimAjustada.getDate() + 1);
         
         // Primeiro, vamos verificar se há dados na tabela
         const verificacao = await pool.request()
-            .input('DATA_INICIO', sql.Date, new Date(dataInicio))
+            .input('DATA_INICIO', sql.Date, dataInicioObj)
             .input('DATA_FIM', sql.Date, dataFimAjustada)
             .query(`
                 SELECT COUNT(*) as TOTAL
@@ -61,7 +65,7 @@ async function relatorioBaixaPorPeriodo(req, res) {
         console.log('📊 Total de registros encontrados:', verificacao.recordset[0].TOTAL);
         
         const result = await pool.request()
-            .input('DATA_INICIO', sql.Date, new Date(dataInicio))
+            .input('DATA_INICIO', sql.Date, dataInicioObj)
             .input('DATA_FIM', sql.Date, dataFimAjustada)
             .query(`
                 SELECT 
@@ -104,7 +108,9 @@ async function relatorioBaixaPorPeriodo(req, res) {
             debug: {
                 totalRegistros: verificacao.recordset[0].TOTAL,
                 dataInicioRecebida: dataInicio,
-                dataFimRecebida: dataFim
+                dataFimRecebida: dataFim,
+                dataInicioProcessada: dataInicioObj.toISOString(),
+                dataFimProcessada: dataFimAjustada.toISOString()
             }
         });
 
