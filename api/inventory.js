@@ -22,7 +22,7 @@ export default async function handler(req, res) {
         .query(`
           SELECT TOP 50 ID, CODIGO, OPERACAO, QNT, USUARIO, convert(varchar, DT, 23) AS DT, convert(varchar, HR, 8) AS HR, MOTIVO, ID_TB_RESUMO
           FROM [dbo].[KARDEX_2026]
-          WHERE CODIGO = @CODIGO AND D_E_L_E_T_ <> '*'
+          WHERE CODIGO = @CODIGO AND D_E_L_E_T_ <> '*' AND USUARIO <> 'BJULHAO'
           ORDER BY DT DESC, HR DESC
         `);
 

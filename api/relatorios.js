@@ -49,6 +49,7 @@ async function relatorioBaixaPorPeriodo(req, res) {
                 FROM [dbo].[KARDEX_2026] k
                 WHERE k.D_E_L_E_T_ <> '*'
                     AND k.OPERACAO = 'SAÍDA'
+                    AND k.USUARIO <> 'BJULHAO'
                     AND k.DT >= @DATA_INICIO
                     AND k.DT <= @DATA_FIM
             `);
@@ -70,6 +71,7 @@ async function relatorioBaixaPorPeriodo(req, res) {
                 LEFT JOIN [dbo].[CAD_PROD] cp ON k.CODIGO = cp.CODIGO
                 WHERE k.D_E_L_E_T_ <> '*'
                     AND k.OPERACAO = 'SAÍDA'
+                    AND k.USUARIO <> 'BJULHAO'
                     AND k.DT >= @DATA_INICIO
                     AND k.DT <= @DATA_FIM
                 GROUP BY k.CODIGO, cp.DESCRICAO
