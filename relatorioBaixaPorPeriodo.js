@@ -103,8 +103,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('totalMovimentacoes').textContent = 
             totalizadores.totalMovimentacoes.toLocaleString('pt-BR');
         
-        const inicioFormatado = formatarData(totalizadores.periodo.inicio);
-        const fimFormatado = formatarData(totalizadores.periodo.fim);
+        // Usa os valores dos inputs (o que o usuário realmente selecionou)
+        const inicioFormatado = formatarData(dataInicio.value);
+        const fimFormatado = formatarData(dataFim.value);
         document.getElementById('periodoInfo').textContent = 
             `${inicioFormatado} a ${fimFormatado}`;
     }
