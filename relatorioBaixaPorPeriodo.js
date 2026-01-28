@@ -42,18 +42,37 @@ document.addEventListener('DOMContentLoaded', function() {
         gerarRelatorioBtn.disabled = true;
 
         try {
-            const response = await fetch(
-                `/api/relatorios?acao=baixaPorPeriodo&dataInicio=${inicio}&dataFim=${fim}`
-            );
+            const url = `/api/relatorios?acao=baixaPorPeriodo&dataInicio=${inicio}&dataFim=${fim}`;
+            console.log('🔍 URL da requisição:', url);
+            console.log('📅 Período:', { inicio, fim });
+
+            const response = await fetch(url);
 
             if (!response.ok) {
-                throw new Error('Erro ao buscar dados');
+                const errorData = await response.json();
+                console.error('❌ Erro na resposta:', errorData);
+                throw new Error(errorData.message || 'Erro ao buscar dados');
             }
 
             const resultado = await response.json();
             
+            console.log('✅ Resultado recebido:', resultado);
+            console.log('📊 Debug:', resultado.debug);
+            
             dadosRelatorio = resultado.dados;
             totalizadores = resultado.totalizadores;
+
+            if (dadosRelatorio.length === 0) {
+                mostrarMensagem(
+                    `⚠️ Nenhum registro encontrado para o período selecionado. ` +
+                    `Total de registros na base: ${resultado.debug?.totalRegistros || 0}`, 
+                    'error'
+                );
+                totalizadoresContainer.style.display = 'none';
+                resultadosContainer.style.display = 'none';
+                gerarRelatorioBtn.disabled = false;
+                return;
+            }
 
             renderizarTotalizadores();
             renderizarTabela();
@@ -67,8 +86,8 @@ document.addEventListener('DOMContentLoaded', function() {
             );
 
         } catch (error) {
-            console.error('Erro ao gerar relatório:', error);
-            mostrarMensagem('Erro ao gerar relatório. Tente novamente.', 'error');
+            console.error('❌ Erro ao gerar relatório:', error);
+            mostrarMensagem(`Erro ao gerar relatório: ${error.message}`, 'error');
         } finally {
             gerarRelatorioBtn.disabled = false;
         }

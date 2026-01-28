@@ -25,6 +25,21 @@ async function relatorioBaixaPorPeriodo(req, res) {
 
         const pool = await getConnection();
         
+        // Primeiro, vamos verificar se há dados na tabela
+        const verificacao = await pool.request()
+            .input('DATA_INICIO', sql.Date, dataInicio)
+            .input('DATA_FIM', sql.Date, dataFim)
+            .query(`
+                SELECT COUNT(*) as TOTAL
+                FROM [dbo].[KARDEX_2026] k
+                WHERE k.D_E_L_E_T_ <> '*'
+                    AND k.OPERACAO = 'SAIDA'
+                    AND k.DT >= @DATA_INICIO
+                    AND k.DT <= @DATA_FIM
+            `);
+
+        console.log('📊 Total de registros encontrados:', verificacao.recordset[0].TOTAL);
+        
         const result = await pool.request()
             .input('DATA_INICIO', sql.Date, dataInicio)
             .input('DATA_FIM', sql.Date, dataFim)
@@ -46,9 +61,13 @@ async function relatorioBaixaPorPeriodo(req, res) {
                 ORDER BY TOTAL_SAIDAS DESC
             `);
 
+        console.log('📦 Produtos agrupados:', result.recordset.length);
+
         const totalSaidas = result.recordset.reduce((acc, item) => acc + item.TOTAL_SAIDAS, 0);
         const totalProdutos = result.recordset.length;
         const totalMovimentacoes = result.recordset.reduce((acc, item) => acc + item.QUANTIDADE_MOVIMENTACOES, 0);
+
+        console.log('💰 Total de saídas:', totalSaidas);
 
         return res.status(200).json({
             dados: result.recordset,
@@ -60,14 +79,20 @@ async function relatorioBaixaPorPeriodo(req, res) {
                     inicio: dataInicio,
                     fim: dataFim
                 }
+            },
+            debug: {
+                totalRegistros: verificacao.recordset[0].TOTAL,
+                dataInicioRecebida: dataInicio,
+                dataFimRecebida: dataFim
             }
         });
 
     } catch (err) {
-        console.error("Erro ao gerar relatório de baixa:", err);
+        console.error("❌ Erro ao gerar relatório de baixa:", err);
         return res.status(500).json({ 
             message: "Erro ao gerar relatório", 
-            error: err.message 
+            error: err.message,
+            stack: err.stack
         });
     }
 }
