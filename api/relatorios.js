@@ -1,16 +1,31 @@
 import { getConnection } from "./db.js";
 import sql from "mssql";
 
+// Habilitar CORS
+const setCorsHeaders = (res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+};
+
 export default async function handler(req, res) {
+    setCorsHeaders(res);
+
+    // Tratamento de OPTIONS para preflight
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     const { acao } = req.query;
 
     if (req.method === "GET") {
         if (acao === 'baixaPorPeriodo') {
             return await relatorioBaixaPorPeriodo(req, res);
         }
+        return res.status(400).json({ message: "Ação não reconhecida" });
     }
 
-    return res.status(400).json({ message: "Ação não reconhecida" });
+    return res.status(405).json({ message: "Método não permitido" });
 }
 
 async function relatorioBaixaPorPeriodo(req, res) {
