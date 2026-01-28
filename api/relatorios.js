@@ -40,13 +40,18 @@ async function relatorioBaixaPorPeriodo(req, res) {
 
         const pool = await getConnection();
         
-        // Converte strings para Date corretamente
+        // Converte strings para Date corretamente SEM subtrair dias
         const dataInicioObj = new Date(dataInicio + 'T00:00:00Z');
         const dataFimObj = new Date(dataFim + 'T00:00:00Z');
         
-        // Adiciona um dia ao dataFim para incluir todo o dia (23:59:59)
+        // Apenas adiciona 1 dia ao dataFim para incluir todo o último dia (até 23:59:59)
         const dataFimAjustada = new Date(dataFimObj);
         dataFimAjustada.setDate(dataFimAjustada.getDate() + 1);
+        
+        console.log('📅 Data Início (recebida):', dataInicio);
+        console.log('📅 Data Fim (recebida):', dataFim);
+        console.log('📅 Data Início (processada):', dataInicioObj.toISOString());
+        console.log('📅 Data Fim Ajustada (processada):', dataFimAjustada.toISOString());
         
         // Primeiro, vamos verificar se há dados na tabela
         const verificacao = await pool.request()
