@@ -358,7 +358,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function formatarData(dataString) {
         if (!dataString) return '-';
-        const data = new Date(dataString + 'T00:00:00');
+        // Remove 'T00:00:00' se existir e formata corretamente
+        const dataParts = dataString.split('T')[0]; // Pega apenas YYYY-MM-DD
+        const data = new Date(dataParts + 'T00:00:00Z'); // Adiciona Z para UTC
         return data.toLocaleDateString('pt-BR');
     }
 

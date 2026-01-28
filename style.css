@@ -718,3 +718,34 @@ tbody tr:hover {
         gap: 10px;
     }
 }
+
+/* =================================================================== */
+/* ESTILOS PARA INPUTS DE DATA (RELATÓRIOS)                          */
+/* =================================================================== */
+.filter-container input[type="date"] {
+    font-size: 16px;
+    padding: 12px;
+    height: 45px;
+    border: 1px solid var(--cor-cinza-borda);
+    border-radius: 4px;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+}
+
+.filter-container input[type="date"]:focus {
+    outline: none;
+    border-color: var(--cor-principal);
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.filter-container label {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--cor-texto);
+    display: block;
+    margin-bottom: 8px;
+}
