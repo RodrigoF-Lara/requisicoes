@@ -40,25 +40,29 @@ async function relatorioBaixaPorPeriodo(req, res) {
 
         const pool = await getConnection();
         
+        // Adiciona um dia ao dataFim para incluir todo o dia
+        const dataFimAjustada = new Date(dataFim);
+        dataFimAjustada.setDate(dataFimAjustada.getDate() + 1);
+        
         // Primeiro, vamos verificar se há dados na tabela
         const verificacao = await pool.request()
-            .input('DATA_INICIO', sql.Date, dataInicio)
-            .input('DATA_FIM', sql.Date, dataFim)
+            .input('DATA_INICIO', sql.Date, new Date(dataInicio))
+            .input('DATA_FIM', sql.Date, dataFimAjustada)
             .query(`
                 SELECT COUNT(*) as TOTAL
                 FROM [dbo].[KARDEX_2026] k
                 WHERE k.D_E_L_E_T_ <> '*'
                     AND k.OPERACAO = 'SAÍDA'
-                    AND k.USUARIO <> 'BJULHAO'
+                    AND k.USUARIO <> 'BEATRIZ JULHAO'
                     AND k.DT >= @DATA_INICIO
-                    AND k.DT <= @DATA_FIM
+                    AND k.DT < @DATA_FIM
             `);
 
         console.log('📊 Total de registros encontrados:', verificacao.recordset[0].TOTAL);
         
         const result = await pool.request()
-            .input('DATA_INICIO', sql.Date, dataInicio)
-            .input('DATA_FIM', sql.Date, dataFim)
+            .input('DATA_INICIO', sql.Date, new Date(dataInicio))
+            .input('DATA_FIM', sql.Date, dataFimAjustada)
             .query(`
                 SELECT 
                     k.CODIGO,
@@ -71,9 +75,9 @@ async function relatorioBaixaPorPeriodo(req, res) {
                 LEFT JOIN [dbo].[CAD_PROD] cp ON k.CODIGO = cp.CODIGO
                 WHERE k.D_E_L_E_T_ <> '*'
                     AND k.OPERACAO = 'SAÍDA'
-                    AND k.USUARIO <> 'BJULHAO'
+                    AND k.USUARIO <> 'BEATRIZ JULHAO'
                     AND k.DT >= @DATA_INICIO
-                    AND k.DT <= @DATA_FIM
+                    AND k.DT < @DATA_FIM
                 GROUP BY k.CODIGO, cp.DESCRICAO
                 ORDER BY TOTAL_SAIDAS DESC
             `);
