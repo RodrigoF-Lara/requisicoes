@@ -673,3 +673,48 @@ tbody tr:hover {
         margin-left: 0 !important;
     }
 }
+
+/* =================================================================== */
+/* ESTILOS PARA RELATÓRIOS                                            */
+/* =================================================================== */
+.table-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.table-actions h2 {
+    margin: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.table-actions div {
+    display: flex;
+    gap: 10px;
+}
+
+.total-row {
+    background-color: #34495e !important;
+    color: white !important;
+    font-weight: bold;
+}
+
+.total-row td {
+    border-color: #2c3e50 !important;
+    padding: 10px 4px;
+}
+
+/* Responsividade para cards de totalizadores */
+@media (max-width: 768px) {
+    .estatisticas-inventario {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .table-actions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+}
