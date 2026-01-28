@@ -361,8 +361,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!dataString) return '-';
         // Remove 'T00:00:00' se existir e formata corretamente
         const dataParts = dataString.split('T')[0]; // Pega apenas YYYY-MM-DD
-        const data = new Date(dataParts + 'T00:00:00Z'); // Adiciona Z para UTC
-        return data.toLocaleDateString('pt-BR');
+        const [ano, mes, dia] = dataParts.split('-');
+        return `${dia}/${mes}/${ano}`;
     }
 
     function mostrarMensagem(mensagem, tipo) {
