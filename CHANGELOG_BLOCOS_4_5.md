@@ -8,12 +8,14 @@
 ## ✨ Novos Recursos
 
 ### Bloco 4: Maior Valor Unitário
+
 - **Descrição:** Seleciona produtos com maior custo unitário (não valor total em estoque)
 - **Configurável:** Quantidade de itens
 - **Lógica:** Pega o custo da última nota fiscal de cada produto e ordena do maior para o menor
 - **Uso:** Ideal para controle rigoroso de itens de alto valor unitário
 
 ### Bloco 5: Não Contados Recentemente
+
 - **Descrição:** Identifica produtos que não foram contados nos últimos N inventários finalizados
 - **Configurável:** Quantidade de itens + Número de inventários para considerar
 - **Lógica:** Busca produtos com saldo em estoque que não aparecem nos últimos N inventários finalizados
@@ -24,15 +26,18 @@
 ## 📁 Arquivos Modificados
 
 ### SQL
+
 - ✅ `SQL_Scripts/add_blocos_4_5_config.sql` - Script para adicionar colunas na configuração
 
 ### Frontend (HTML/CSS/JS)
+
 - ✅ `configInventario.html` - Campos de configuração dos Blocos 4 e 5
 - ✅ `configInventario.js` - Lógica de salvamento/carregamento das configurações
 - ✅ `inventarioCiclico.js` - Renderização e exportação com novos blocos
 - ✅ `style.css` - Classes CSS para badges dos Blocos 4 e 5
 
 ### Backend (API)
+
 - ✅ `api/configInventario.js` - Atualização para salvar/recuperar BLOCO4 e BLOCO5
 - ✅ `api/inventarioCiclico.js` - Queries SQL para gerar Blocos 4 e 5
 
@@ -41,6 +46,7 @@
 ## 🗄️ Alterações no Banco de Dados
 
 ### Novas Colunas em TB_CONFIG_INVENTARIO
+
 ```sql
 BLOCO4_QTD_ITENS INT DEFAULT 5
 BLOCO5_QTD_ITENS INT DEFAULT 10
@@ -52,6 +58,7 @@ BLOCO5_INVENTARIOS_ATRAS INT DEFAULT 3
 ## 🎯 Lógica dos Blocos
 
 ### Bloco 4: Maior Valor Unitário
+
 ```sql
 -- Pega produtos com maior custo unitário (última NF)
 -- Ordena por CUSTO_UNITARIO DESC
@@ -59,6 +66,7 @@ BLOCO5_INVENTARIOS_ATRAS INT DEFAULT 3
 ```
 
 ### Bloco 5: Não Contados
+
 ```sql
 -- Busca últimos N inventários finalizados
 -- Identifica itens contados nesses inventários
@@ -73,13 +81,13 @@ BLOCO5_INVENTARIOS_ATRAS INT DEFAULT 3
 
 ```css
 .bloco-maior-valor-unitario {
-    background-color: #cff4fc;
-    color: #055160;
+  background-color: #cff4fc;
+  color: #055160;
 }
 
 .bloco-nao-contado {
-    background-color: #fff3cd;
-    color: #856404;
+  background-color: #fff3cd;
+  color: #856404;
 }
 ```
 
@@ -87,11 +95,11 @@ BLOCO5_INVENTARIOS_ATRAS INT DEFAULT 3
 
 ## 📊 Configuração Padrão
 
-| Parâmetro | Valor Padrão |
-|-----------|--------------|
-| Bloco 4 - Quantidade de Itens | 5 |
-| Bloco 5 - Quantidade de Itens | 10 |
-| Bloco 5 - Inventários Atrás | 3 |
+| Parâmetro                     | Valor Padrão |
+| ----------------------------- | ------------ |
+| Bloco 4 - Quantidade de Itens | 5            |
+| Bloco 5 - Quantidade de Itens | 10           |
+| Bloco 5 - Inventários Atrás   | 3            |
 
 ---
 
@@ -110,6 +118,7 @@ BLOCO5_INVENTARIOS_ATRAS INT DEFAULT 3
 ## 🚀 Como Usar
 
 1. **Execute o script SQL:**
+
    ```bash
    # No SSMS, execute:
    SQL_Scripts/add_blocos_4_5_config.sql
@@ -140,14 +149,17 @@ BLOCO5_INVENTARIOS_ATRAS INT DEFAULT 3
 ## 🐛 Possíveis Problemas e Soluções
 
 ### Bloco 5 retorna 0 itens
+
 **Causa:** Nenhum inventário finalizado no sistema  
 **Solução:** Finalize pelo menos 1 inventário antes de usar o Bloco 5
 
 ### Erro ao executar SQL
+
 **Causa:** Colunas já existem  
 **Solução:** Script detecta e pula automaticamente
 
 ### Blocos não aparecem
+
 **Causa:** Cache do navegador  
 **Solução:** Ctrl + F5 para recarregar
 

@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const configForm = document.getElementById('configForm');
     const resetBtn = document.getElementById('resetBtn');
     const statusMessage = document.getElementById('statusMessage');
@@ -17,12 +17,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Carrega as configurações atuais ao abrir a página
     carregarConfiguracoes();
 
-    configForm.addEventListener('submit', async function(e) {
+    configForm.addEventListener('submit', async function (e) {
         e.preventDefault();
         await salvarConfiguracoes();
     });
 
-    resetBtn.addEventListener('click', function() {
+    resetBtn.addEventListener('click', function () {
         if (confirm('Restaurar configurações padrão?')) {
             restaurarPadrao();
         }
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok && data.config) {
                 const config = data.config;
-                
+
                 // Preenche o formulário
                 bloco1Qtd.value = config.BLOCO1_QTD_ITENS;
                 bloco1Dias.value = config.BLOCO1_DIAS_MOVIMENTACAO;
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function atualizarResumo(config) {
-        const dataAlteracao = config.DT_ALTERACAO 
+        const dataAlteracao = config.DT_ALTERACAO
             ? new Date(config.DT_ALTERACAO).toLocaleString('pt-BR')
             : 'N/A';
 

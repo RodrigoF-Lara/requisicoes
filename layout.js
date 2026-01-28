@@ -20,10 +20,13 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="sidebar-user-info"><span id="sidebar-username">Usuário</span></div>
         <nav class="sidebar-nav">
           <a href="menu.html" id="nav-menu"><i class="fa fa-home"></i> Menu Principal</a>
-          <a href="nova-requisicao.html" id="nav-nova-requisicao"><i class="fa fa-plus-square"></i> Nova Requisição</a>
-          <a href="consultar.html" id="nav-consultar"><i class="fa fa-search"></i> Consultar</a>
+          <a href="novaRequisicao.html" id="nav-nova-requisicao"><i class="fa fa-plus-square"></i> Nova Requisição</a>
+          <a href="consulta.html" id="nav-consultar"><i class="fa fa-search"></i> Consultar</a>
           <a href="estoque.html" id="nav-estoque"><i class="fa fa-archive"></i> Gerenciar Estoque</a>
-          <a href="status-nf.html" id="nav-status-nf"><i class="fa fa-barcode"></i> Status NF</a>
+          <a href="statusNF.html" id="nav-status-nf"><i class="fa fa-barcode"></i> Status NF</a>
+          <a href="inventarioCiclico.html" id="nav-inventario-ciclico"><i class="fa fa-clipboard-check"></i> Inventário Cíclico</a>
+          <a href="relatorios.html" id="nav-relatorios"><i class="fa fa-chart-bar"></i> Relatórios</a>
+          <a href="configInventario.html" id="nav-config-inventario"><i class="fa fa-cog"></i> Configurações</a>
         </nav>
         <div class="sidebar-footer"><button id="logout-btn" class="logout-btn">Sair</button></div>
       `;
@@ -41,10 +44,15 @@ function inicializarSidebar() {
   const idMap = {
     'menu': 'nav-menu',
     'nova-requisicao': 'nav-nova-requisicao',
+    'novarequisicao': 'nav-nova-requisicao',
     'consultar': 'nav-consultar',
+    'consulta': 'nav-consultar',
     'estoque': 'nav-estoque',
     'status-nf': 'nav-status-nf',
+    'statusnf': 'nav-status-nf',
     'inventariociclico': 'nav-inventario-ciclico',
+    'relatorios': 'nav-relatorios',
+    'configinventario': 'nav-config-inventario',
     'index': 'nav-menu'
   };
   const navId = idMap[pageKey] || `nav-${pageKey}`;
