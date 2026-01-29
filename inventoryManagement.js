@@ -234,25 +234,26 @@
             width: 145mm;
             height: 104mm;
             border: 3px solid #000;
-            padding: 4mm;
+            padding: 3mm;
             background: white;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
+            justify-content: space-between;
         }
         
         .header {
             text-align: center;
             border-bottom: 2px solid #333;
-            padding-bottom: 2mm;
-            margin-bottom: 2mm;
+            padding-bottom: 1.5mm;
+            margin-bottom: 1.5mm;
         }
         
         .header-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2mm;
+            margin-bottom: 1.5mm;
         }
         
         .header-top .id-badge {
@@ -265,11 +266,12 @@
         }
         
         .header h1 {
-            font-size: 16pt;
+            font-size: 15pt;
             font-weight: bold;
             color: #1976d2;
             flex: 1;
             text-align: center;
+            margin: 0;
         }
         
         .header .tipo-movimento {
@@ -298,14 +300,14 @@
         }
         
         .info-principal {
-            margin: 1.5mm 0;
+            margin: 1mm 0;
         }
         
         .info-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 1mm;
-            padding: 1.5mm;
+            margin-bottom: 0.8mm;
+            padding: 1.2mm;
             background-color: #f5f5f5;
             border-left: 3px solid #1976d2;
         }
@@ -318,13 +320,13 @@
         .info-label {
             font-weight: bold;
             color: #333;
-            font-size: 9pt;
+            font-size: 8.5pt;
             min-width: 35%;
         }
         
         .info-value {
             color: #000;
-            font-size: 9pt;
+            font-size: 8.5pt;
             font-weight: 600;
             text-align: right;
             flex: 1;
@@ -416,7 +418,7 @@
         <div class="info-principal">
             <div class="info-row destaque">
                 <span class="info-label">QUANTIDADE:</span>
-                <span class="info-value" style="font-size: 11pt;">${dados.quantidade}</span>
+                <span class="info-value" style="font-size: 10pt;">${dados.quantidade}</span>
             </div>
             
             <div class="info-row">
@@ -450,9 +452,9 @@
         JsBarcode("#barcode", "${dados.codigo}", {
             format: "CODE128",
             width: 3,
-            height: 65,
+            height: 55,
             displayValue: true,
-            fontSize: 16,
+            fontSize: 14,
             margin: 2,
             fontOptions: "bold"
         });
