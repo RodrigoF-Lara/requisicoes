@@ -99,7 +99,7 @@
             width: 145mm;
             height: 104mm;
             border: 2px solid #000;
-            padding: 8mm;
+            padding: 6mm;
             background: white;
             display: flex;
             flex-direction: column;
@@ -109,46 +109,68 @@
         .header {
             text-align: center;
             border-bottom: 2px solid #333;
-            padding-bottom: 4mm;
-            margin-bottom: 3mm;
+            padding-bottom: 3mm;
+            margin-bottom: 2mm;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2mm;
+        }
+        
+        .header-top .id-badge {
+            background-color: #2c3e50;
+            color: white;
+            padding: 2mm 4mm;
+            border-radius: 3mm;
+            font-size: 11pt;
+            font-weight: bold;
         }
         
         .header h1 {
-            font-size: 18pt;
+            font-size: 16pt;
             font-weight: bold;
             color: #1976d2;
-            margin-bottom: 2mm;
+            flex: 1;
+            text-align: center;
         }
         
         .header .tipo-movimento {
             display: inline-block;
             background-color: #4caf50;
             color: white;
-            padding: 2mm 6mm;
+            padding: 2mm 5mm;
             border-radius: 3mm;
-            font-size: 12pt;
+            font-size: 11pt;
             font-weight: bold;
         }
         
         .codigo-barras {
             text-align: center;
-            margin: 3mm 0;
+            margin: 2mm 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         
         .codigo-barras svg {
-            max-width: 100%;
-            height: auto;
+            width: 100% !important;
+            max-width: 130mm !important;
+            height: auto !important;
         }
         
         .info-principal {
-            margin: 3mm 0;
+            margin: 2mm 0;
         }
         
         .info-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 2mm;
-            padding: 2mm;
+            margin-bottom: 1.5mm;
+            padding: 1.5mm;
             background-color: #f5f5f5;
             border-left: 3px solid #1976d2;
         }
@@ -161,21 +183,21 @@
         .info-label {
             font-weight: bold;
             color: #333;
-            font-size: 10pt;
-            min-width: 40%;
+            font-size: 9pt;
+            min-width: 35%;
         }
         
         .info-value {
             color: #000;
-            font-size: 10pt;
+            font-size: 9pt;
             font-weight: 600;
             text-align: right;
             flex: 1;
         }
         
         .descricao {
-            margin: 3mm 0;
-            padding: 3mm;
+            margin: 2mm 0;
+            padding: 2mm;
             background-color: #fff3e0;
             border: 1px solid #ff9800;
             border-radius: 2mm;
@@ -183,16 +205,18 @@
         
         .descricao-label {
             font-weight: bold;
-            font-size: 9pt;
+            font-size: 8pt;
             color: #e65100;
             margin-bottom: 1mm;
         }
         
         .descricao-text {
-            font-size: 11pt;
+            font-size: 10pt;
             color: #000;
             font-weight: 600;
-            line-height: 1.3;
+            line-height: 1.2;
+            max-height: 2.4em;
+            overflow: hidden;
         }
         
         .footer {
@@ -201,7 +225,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 8pt;
+            font-size: 7pt;
             color: #666;
         }
         
@@ -239,8 +263,11 @@
     
     <div class="etiqueta">
         <div class="header">
-            <h1>KARDEX SYSTEM</h1>
-            <span class="tipo-movimento">${dados.tipoMovimento}</span>
+            <div class="header-top">
+                <span class="id-badge">ID: ${dados.idMovimento || 'N/A'}</span>
+                <h1>KARDEX SYSTEM</h1>
+                <span class="tipo-movimento">${dados.tipoMovimento}</span>
+            </div>
         </div>
         
         <div class="codigo-barras">
@@ -285,13 +312,15 @@
     </div>
     
     <script>
+        // Gera código de barras com tamanho maximizado
         JsBarcode("#barcode", "${dados.codigo}", {
             format: "CODE128",
-            width: 2,
-            height: 60,
+            width: 3,
+            height: 80,
             displayValue: true,
-            fontSize: 14,
-            margin: 5
+            fontSize: 18,
+            margin: 5,
+            fontOptions: "bold"
         });
         
         setTimeout(() => window.focus(), 250);
@@ -347,6 +376,7 @@
       // Gera etiqueta apenas para ENTRADA
       if (tipo.toUpperCase() === "ENTRADA") {
         const dadosEtiqueta = {
+          idMovimento: data.resumoId || 'N/A',
           codigo: codigo,
           descricao: infoDescricao.textContent,
           quantidade: quantidade,
