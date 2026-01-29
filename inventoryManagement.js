@@ -55,6 +55,254 @@
     }
   }
 
+  function gerarEtiqueta(dados) {
+    const janelaEtiqueta = window.open('', '_blank', 'width=600,height=400');
+    
+    const htmlEtiqueta = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Etiqueta - ${dados.codigo}</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <style>
+        @media print {
+            @page { 
+                size: 145mm 104mm;
+                margin: 0;
+            }
+            body { 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact;
+            }
+            .no-print { display: none !important; }
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 5mm;
+        }
+        
+        .etiqueta {
+            width: 145mm;
+            height: 104mm;
+            border: 2px solid #000;
+            padding: 8mm;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 4mm;
+            margin-bottom: 3mm;
+        }
+        
+        .header h1 {
+            font-size: 18pt;
+            font-weight: bold;
+            color: #1976d2;
+            margin-bottom: 2mm;
+        }
+        
+        .header .tipo-movimento {
+            display: inline-block;
+            background-color: #4caf50;
+            color: white;
+            padding: 2mm 6mm;
+            border-radius: 3mm;
+            font-size: 12pt;
+            font-weight: bold;
+        }
+        
+        .codigo-barras {
+            text-align: center;
+            margin: 3mm 0;
+        }
+        
+        .codigo-barras svg {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .info-principal {
+            margin: 3mm 0;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2mm;
+            padding: 2mm;
+            background-color: #f5f5f5;
+            border-left: 3px solid #1976d2;
+        }
+        
+        .info-row.destaque {
+            background-color: #e3f2fd;
+            border-left-color: #0d47a1;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #333;
+            font-size: 10pt;
+            min-width: 40%;
+        }
+        
+        .info-value {
+            color: #000;
+            font-size: 10pt;
+            font-weight: 600;
+            text-align: right;
+            flex: 1;
+        }
+        
+        .descricao {
+            margin: 3mm 0;
+            padding: 3mm;
+            background-color: #fff3e0;
+            border: 1px solid #ff9800;
+            border-radius: 2mm;
+        }
+        
+        .descricao-label {
+            font-weight: bold;
+            font-size: 9pt;
+            color: #e65100;
+            margin-bottom: 1mm;
+        }
+        
+        .descricao-text {
+            font-size: 11pt;
+            color: #000;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        
+        .footer {
+            border-top: 2px solid #333;
+            padding-top: 2mm;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 8pt;
+            color: #666;
+        }
+        
+        .footer-left {
+            font-style: italic;
+        }
+        
+        .footer-right {
+            text-align: right;
+            font-weight: bold;
+        }
+        
+        .btn-imprimir {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px 20px;
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        
+        .btn-imprimir:hover {
+            background-color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <button class="btn-imprimir no-print" onclick="window.print()">🖨️ Imprimir Etiqueta</button>
+    
+    <div class="etiqueta">
+        <div class="header">
+            <h1>KARDEX SYSTEM</h1>
+            <span class="tipo-movimento">${dados.tipoMovimento}</span>
+        </div>
+        
+        <div class="codigo-barras">
+            <svg id="barcode"></svg>
+        </div>
+        
+        <div class="info-principal">
+            <div class="info-row destaque">
+                <span class="info-label">CÓDIGO:</span>
+                <span class="info-value">${dados.codigo}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">QUANTIDADE:</span>
+                <span class="info-value">${dados.quantidade}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">ENDEREÇO:</span>
+                <span class="info-value">${dados.endereco || '-'}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">ARMAZÉM:</span>
+                <span class="info-value">${dados.armazem || '-'}</span>
+            </div>
+        </div>
+        
+        <div class="descricao">
+            <div class="descricao-label">DESCRIÇÃO DO PRODUTO:</div>
+            <div class="descricao-text">${dados.descricao || 'N/A'}</div>
+        </div>
+        
+        <div class="footer">
+            <div class="footer-left">
+                Gerado em: ${dados.dataHora}
+            </div>
+            <div class="footer-right">
+                Usuário: ${dados.usuario}
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        JsBarcode("#barcode", "${dados.codigo}", {
+            format: "CODE128",
+            width: 2,
+            height: 60,
+            displayValue: true,
+            fontSize: 14,
+            margin: 5
+        });
+        
+        setTimeout(() => window.focus(), 250);
+    </script>
+</body>
+</html>`;
+
+    janelaEtiqueta.document.write(htmlEtiqueta);
+    janelaEtiqueta.document.close();
+  }
+
   btnConsultar.addEventListener("click", () => {
     const codigo = codigoEl.value.trim();
     if (!codigo) {
@@ -95,6 +343,25 @@
       if (!res.ok) throw new Error(data.message || "Erro ao registrar movimento");
       statusEl.style.color = "green";
       statusEl.textContent = data.message || "Movimento registrado";
+      
+      // Gera etiqueta apenas para ENTRADA
+      if (tipo.toUpperCase() === "ENTRADA") {
+        const dadosEtiqueta = {
+          codigo: codigo,
+          descricao: infoDescricao.textContent,
+          quantidade: quantidade,
+          tipoMovimento: "ENTRADA",
+          endereco: endereco,
+          armazem: armazem,
+          dataHora: new Date().toLocaleString('pt-BR'),
+          usuario: usuario
+        };
+        
+        setTimeout(() => {
+          gerarEtiqueta(dadosEtiqueta);
+        }, 500);
+      }
+      
       // atualiza informações e histórico
       await consultar(codigo);
       // limpa quantidade (opcional)
