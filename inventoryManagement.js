@@ -7,14 +7,18 @@
   const infoQuantidade = document.getElementById("infoQuantidade");
 
   const entradaSaidaContainer = document.getElementById("entradaSaidaContainer");
-  const quantidadeEl = document.getElementById("quantidade");
-  const tipoMovimento = document.getElementById("tipoMovimento");
-  const gerenciarBtn = document.getElementById("gerenciarBtn");
   const statusEl = document.getElementById("status");
-
-  // novos campos de endereço e armazém (devem existir no HTML)
-  const enderecoEl = document.getElementById("endereco");
-  const armazemEl = document.getElementById("armazem");
+  
+  // Novos elementos para modal
+  const btnEntrada = document.getElementById("btnEntrada");
+  const btnSaida = document.getElementById("btnSaida");
+  const modalMovimento = document.getElementById("modalMovimento");
+  const closeModal = document.getElementById("closeModal");
+  const formMovimento = document.getElementById("formMovimento");
+  const tituloModal = document.getElementById("tituloModal");
+  const iconModal = document.getElementById("iconModal");
+  const inputTipoMovimento = document.getElementById("inputTipoMovimento");
+  const submitBtn = document.getElementById("submitBtn");
 
   const historicoContainer = document.getElementById("historicoContainer");
   const historicoBody = document.getElementById("historicoBody");
@@ -23,7 +27,10 @@
   const estatisticasContainer = document.getElementById("estatisticasContainer");
   const saldoPorLocalContainer = document.getElementById("saldoPorLocalContainer");
 
+  let codigoAtual = "";
+
   async function consultar(codigo) {
+    codigoAtual = codigo;
     produtoInfo.style.display = "none";
     entradaSaidaContainer.style.display = "none";
     historicoContainer.style.display = "none";
@@ -32,6 +39,7 @@
     
     statusEl.style.color = "#222";
     statusEl.textContent = "Buscando...";
+    
     try {
       const res = await fetch(`/api/inventory?codigo=${encodeURIComponent(codigo)}`);
       if (!res.ok) {
@@ -39,19 +47,29 @@
         throw new Error(err.message || "Erro ao consultar");
       }
       const data = await res.json();
+      
       infoCodigo.textContent = data.codigo || codigo;
       infoDescricao.textContent = data.descricao || "-";
       infoQuantidade.textContent = (data.saldo !== undefined) ? data.saldo : "-";
+      
       produtoInfo.style.display = "block";
       entradaSaidaContainer.style.display = "block";
       historicoContainer.style.display = "block";
+      
       renderHistorico(data.movimentos || []);
       renderEstatisticas(data);
       await buscarSaldoPorLocal(codigo);
+      
       statusEl.textContent = "";
+      
+      // Ativa os botões
+      btnEntrada.disabled = false;
+      btnSaida.disabled = false;
     } catch (err) {
       statusEl.style.color = "#c00";
       statusEl.textContent = `Erro: ${err.message}`;
+      btnEntrada.disabled = true;
+      btnSaida.disabled = true;
     }
   }
 
@@ -79,6 +97,7 @@
     }
     
     let totalCaixas = 0;
+    let totalSaldo = 0;
     
     locais.forEach(local => {
       const tr = document.createElement("tr");
@@ -91,16 +110,16 @@
       `;
       tbody.appendChild(tr);
       totalCaixas += (local.QNT_CAIXAS || 0);
+      totalSaldo += (local.SALDO || 0);
     });
     
-    // Adiciona linha de total
+    // Adiciona linha de total com destaque
     const trTotal = document.createElement("tr");
-    trTotal.style.backgroundColor = "#e3f2fd";
-    trTotal.style.fontWeight = "bold";
+    trTotal.className = "total-row-saldo";
     trTotal.innerHTML = `
-      <td colspan="3" class="text-right">TOTAL DE CAIXAS:</td>
+      <td colspan="3" class="text-right"><strong>TOTAL:</strong></td>
       <td><strong>${totalCaixas}</strong></td>
-      <td></td>
+      <td class="text-right"><strong style="font-size: 1.1em; color: #1976d2;">🏷️ ${totalSaldo}</strong></td>
     `;
     tbody.appendChild(trTotal);
     
@@ -113,10 +132,16 @@
     const movimentos = data.movimentos || [];
     const entradas = movimentos.filter(m => m.OPERACAO === 'ENTRADA');
     const saidas = movimentos.filter(m => m.OPERACAO === 'SAÍDA');
+    const saldoTotal = data.saldo || 0;
     
     estatisticasContainer.innerHTML = `
       <h3>📊 Estatísticas Rápidas</h3>
       <div class="estatisticas-grid">
+        <div class="stat-card destaque-saldo">
+          <i class="fa-solid fa-boxes-stacked"></i>
+          <span class="stat-label">Saldo Total em Estoque</span>
+          <span class="stat-value" style="color: #28a745; font-size: 32px;">${saldoTotal.toLocaleString('pt-BR')}</span>
+        </div>
         <div class="stat-card">
           <i class="fa-solid fa-arrow-up"></i>
           <span class="stat-label">Total Entradas</span>
@@ -453,26 +478,65 @@
     consultar(codigo);
   });
 
-  gerenciarBtn.addEventListener("click", async () => {
-    const codigo = codigoEl.value.trim();
-    const quantidade = Number(quantidadeEl.value) || 0;
-    const tipo = tipoMovimento.value;
+  btnEntrada.addEventListener("click", () => {
+    if (!codigoAtual) return;
+    tituloModal.textContent = "📥 Registrar ENTRADA";
+    tituloModal.style.color = "#4caf50";
+    iconModal.textContent = "📥";
+    iconModal.style.color = "#4caf50";
+    inputTipoMovimento.value = "ENTRADA";
+    submitBtn.style.backgroundColor = "#4caf50";
+    submitBtn.textContent = "✓ Registrar Entrada";
+    document.getElementById("quantidadeModal").value = "1";
+    document.getElementById("enderecoModal").value = "";
+    document.getElementById("armazemModal").value = "";
+    modalMovimento.style.display = "flex";
+  });
+
+  btnSaida.addEventListener("click", () => {
+    if (!codigoAtual) return;
+    tituloModal.textContent = "📤 Registrar SAÍDA";
+    tituloModal.style.color = "#f44336";
+    iconModal.textContent = "📤";
+    iconModal.style.color = "#f44336";
+    inputTipoMovimento.value = "SAIDA";
+    submitBtn.style.backgroundColor = "#f44336";
+    submitBtn.textContent = "✓ Registrar Saída";
+    document.getElementById("quantidadeModal").value = "1";
+    document.getElementById("enderecoModal").value = "";
+    document.getElementById("armazemModal").value = "";
+    modalMovimento.style.display = "flex";
+  });
+
+  closeModal.addEventListener("click", () => {
+    modalMovimento.style.display = "none";
+  });
+
+  modalMovimento.addEventListener("click", (e) => {
+    if (e.target === modalMovimento) {
+      modalMovimento.style.display = "none";
+    }
+  });
+
+  formMovimento.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
+    const quantidade = Number(document.getElementById("quantidadeModal").value) || 0;
+    const endereco = (document.getElementById("enderecoModal").value || "").trim();
+    const armazem = (document.getElementById("armazemModal").value || "").trim();
+    const tipo = inputTipoMovimento.value;
     const usuario = localStorage.getItem("userName") || "WEB";
 
-    const endereco = (enderecoEl && enderecoEl.value || "").trim();
-    const armazem = (armazemEl && armazemEl.value || "").trim();
-
-    // validação mínima
-    if (!codigo || quantidade <= 0) {
-      statusEl.style.color = "#c00";
-      statusEl.textContent = "Código e quantidade válidos são obrigatórios.";
+    if (!codigoAtual || quantidade <= 0) {
+      alert("Código e quantidade válidos são obrigatórios.");
       return;
     }
 
     statusEl.style.color = "#222";
     statusEl.textContent = "Registrando...";
+    
     try {
-      const body = { codigo, tipo, quantidade, usuario, endereco, armazem };
+      const body = { codigo: codigoAtual, tipo, quantidade, usuario, endereco, armazem };
       const res = await fetch("/api/inventory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -480,14 +544,15 @@
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || "Erro ao registrar movimento");
+      
       statusEl.style.color = "green";
-      statusEl.textContent = data.message || "Movimento registrado";
+      statusEl.textContent = data.message || "Movimento registrado com sucesso!";
       
       // Gera etiqueta apenas para ENTRADA
-      if (tipo.toUpperCase() === "ENTRADA") {
+      if (tipo === "ENTRADA") {
         const dadosEtiqueta = {
           idMovimento: data.resumoId || 'N/A',
-          codigo: codigo,
+          codigo: codigoAtual,
           descricao: infoDescricao.textContent,
           quantidade: quantidade,
           tipoMovimento: "ENTRADA",
@@ -502,13 +567,19 @@
         }, 500);
       }
       
-      // atualiza informações e histórico
-      await consultar(codigo);
-      // limpa quantidade (opcional)
-      quantidadeEl.value = "1";
+      // Fecha modal e atualiza
+      modalMovimento.style.display = "none";
+      setTimeout(() => {
+        consultar(codigoAtual);
+      }, tipo === "ENTRADA" ? 1500 : 500);
+      
     } catch (err) {
       statusEl.style.color = "#c00";
       statusEl.textContent = `Erro: ${err.message}`;
     }
   });
+
+  // Desativa botões inicialmente
+  btnEntrada.disabled = true;
+  btnSaida.disabled = true;
 });

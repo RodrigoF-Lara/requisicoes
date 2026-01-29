@@ -50,29 +50,64 @@
             </div>
 
             <div class="form-group" id="entradaSaidaContainer" style="display: none;">
-                <h2>Gerenciar Entradas e Saídas</h2>
-                <div>
-                    <label for="quantidade">Quantidade:</label>
-                    <input type="number" id="quantidade" required />
-                    <select id="tipoMovimento">
-                        <option value="ENTRADA">Entrada</option>
-                        <option value="SAIDA">Saída</option>
-                    </select>
-                </div>
+                <div class="card gerenciar-card">
+                    <div class="gerenciar-header">
+                        <h2>🚀 Gerenciar Movimentações</h2>
+                        <p>Registre entradas e saídas do produto</p>
+                    </div>
 
-                <!-- NOVOS CAMPOS: endereço e armazém -->
-                <div style="margin-top:8px;">
-                    <label for="endereco">Endereço:</label>
-                    <input type="text" id="endereco" placeholder="Ex: TESTE1" />
-                    <label for="armazem" style="margin-left:12px;">Armazém:</label>
-                    <input type="text" id="armazem" placeholder="Ex: 01" style="width:80px;" />
-                </div>
+                    <div class="botoes-movimento">
+                        <button id="btnEntrada" class="btn-movimento entrada" disabled>
+                            <i class="fa-solid fa-arrow-up"></i>
+                            <span>ENTRADA</span>
+                        </button>
+                        <button id="btnSaida" class="btn-movimento saida" disabled>
+                            <i class="fa-solid fa-arrow-down"></i>
+                            <span>SAÍDA</span>
+                        </button>
+                    </div>
 
-                <div style="margin-top:8px;">
-                    <button id="gerenciarBtn" class="btn-destaque">Registrar Movimento</button>
+                    <div id="status" class="status-message"></div>
                 </div>
+            </div>
 
-                <div id="status" class="status-message"></div>
+            <!-- MODAL para Entrada/Saída -->
+            <div id="modalMovimento" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <span id="iconModal" style="font-size: 32px; margin-right: 10px;">📥</span>
+                        <h2 id="tituloModal">Registrar Movimento</h2>
+                        <span id="closeModal" class="close-btn">&times;</span>
+                    </div>
+                    
+                    <form id="formMovimento">
+                        <div class="form-group-modal">
+                            <label for="quantidadeModal">Quantidade:</label>
+                            <input type="number" id="quantidadeModal" min="1" value="1" required />
+                        </div>
+
+                        <div class="form-group-modal">
+                            <label for="enderecoModal">Endereço:</label>
+                            <input type="text" id="enderecoModal" placeholder="Ex: TESTE1" />
+                        </div>
+
+                        <div class="form-group-modal">
+                            <label for="armazemModal">Armazém:</label>
+                            <input type="text" id="armazemModal" placeholder="Ex: 01" />
+                        </div>
+
+                        <input type="hidden" id="inputTipoMovimento" />
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn-cancelar" onclick="document.getElementById('modalMovimento').style.display='none'">
+                                Cancelar
+                            </button>
+                            <button type="submit" id="submitBtn" class="btn-movimento entrada">
+                                ✓ Registrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             <div id="historicoContainer" style="display: none; margin-top: 20px;">
