@@ -233,18 +233,18 @@
         .etiqueta {
             width: 145mm;
             height: 104mm;
-            border: 2px solid #000;
-            padding: 6mm;
+            border: 3px solid #000;
+            padding: 4mm;
             background: white;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            box-sizing: border-box;
         }
         
         .header {
             text-align: center;
             border-bottom: 2px solid #333;
-            padding-bottom: 3mm;
+            padding-bottom: 2mm;
             margin-bottom: 2mm;
         }
         
@@ -258,7 +258,7 @@
         .header-top .id-badge {
             background-color: #2c3e50;
             color: white;
-            padding: 2mm 4mm;
+            padding: 1.5mm 3mm;
             border-radius: 3mm;
             font-size: 11pt;
             font-weight: bold;
@@ -276,7 +276,7 @@
             display: inline-block;
             background-color: #4caf50;
             color: white;
-            padding: 2mm 5mm;
+            padding: 1.5mm 4mm;
             border-radius: 3mm;
             font-size: 11pt;
             font-weight: bold;
@@ -298,13 +298,13 @@
         }
         
         .info-principal {
-            margin: 2mm 0;
+            margin: 1.5mm 0;
         }
         
         .info-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 1.5mm;
+            margin-bottom: 1mm;
             padding: 1.5mm;
             background-color: #f5f5f5;
             border-left: 3px solid #1976d2;
@@ -405,19 +405,18 @@
             </div>
         </div>
         
+        <div class="codigo-principal">
+            <div class="codigo-texto">${dados.codigo}</div>
+        </div>
+        
         <div class="codigo-barras">
             <svg id="barcode"></svg>
         </div>
         
         <div class="info-principal">
             <div class="info-row destaque">
-                <span class="info-label">CÓDIGO:</span>
-                <span class="info-value">${dados.codigo}</span>
-            </div>
-            
-            <div class="info-row">
                 <span class="info-label">QUANTIDADE:</span>
-                <span class="info-value">${dados.quantidade}</span>
+                <span class="info-value" style="font-size: 11pt;">${dados.quantidade}</span>
             </div>
             
             <div class="info-row">
@@ -427,7 +426,7 @@
             
             <div class="info-row">
                 <span class="info-label">ARMAZÉM:</span>
-                <span class="info-value">${dados.armazem || '-'}</span>
+                <span class="info-value">${dados.armazem ? String(dados.armazem).padStart(2, '0') : '-'}</span>
             </div>
         </div>
         
@@ -438,10 +437,10 @@
         
         <div class="footer">
             <div class="footer-left">
-                Gerado em: ${dados.dataHora}
+                ${dados.dataHora}
             </div>
             <div class="footer-right">
-                Usuário: ${dados.usuario}
+                ${dados.usuario} | KARDEX 2026
             </div>
         </div>
     </div>
@@ -451,10 +450,10 @@
         JsBarcode("#barcode", "${dados.codigo}", {
             format: "CODE128",
             width: 3,
-            height: 80,
+            height: 65,
             displayValue: true,
-            fontSize: 18,
-            margin: 5,
+            fontSize: 16,
+            margin: 2,
             fontOptions: "bold"
         });
         
