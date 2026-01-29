@@ -6,28 +6,68 @@ export default async function handler(req, res) {
     const pool = await getConnection();
 
     if (req.method === "GET") {
-      const codigo = String((req.query && req.query.codigo) || "").trim();
-      if (!codigo) return res.status(400).json({ message: "codigo é obrigatório" });
+      const { codigo, action } = req.query;
+      
+      // Novo endpoint para saldo por local
+      if (action === 'saldoLocal' && codigo) {
+        const result = await pool.request()
+          .input("CODIGO", sql.VarChar(10), codigo)
+          .query(`
+            SELECT 
+              ARMAZEM,
+              ENDERECO,
+              QNT AS TAM_LOTE,
+              COUNT(*) AS QNT_CAIXAS,
+              SUM(SALDO) AS SALDO
+            FROM [dbo].[KARDEX_2026_EMBALAGEM]
+            WHERE [D_E_L_E_T_] = '' 
+              AND CODIGO = @CODIGO 
+              AND SALDO > 0
+              AND KARDEX = 2026
+            GROUP BY ARMAZEM, ENDERECO, QNT
+            ORDER BY ARMAZEM, ENDERECO
+          `);
+        
+        return res.status(200).json({ locais: result.recordset });
+      }
+      
+      // Endpoint original de consulta
+      const codigoQuery = String((req.query && req.query.codigo) || "").trim();
+      if (!codigoQuery) return res.status(400).json({ message: "codigo é obrigatório" });
 
       const prod = await pool.request()
-        .input("CODIGO", sql.VarChar(10), codigo)
+        .input("CODIGO", sql.VarChar(10), codigoQuery)
         .query("SELECT TOP 1 CODIGO, DESCRICAO FROM [dbo].[CAD_PROD] WHERE CODIGO = @CODIGO");
 
       const saldoRes = await pool.request()
-        .input("CODIGO", sql.VarChar(10), codigo)
-        .query("SELECT ISNULL(SUM(SALDO),0) AS SALDO FROM [dbo].[KARDEX_2026_EMBALAGEM] WHERE CODIGO = @CODIGO AND D_E_L_E_T_ <> '*'");
+        .input("CODIGO", sql.VarChar(10), codigoQuery)
+        .query("SELECT ISNULL(SUM(SALDO),0) AS SALDO FROM [dbo].[KARDEX_2026_EMBALAGEM] WHERE CODIGO = @CODIGO AND D_E_L_E_T_ <> '*' AND KARDEX = 2026");
 
       const mov = await pool.request()
-        .input("CODIGO", sql.VarChar(10), codigo)
+        .input("CODIGO", sql.VarChar(10), codigoQuery)
         .query(`
-          SELECT TOP 50 ID, CODIGO, OPERACAO, QNT, USUARIO, convert(varchar, DT, 23) AS DT, convert(varchar, HR, 8) AS HR, MOTIVO, ID_TB_RESUMO
+          SELECT TOP 50 
+            ID, 
+            CODIGO, 
+            OPERACAO, 
+            QNT, 
+            USUARIO, 
+            ENDERECO,
+            ARMAZEM,
+            convert(varchar, DT, 23) AS DT, 
+            convert(varchar, HR, 8) AS HR, 
+            MOTIVO, 
+            ID_TB_RESUMO
           FROM [dbo].[KARDEX_2026]
-          WHERE CODIGO = @CODIGO AND D_E_L_E_T_ <> '*' AND USUARIO <> 'BJULHAO'
+          WHERE CODIGO = @CODIGO 
+            AND D_E_L_E_T_ <> '*' 
+            AND USUARIO <> 'BJULHAO'
+            AND KARDEX = '2026'
           ORDER BY DT DESC, HR DESC
         `);
 
       return res.status(200).json({
-        codigo,
+        codigo: codigoQuery,
         descricao: (prod.recordset[0] && prod.recordset[0].DESCRICAO) || null,
         saldo: (saldoRes.recordset[0] && saldoRes.recordset[0].SALDO) || 0,
         movimentos: mov.recordset || []

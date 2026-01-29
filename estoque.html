@@ -27,6 +27,28 @@
                 <p><strong>Quantidade em Estoque:</strong> <span id="infoQuantidade"></span></p>
             </div>
 
+            <!-- NOVA SEÇÃO: Estatísticas Rápidas -->
+            <div id="estatisticasContainer" style="display: none; margin-top: 20px;">
+                <!-- Preenchido dinamicamente -->
+            </div>
+
+            <!-- NOVA SEÇÃO: Saldo por Local -->
+            <div id="saldoPorLocalContainer" class="card" style="display: none; margin-top: 20px;">
+                <h2>📦 Saldo por Localização</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Armazém</th>
+                            <th>Endereço</th>
+                            <th>Tam. Lote</th>
+                            <th>Qtd Caixas</th>
+                            <th class="text-right">Saldo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="saldoLocalBody"></tbody>
+                </table>
+            </div>
+
             <div class="form-group" id="entradaSaidaContainer" style="display: none;">
                 <h2>Gerenciar Entradas e Saídas</h2>
                 <div>
@@ -53,14 +75,19 @@
                 <div id="status" class="status-message"></div>
             </div>
 
-            <div id="historicoContainer" style="display: none;">
-                <h2>Histórico de Movimentos</h2>
+            <div id="historicoContainer" style="display: none; margin-top: 20px;">
+                <h2>📋 Histórico de Movimentos</h2>
                 <table id="historicoTable">
                     <thead>
                         <tr>
-                            <th>Data</th>
+                            <th>ID</th>
                             <th>Tipo</th>
-                            <th>Quantidade</th>
+                            <th>Endereço</th>
+                            <th>Armaz.</th>
+                            <th class="text-right">Qtd</th>
+                            <th>Usuário</th>
+                            <th>Data</th>
+                            <th>Hora</th>
                         </tr>
                     </thead>
                     <tbody id="historicoBody"></tbody>

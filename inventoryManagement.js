@@ -18,11 +18,18 @@
 
   const historicoContainer = document.getElementById("historicoContainer");
   const historicoBody = document.getElementById("historicoBody");
+  
+  // Novos elementos para estatísticas
+  const estatisticasContainer = document.getElementById("estatisticasContainer");
+  const saldoPorLocalContainer = document.getElementById("saldoPorLocalContainer");
 
   async function consultar(codigo) {
     produtoInfo.style.display = "none";
     entradaSaidaContainer.style.display = "none";
     historicoContainer.style.display = "none";
+    estatisticasContainer.style.display = "none";
+    saldoPorLocalContainer.style.display = "none";
+    
     statusEl.style.color = "#222";
     statusEl.textContent = "Buscando...";
     try {
@@ -39,6 +46,8 @@
       entradaSaidaContainer.style.display = "block";
       historicoContainer.style.display = "block";
       renderHistorico(data.movimentos || []);
+      renderEstatisticas(data);
+      await buscarSaldoPorLocal(codigo);
       statusEl.textContent = "";
     } catch (err) {
       statusEl.style.color = "#c00";
@@ -46,13 +55,114 @@
     }
   }
 
+  async function buscarSaldoPorLocal(codigo) {
+    try {
+      const res = await fetch(`/api/inventory?codigo=${encodeURIComponent(codigo)}&action=saldoLocal`);
+      if (!res.ok) return;
+      
+      const data = await res.json();
+      renderSaldoPorLocal(data.locais || []);
+    } catch (err) {
+      console.error('Erro ao buscar saldo por local:', err);
+    }
+  }
+
+  function renderSaldoPorLocal(locais) {
+    const tbody = document.getElementById("saldoLocalBody");
+    if (!tbody) return;
+    
+    tbody.innerHTML = "";
+    
+    if (locais.length === 0) {
+      saldoPorLocalContainer.style.display = "none";
+      return;
+    }
+    
+    let totalCaixas = 0;
+    
+    locais.forEach(local => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${local.ARMAZEM ? String(local.ARMAZEM).padStart(2, '0') : '-'}</td>
+        <td><strong>${local.ENDERECO || '-'}</strong></td>
+        <td>${local.TAM_LOTE || '-'}</td>
+        <td><strong>${local.QNT_CAIXAS || 0}</strong></td>
+        <td class="text-right"><strong>${local.SALDO || 0}</strong></td>
+      `;
+      tbody.appendChild(tr);
+      totalCaixas += (local.QNT_CAIXAS || 0);
+    });
+    
+    // Adiciona linha de total
+    const trTotal = document.createElement("tr");
+    trTotal.style.backgroundColor = "#e3f2fd";
+    trTotal.style.fontWeight = "bold";
+    trTotal.innerHTML = `
+      <td colspan="3" class="text-right">TOTAL DE CAIXAS:</td>
+      <td><strong>${totalCaixas}</strong></td>
+      <td></td>
+    `;
+    tbody.appendChild(trTotal);
+    
+    saldoPorLocalContainer.style.display = "block";
+  }
+
+  function renderEstatisticas(data) {
+    if (!estatisticasContainer) return;
+    
+    const movimentos = data.movimentos || [];
+    const entradas = movimentos.filter(m => m.OPERACAO === 'ENTRADA');
+    const saidas = movimentos.filter(m => m.OPERACAO === 'SAÍDA');
+    
+    estatisticasContainer.innerHTML = `
+      <h3>📊 Estatísticas Rápidas</h3>
+      <div class="estatisticas-grid">
+        <div class="stat-card">
+          <i class="fa-solid fa-arrow-up"></i>
+          <span class="stat-label">Total Entradas</span>
+          <span class="stat-value">${entradas.length}</span>
+        </div>
+        <div class="stat-card">
+          <i class="fa-solid fa-arrow-down"></i>
+          <span class="stat-label">Total Saídas</span>
+          <span class="stat-value">${saidas.length}</span>
+        </div>
+        <div class="stat-card">
+          <i class="fa-solid fa-calendar-days"></i>
+          <span class="stat-label">Última Movimentação</span>
+          <span class="stat-value">${movimentos[0]?.DT ? new Date(movimentos[0].DT).toLocaleDateString('pt-BR') : '-'}</span>
+        </div>
+      </div>
+    `;
+    
+    estatisticasContainer.style.display = "block";
+  }
+
   function renderHistorico(rows) {
     historicoBody.innerHTML = "";
-    for (const r of rows) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${r.DT || ""}</td><td>${r.OPERACAO || r.TIPO || ""}</td><td>${r.QNT || ""}</td>`;
-      historicoBody.appendChild(tr);
+    if (!rows || rows.length === 0) {
+      historicoBody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Nenhum histórico encontrado</td></tr>';
+      return;
     }
+    
+    rows.forEach((r) => {
+      const tr = document.createElement("tr");
+      
+      const operacaoClass = r.OPERACAO === 'ENTRADA' ? 'badge-entrada' : 'badge-saida';
+      const operacaoIcon = r.OPERACAO === 'ENTRADA' ? '⬆️' : '⬇️';
+      
+      tr.innerHTML = `
+        <td>${r.ID_TB_RESUMO || '-'}</td>
+        <td><span class="badge ${operacaoClass}">${operacaoIcon} ${r.OPERACAO || "-"}</span></td>
+        <td>${r.ENDERECO || "-"}</td>
+        <td>${r.ARMAZEM ? String(r.ARMAZEM).padStart(2, '0') : "-"}</td>
+        <td class="text-right"><strong>${r.QNT || 0}</strong></td>
+        <td>${r.USUARIO || "-"}</td>
+        <td>${r.DT ? new Date(r.DT).toLocaleDateString('pt-BR') : "-"}</td>
+        <td>${r.HR || "-"}</td>
+      `;
+      historicoBody.appendChild(tr);
+    });
   }
 
   function gerarEtiqueta(dados) {
