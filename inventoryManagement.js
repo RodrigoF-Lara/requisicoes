@@ -273,10 +273,7 @@
             }
             .no-print { display: none !important; }
             .etiqueta {
-                page-break-after: always;
-            }
-            .etiqueta:last-child {
-                page-break-after: auto;
+                page-break-inside: avoid; /* Evita que a etiqueta seja cortada */
             }
         }
         
