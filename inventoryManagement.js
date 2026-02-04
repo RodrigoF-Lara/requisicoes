@@ -570,7 +570,7 @@
             data.lotes.forEach(lote => {
                 const option = document.createElement('option');
                 option.value = lote.ID;
-                option.textContent = \`ID: ${lote.ID} | End: ${lote.ENDERECO || 'N/A'} | Saldo: ${lote.SALDO}\`;
+                option.textContent = `ID: ${lote.ID} | End: ${lote.ENDERECO || 'N/A'} | Saldo: ${lote.SALDO}`;
                 option.dataset.saldo = lote.SALDO;
                 loteSelect.appendChild(option);
             });
@@ -579,7 +579,7 @@
             loteSelect.innerHTML = '<option value="">Nenhum lote com saldo encontrado.</option>';
         }
     } catch (err) {
-        loteSelect.innerHTML = \`<option value="">Erro ao carregar lotes.</option>\`;
+        loteSelect.innerHTML = `<option value="">Erro ao carregar lotes.</option>`;
         console.error(err);
     }
   });
@@ -607,10 +607,10 @@
             saldo: parseFloat(selectedOption.dataset.saldo)
         };
         // Atualiza o título do modal com o ID selecionado
-        tituloModal.textContent = \`📤 Registrar SAÍDA (Lote ID: ${loteSelecionado.id})\`;
+        tituloModal.textContent = `📤 Registrar SAÍDA (Lote ID: ${loteSelecionado.id})`;
     } else {
         loteSelecionado = null;
-        tituloModal.textContent = \`📤 Registrar SAÍDA\`;
+        tituloModal.textContent = `📤 Registrar SAÍDA`;
     }
   });
 
@@ -634,7 +634,7 @@
             endereco: row.cells[2].textContent.trim(),
             armazem: row.cells[3].textContent.trim(),
             usuario: row.cells[5].textContent.trim(),
-            dataHora: \`\${row.cells[6].textContent.trim()} \${row.cells[7].textContent.trim()}\`,
+            dataHora: `${row.cells[6].textContent.trim()} ${row.cells[7].textContent.trim()}`,
             tipoMovimento: operacao
         };
         gerarEtiqueta(dados);
@@ -661,7 +661,7 @@
         return;
       }
       if (quantidade > loteSelecionado.saldo) {
-        alert(\`Quantidade inválida. O lote selecionado (${loteSelecionado.id}) possui saldo de apenas ${loteSelecionado.saldo}.\`);
+        alert(`Quantidade inválida. O lote selecionado (${loteSelecionado.id}) possui saldo de apenas ${loteSelecionado.saldo}.`);
         return;
       }
     }
@@ -673,7 +673,7 @@
     try {
       for (let i = 0; i < repeticoes; i++) {
         if (repeticoes > 1) {
-          statusEl.textContent = \`Registrando ${i + 1} de ${repeticoes}...\`;
+          statusEl.textContent = `Registrando ${i + 1} de ${repeticoes}...`;
         }
         
         const body = {
@@ -698,7 +698,7 @@
 
         const data = await res.json();
         if (!res.ok) {
-            throw new Error(data.message || \`Erro ao registrar movimento ${i + 1}\`);
+            throw new Error(data.message || `Erro ao registrar movimento ${i + 1}`);
         }
         
         if (tipo === 'ENTRADA' && data.labelData) {
@@ -719,11 +719,11 @@
       }, 500);
       
       statusEl.style.color = "#28a745";
-      statusEl.textContent = \`${repeticoes} movimento(s) registrado(s) com sucesso!\`;
+      statusEl.textContent = `${repeticoes} movimento(s) registrado(s) com sucesso!`;
 
     } catch (err) {
       statusEl.style.color = "#c00";
-      statusEl.textContent = \`Erro: ${err.message}\`;
+      statusEl.textContent = `Erro: ${err.message}`;
       // Re-consulta mesmo em caso de erro para atualizar a lista com os que deram certo
       setTimeout(() => {
         consultar(codigoAtual);
