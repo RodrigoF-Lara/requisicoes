@@ -387,6 +387,12 @@ tbody tr:hover {
     background-color: #5a6268;
 }
 
+.btn-secundario:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
 .resultado-acuracidade {
     padding: 20px;
     text-align: center;
@@ -749,6 +755,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: block;
     margin-bottom: 8px;
 }
+
 /* Novos estilos para estatísticas e saldo por local */
 .estatisticas-grid {
     display: grid;
@@ -941,13 +948,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .btn-movimento:disabled {
-    opacity: 0.5;
+    background: #bdc3c7;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 /* === MODAL === */
 .modal {
-    display: none;
+    display: none; /* Oculto por padrão */
     position: fixed;
     z-index: 2000;
     left: 0;
