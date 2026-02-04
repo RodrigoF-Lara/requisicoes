@@ -1,4 +1,4 @@
-# Sistema de Requisições & Kardex - Instruções para AI
+## Sistema de Requisições & Kardex - Instruções para AI
 
 ## Arquitetura Essencial
 - **Frontend**: Vanilla JS/HTML/CSS, páginas .html independentes, roteamento via `layout.js`
