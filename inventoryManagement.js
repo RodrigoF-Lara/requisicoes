@@ -59,13 +59,13 @@
       
       renderHistorico(data.movimentos || []);
       renderEstatisticas(data);
-      await buscarSaldoPorLocal(codigo);
+      await buscarSaldoAgrupado(codigo);
       
       statusEl.textContent = "";
       
-      // Ativa o botão de ENTRADA, mas SAÍDA depende da seleção de lote
+      // Habilita botões de entrada e saída
       btnEntrada.disabled = false;
-      btnSaida.disabled = true; // Desabilita por padrão
+      btnSaida.disabled = false; 
       loteSelecionado = null; // Reseta lote selecionado
 
     } catch (err) {
@@ -76,39 +76,37 @@
     }
   }
 
-  async function buscarSaldoPorLocal(codigo) {
+  async function buscarSaldoAgrupado(codigo) {
     const saldoLocalBody = document.getElementById("saldoLocalBody");
     saldoPorLocalContainer.style.display = 'block';
-    saldoLocalBody.innerHTML = '<tr><td colspan="6">Buscando...</td></tr>';
+    saldoLocalBody.innerHTML = '<tr><td colspan="5">Buscando...</td></tr>';
     
     try {
-        const res = await fetch(`/api/inventory?action=saldoPorLote&codigo=${encodeURIComponent(codigo)}`);
+        const res = await fetch(`/api/inventory?action=saldoLocal&codigo=${encodeURIComponent(codigo)}`);
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
-        renderSaldoPorLocal(data.lotes);
+        renderSaldoAgrupado(data.locais);
     } catch (err) {
-        saldoLocalBody.innerHTML = `<tr><td colspan="6" style="color:#c00;">${err.message}</td></tr>`;
+        saldoLocalBody.innerHTML = `<tr><td colspan="5" style="color:#c00;">${err.message}</td></tr>`;
     }
   }
 
-  function renderSaldoPorLocal(lotes) {
+  function renderSaldoAgrupado(locais) {
     const saldoLocalBody = document.getElementById("saldoLocalBody");
     saldoLocalBody.innerHTML = "";
-    if (!lotes || lotes.length === 0) {
-      saldoLocalBody.innerHTML = '<tr><td colspan="6" class="info-message">Nenhum lote com saldo encontrado para este produto.</td></tr>';
+    if (!locais || locais.length === 0) {
+      saldoLocalBody.innerHTML = '<tr><td colspan="5" class="info-message">Nenhum saldo encontrado para este produto.</td></tr>';
       return;
     }
     
-    lotes.forEach(lote => {
+    locais.forEach(local => {
         const tr = document.createElement('tr');
-        tr.dataset.id = lote.ID;
         tr.innerHTML = `
-            <td><strong>${lote.ID}</strong></td>
-            <td>${lote.ARMAZEM || "-"}</td>
-            <td>${lote.ENDERECO || "-"}</td>
-            <td>${lote.TAM_LOTE || 0}</td>
-            <td class="text-right"><strong>${lote.SALDO || 0}</strong></td>
-            <td><button class="btn-selecionar-lote" data-id="${lote.ID}" data-saldo="${lote.SALDO}">Selecionar</button></td>
+            <td>${local.ARMAZEM || "-"}</td>
+            <td>${local.ENDERECO || "-"}</td>
+            <td>${local.TAM_LOTE || 0}</td>
+            <td class="text-right">${local.QNT_CAIXAS || 0}</td>
+            <td class="text-right"><strong>${local.SALDO || 0}</strong></td>
         `;
         saldoLocalBody.appendChild(tr);
     });
@@ -474,21 +472,6 @@
     }
   });
 
-  document.getElementById('saldoLocalBody').addEventListener('click', (e) => {
-    if (e.target.classList.contains('btn-selecionar-lote')) {
-        const id = e.target.dataset.id;
-        const saldo = parseFloat(e.target.dataset.saldo);
-        loteSelecionado = { id, saldo };
-
-        document.querySelectorAll('#saldoLocalBody tr').forEach(row => row.classList.remove('selecionado'));
-        e.target.closest('tr').classList.add('selecionado');
-        
-        btnSaida.disabled = false;
-        statusEl.textContent = `Lote ${id} selecionado para saída. Saldo disponível: ${saldo}.`;
-        statusEl.style.color = '#17a2b8';
-    }
-  });
-
   btnEntrada.addEventListener("click", () => {
     if (!codigoAtual) return;
     tituloModal.textContent = "📥 Registrar ENTRADA";
@@ -498,22 +481,61 @@
     inputTipoMovimento.value = "ENTRADA";
     submitBtn.className = "btn-movimento entrada";
     submitBtn.textContent = "✓ Registrar Entrada";
+
+    // Mostra/oculta campos
+    document.getElementById('loteSelectorContainer').style.display = 'none';
+    document.getElementById('entradaFields').style.display = 'block';
+    
     modalMovimento.style.display = "flex";
   });
 
-  btnSaida.addEventListener("click", () => {
-    if (!loteSelecionado) {
-      alert('Por favor, selecione um lote da lista "Saldo por Lote" antes de registrar uma saída.');
+  btnSaida.addEventListener("click", async () => {
+    if (!codigoAtual) {
+      alert('Consulte um produto antes de registrar uma saída.');
       return;
     }
-    tituloModal.textContent = `📤 Registrar SAÍDA (Lote ID: ${loteSelecionado.id})`;
+    tituloModal.textContent = `📤 Registrar SAÍDA`;
     tituloModal.style.color = "#f44336";
     iconModal.textContent = "📤";
     iconModal.style.color = "#f44336";
-    inputTipoMovimento.value = "SAIDA"; // Note: a API espera 'SAIDA' ou 'ENTRADA'
+    inputTipoMovimento.value = "SAIDA";
     submitBtn.className = "btn-movimento saida";
     submitBtn.textContent = "✓ Registrar Saída";
+
+    // Mostra/oculta campos
+    document.getElementById('loteSelectorContainer').style.display = 'block';
+    document.getElementById('entradaFields').style.display = 'none';
+    
     modalMovimento.style.display = "flex";
+
+    // Busca e popula os lotes disponíveis
+    const loteSelect = document.getElementById('loteIdModal');
+    loteSelect.innerHTML = '<option value="">Carregando lotes...</option>';
+    loteSelect.disabled = true;
+    loteSelecionado = null; // Reseta seleção anterior
+
+    try {
+        const res = await fetch(`/api/inventory?action=saldoPorLote&codigo=${encodeURIComponent(codigoAtual)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+
+        if (data.lotes && data.lotes.length > 0) {
+            loteSelect.innerHTML = '<option value="">Selecione um lote...</option>';
+            data.lotes.forEach(lote => {
+                const option = document.createElement('option');
+                option.value = lote.ID;
+                option.textContent = `ID: ${lote.ID} | End: ${lote.ENDERECO || 'N/A'} | Saldo: ${lote.SALDO}`;
+                option.dataset.saldo = lote.SALDO;
+                loteSelect.appendChild(option);
+            });
+            loteSelect.disabled = false;
+        } else {
+            loteSelect.innerHTML = '<option value="">Nenhum lote com saldo encontrado.</option>';
+        }
+    } catch (err) {
+        loteSelect.innerHTML = `<option value="">Erro ao carregar lotes.</option>`;
+        console.error(err);
+    }
   });
 
   closeModal.addEventListener("click", () => {
@@ -529,6 +551,21 @@
   formMovimento.addEventListener("submit", (e) => {
     e.preventDefault();
     handleMovimento();
+  });
+
+  document.getElementById('loteIdModal').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    if (selectedOption && selectedOption.value) {
+        loteSelecionado = {
+            id: selectedOption.value,
+            saldo: parseFloat(selectedOption.dataset.saldo)
+        };
+        // Atualiza o título do modal com o ID selecionado
+        tituloModal.textContent = `📤 Registrar SAÍDA (Lote ID: ${loteSelecionado.id})`;
+    } else {
+        loteSelecionado = null;
+        tituloModal.textContent = `📤 Registrar SAÍDA`;
+    }
   });
 
   // Listener para o botão de reimprimir etiqueta
@@ -550,16 +587,26 @@
   });
 
   async function handleMovimento() {
-    const tamanhoLote = Number(document.getElementById("tamanhoLoteModal").value) || 0;
+    const tipo = inputTipoMovimento.value;
+    
+    // Validação específica para SAÍDA
+    if (tipo === 'SAIDA') {
+        const idLote = document.getElementById('loteIdModal').value;
+        if (!idLote || !loteSelecionado) {
+            alert("Por favor, selecione um lote de saída.");
+            return;
+        }
+    }
+
+    const quantidade = Number(document.getElementById("tamanhoLoteModal").value) || 0;
     const repeticoes = Number(document.getElementById("repeticoesModal").value) || 1;
     const observacao = document.getElementById("observacaoModal").value.trim();
     const endereco = (document.getElementById("enderecoModal").value || "").trim();
     const armazem = (document.getElementById("armazemModal").value || "").trim();
-    const tipo = inputTipoMovimento.value;
     const usuario = localStorage.getItem("userName") || "WEB";
 
-    if (!codigoAtual || tamanhoLote <= 0 || repeticoes <= 0) {
-      alert("Preencha todos os campos obrigatórios.");
+    if (!codigoAtual || quantidade <= 0 || repeticoes <= 0) {
+      alert("A quantidade e o número de repetições devem ser maiores que zero.");
       return;
     }
 
@@ -568,7 +615,7 @@
         alert("Erro fatal: Nenhum lote selecionado. A operação não pode continuar.");
         return;
       }
-      if (tamanhoLote > loteSelecionado.saldo) {
+      if (quantidade > loteSelecionado.saldo) {
         alert(`Quantidade inválida. O lote selecionado (${loteSelecionado.id}) possui saldo de apenas ${loteSelecionado.saldo}.`);
         return;
       }
@@ -582,7 +629,7 @@
         const body = {
           codigo: codigoAtual,
           tipo,
-          quantidade: tamanhoLote,
+          quantidade: quantidade,
           usuario,
           endereco,
           armazem,
@@ -598,22 +645,26 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
-
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Erro ao registrar movimento");
+        if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.message || 'Falha ao registrar');
+        }
       }
-
-      statusEl.style.color = "green";
-      statusEl.textContent = "Movimentos registrados com sucesso!";
+      
       modalMovimento.style.display = "none";
-      consultar(codigoAtual);
+      formMovimento.reset();
+      
+      // Atraso para dar tempo ao DB de atualizar antes de reconsultar
+      setTimeout(() => {
+          consultar(codigoAtual);
+      }, 500);
+      
+      statusEl.style.color = "#28a745";
+      statusEl.textContent = "Movimento registrado com sucesso!";
+
     } catch (err) {
-        statusEl.style.color = "#c00";
-        statusEl.textContent = `Erro: ${err.message}`;
+      statusEl.style.color = "#c00";
+      statusEl.textContent = `Erro: ${err.message}`;
     }
   }
-
-  // Desativa botões inicialmente
-  btnEntrada.disabled = true;
-  btnSaida.disabled = true;
 });
