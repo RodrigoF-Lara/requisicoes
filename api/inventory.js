@@ -86,8 +86,8 @@ export default async function handler(req, res) {
       }
 
       const { codigo, tipo, quantidade, usuario, endereco, armazem, observacao } = body;
-      if (!codigo || !quantidade || !usuario) {
-        return res.status(400).json({ message: "Código, quantidade e usuário são obrigatórios." });
+      if (!codigo || !tipo || quantidade == null || !usuario) {
+        return res.status(400).json({ message: "Campos obrigatórios: código, tipo, quantidade, usuário." });
       }
 
       const operacao = tipo.toUpperCase() === "ENTRADA" ? "ENTRADA" : "SAIDA";
@@ -97,20 +97,22 @@ export default async function handler(req, res) {
       try {
         await transaction.begin();
 
-        await transaction.request()
+        const insertEmbReq = transaction.request();
+        await insertEmbReq
           .input("CODIGO", sql.VarChar(10), codigo)
           .input("ENDERECO", sql.VarChar(100), endereco || "")
           .input("ARMAZEM", sql.VarChar(50), armazem || "")
           .input("QNT", sql.Float, qntValue)
           .input("USUARIO", sql.VarChar(50), usuario)
-          .input("OBS", sql.NVarChar(sql.MAX), observacao || "")
-          .input("OPERACAO", sql.VarChar(50), operacao)
+          .input("OBS", sql.VarChar(255), observacao || "")
           .input("DT", sql.Date, new Date())
-          .input("HR", sql.Time, new Date())
+          .input("HR", sql.VarChar(8), new Date().toTimeString().split(" ")[0])
+          .input("MOTIVO", sql.VarChar(50), "Entrada via sistema")
+          .input("KARDEX", sql.Int, 2026)
           .query(`
             INSERT INTO [dbo].[KARDEX_2026_EMBALAGEM]
-            ([CODIGO], [ENDERECO], [ARMAZEM], [QNT], [USUARIO], [OBS], [OPERACAO], [DT], [HR])
-            VALUES (@CODIGO, @ENDERECO, @ARMAZEM, @QNT, @USUARIO, @OBS, @OPERACAO, @DT, @HR)
+            ([CODIGO], [ENDERECO], [ARMAZEM], [QNT], [USUARIO], [OBS], [DT], [HR], [MOTIVO], [KARDEX])
+            VALUES (@CODIGO, @ENDERECO, @ARMAZEM, @QNT, @USUARIO, @OBS, @DT, @HR, @MOTIVO, @KARDEX)
           `);
 
         await transaction.commit();

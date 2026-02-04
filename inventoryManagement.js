@@ -524,23 +524,23 @@
     
     const quantidade = Number(document.getElementById("quantidadeModal").value) || 0;
     const tamanhoLote = Number(document.getElementById("tamanhoLoteModal").value) || 0;
-    const repeticoes = Number(document.getElementById("repeticoesModal").value) || 0;
+    const repeticoes = Number(document.getElementById("repeticoesModal").value) || 1;
     const observacao = document.getElementById("observacaoModal").value.trim();
     const endereco = (document.getElementById("enderecoModal").value || "").trim();
     const armazem = (document.getElementById("armazemModal").value || "").trim();
     const tipo = inputTipoMovimento.value;
     const usuario = localStorage.getItem("userName") || "WEB";
 
-    if (!codigoAtual || quantidade <= 0 || tamanhoLote <= 0) {
-        alert("Código, quantidade e tamanho de lote válidos são obrigatórios.");
+    if (!codigoAtual || quantidade <= 0 || tamanhoLote <= 0 || repeticoes <= 0) {
+        alert("Preencha todos os campos obrigatórios.");
         return;
     }
 
-    try {
-        statusEl.style.color = "#222";
-        statusEl.textContent = "Registrando...";
+    statusEl.style.color = "#222";
+    statusEl.textContent = "Registrando...";
 
-        for (let i = 0; i <= repeticoes; i++) {
+    try {
+        for (let i = 0; i < repeticoes; i++) {
             const body = {
                 codigo: codigoAtual,
                 tipo,
@@ -562,7 +562,7 @@
         }
 
         statusEl.style.color = "green";
-        statusEl.textContent = "Movimento registrado com sucesso!";
+        statusEl.textContent = "Movimentos registrados com sucesso!";
         modalMovimento.style.display = "none";
         consultar(codigoAtual);
     } catch (err) {
