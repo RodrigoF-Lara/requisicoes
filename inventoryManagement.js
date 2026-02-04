@@ -152,41 +152,110 @@
   function renderHistorico(rows) {
     historicoBody.innerHTML = "";
     if (!rows || rows.length === 0) {
-      historicoBody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Nenhum histórico encontrado</td></tr>';
+      historicoBody.innerHTML =
+        '<tr><td colspan="9" style="text-align:center;">Nenhum histórico encontrado</td></tr>';
       return;
     }
-    
-    rows.forEach((r) => {
-      const tr = document.createElement("tr");
-      
-      const operacaoClass = r.OPERACAO === 'ENTRADA' ? 'badge-entrada' : 'badge-saida';
-      const operacaoIcon = r.OPERACAO === 'ENTRADA' ? '⬆️' : '⬇️';
-      
-      tr.innerHTML = `
-        <td>${r.ID_TB_RESUMO || '-'}</td>
-        <td><span class="badge ${operacaoClass}">${operacaoIcon} ${r.OPERACAO || "-"}</span></td>
-        <td>${r.ENDERECO || "-"}</td>
-        <td>${r.ARMAZEM ? String(r.ARMAZEM).padStart(2, '0') : "-"}</td>
-        <td class="text-right"><strong>${r.QNT || 0}</strong></td>
-        <td>${r.USUARIO || "-"}</td>
-        <td>${r.DT ? new Date(r.DT).toLocaleDateString('pt-BR') : "-"}</td>
-        <td>${r.HR || "-"}</td>
+
+    rows.forEach((row) => {
+      historicoBody.innerHTML += `
+        <tr data-id-movimento="${row.ID_TB_RESUMO}">
+          <td>${row.ID_TB_RESUMO || "-"}</td>
+          <td><span class="badge ${
+            row.OPERACAO === "ENTRADA" ? "badge-entrada" : "badge-saida"
+          }">${row.OPERACAO === "ENTRADA" ? "⬆️" : "⬇️"} ${
+        row.OPERACAO || "-"
+      }</span></td>
+          <td>${row.ENDERECO || "-"}</td>
+          <td>${row.ARMAZEM ? String(row.ARMAZEM).padStart(2, "0") : "-"}</td>
+          <td class="text-right"><strong>${row.QNT || 0}</strong></td>
+          <td>${row.USUARIO || "-"}</td>
+          <td>${
+            row.DT ? new Date(row.DT).toLocaleDateString("pt-BR") : "-"
+          }</td>
+          <td>${row.HR || "-"}</td>
+          <td class="actions-cell">
+            ${
+              row.OPERACAO === "ENTRADA"
+                ? `<button class="btn-reimprimir" title="Reimprimir Etiqueta">
+                <i class="fa-solid fa-print"></i>
+              </button>`
+                : ""
+            }
+          </td>
+        </tr>
       `;
-      historicoBody.appendChild(tr);
     });
   }
 
-  function gerarEtiqueta(dados) {
-    const janelaEtiqueta = window.open('', '_blank', 'width=600,height=400');
-    
-    const htmlEtiqueta = `
+  function gerarEtiqueta(dadosOuArray) {
+    const etiquetas = Array.isArray(dadosOuArray) ? dadosOuArray : [dadosOuArray];
+    if (etiquetas.length === 0) {
+      console.error("gerarEtiqueta foi chamada sem dados de etiqueta válidos.");
+      return;
+    }
+
+    const janelaEtiqueta = window.open("", "_blank", "width=800,height=600");
+
+    const etiquetasHtml = etiquetas.map(dados => `
+      <div class="etiqueta">
+        <div class="header">
+            <div class="header-top">
+                <span class="id-badge">ID: ${dados.idMovimento || "N/A"}</span>
+                <h1>KARDEX SYSTEM</h1>
+                <span class="tipo-movimento">${dados.tipoMovimento}</span>
+            </div>
+        </div>
+        
+        <div class="codigo-principal">
+            <div class="codigo-texto">${dados.codigo}</div>
+        </div>
+        
+        <div class="codigo-barras">
+            <svg id="barcode-${dados.idMovimento}"></svg>
+        </div>
+        
+        <div class="info-principal">
+            <div class="info-row destaque">
+                <span class="info-label">QUANTIDADE:</span>
+                <span class="info-value" style="font-size: 10pt;">${dados.quantidade}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">ENDEREÇO:</span>
+                <span class="info-value">${dados.endereco || "-"}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">ARMAZÉM:</span>
+                <span class="info-value">${dados.armazem ? String(dados.armazem).padStart(2, "0") : "-"}</span>
+            </div>
+        </div>
+        
+        <div class="descricao">
+            <div class="descricao-label">DESCRIÇÃO DO PRODUTO:</div>
+            <div class="descricao-text">${dados.descricao || "N/A"}</div>
+        </div>
+        
+        <div class="footer">
+            <div class="footer-left">
+                ${dados.dataHora}
+            </div>
+            <div class="footer-right">
+                ${dados.usuario} | KARDEX 2026
+            </div>
+        </div>
+    </div>
+    `).join('');
+
+    const htmlEtiqueta = \`
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Etiqueta - ${dados.codigo}</title>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <title>Etiqueta - ${etiquetas[0].codigo}</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
     <style>
         @media print {
             @page { 
@@ -198,6 +267,12 @@
                 print-color-adjust: exact;
             }
             .no-print { display: none !important; }
+            .etiqueta {
+                page-break-after: always;
+            }
+            .etiqueta:last-child {
+                page-break-after: auto;
+            }
         }
         
         * {
@@ -208,24 +283,24 @@
         
         body {
             font-family: 'Arial', sans-serif;
-            background: white;
+            background: #ccc;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            min-height: 100vh;
             padding: 5mm;
         }
         
         .etiqueta {
             width: 145mm;
             height: 104mm;
-            border: 3px solid #000;
+            border: 1px dashed #666;
             padding: 3mm;
             background: white;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
             justify-content: space-between;
+            margin-bottom: 5mm;
         }
         
         .header {
@@ -360,6 +435,18 @@
             text-align: right;
             font-weight: bold;
         }
+
+        .codigo-principal {
+          text-align: center;
+          padding: 2mm 0;
+        }
+
+        .codigo-texto {
+            font-size: 20pt;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #111;
+        }
         
         .btn-imprimir {
             position: fixed;
@@ -383,82 +470,39 @@
 </head>
 <body>
     <button class="btn-imprimir no-print" onclick="window.print()">🖨️ Imprimir Etiqueta</button>
-    
-    <div class="etiqueta">
-        <div class="header">
-            <div class="header-top">
-                <span class="id-badge">ID: ${dados.idMovimento || 'N/A'}</span>
-                <h1>KARDEX SYSTEM</h1>
-                <span class="tipo-movimento">${dados.tipoMovimento}</span>
-            </div>
-        </div>
-        
-        <div class="codigo-principal">
-            <div class="codigo-texto">${dados.codigo}</div>
-        </div>
-        
-        <div class="codigo-barras">
-            <svg id="barcode"></svg>
-        </div>
-        
-        <div class="info-principal">
-            <div class="info-row destaque">
-                <span class="info-label">QUANTIDADE:</span>
-                <span class="info-value" style="font-size: 10pt;">${dados.quantidade}</span>
-            </div>
-            
-            <div class="info-row">
-                <span class="info-label">ENDEREÇO:</span>
-                <span class="info-value">${dados.endereco || '-'}</span>
-            </div>
-            
-            <div class="info-row">
-                <span class="info-label">ARMAZÉM:</span>
-                <span class="info-value">${dados.armazem ? String(dados.armazem).padStart(2, '0') : '-'}</span>
-            </div>
-        </div>
-        
-        <div class="descricao">
-            <div class="descricao-label">DESCRIÇÃO DO PRODUTO:</div>
-            <div class="descricao-text">${dados.descricao || 'N/A'}</div>
-        </div>
-        
-        <div class="footer">
-            <div class="footer-left">
-                ${dados.dataHora}
-            </div>
-            <div class="footer-right">
-                ${dados.usuario} | KARDEX 2026
-            </div>
-        </div>
-    </div>
-    
+    ${etiquetasHtml}    
     <script>
-        // Gera código de barras com tamanho maximizado
-        JsBarcode("#barcode", "${dados.codigo}", {
-            format: "CODE128",
-            width: 3,
-            height: 55,
-            displayValue: true,
-            fontSize: 14,
-            margin: 2,
-            fontOptions: "bold"
-        });
-        
-        setTimeout(() => window.focus(), 250);
-    </script>
+        const etiquetasData = ${JSON.stringify(etiquetas)};
+        setTimeout(() => {
+            etiquetasData.forEach(dados => {
+                if (dados.idMovimento && document.getElementById('barcode-' + dados.idMovimento)) {
+                    JsBarcode("#barcode-" + dados.idMovimento, dados.codigo, {
+                        format: "CODE128",
+                        width: 3,
+                        height: 55,
+                        displayValue: true,
+                        fontSize: 14,
+                        margin: 2,
+                        fontOptions: "bold"
+                    });
+                }
+            });
+            window.focus();
+        }, 250);
+    <\/script>
 </body>
-</html>`;
+</html>\`;
 
     janelaEtiqueta.document.write(htmlEtiqueta);
     janelaEtiqueta.document.close();
-    
+
     // Adiciona um pequeno delay para garantir que o conteúdo foi renderizado antes de imprimir
     setTimeout(() => {
-        janelaEtiqueta.print();
-        janelaEtiqueta.close();
-    }, 250);
+      janelaEtiqueta.print();
+    }, 500);
   }
+
+  // --- Lógica de Eventos ---
 
   btnConsultar.addEventListener("click", () => {
     const codigo = codigoEl.value.trim();
@@ -485,6 +529,7 @@
     // Mostra/oculta campos
     document.getElementById('loteSelectorContainer').style.display = 'none';
     document.getElementById('entradaFields').style.display = 'block';
+    document.getElementById('repeticoesContainer').style.display = 'block';
     
     modalMovimento.style.display = "flex";
   });
@@ -505,6 +550,7 @@
     // Mostra/oculta campos
     document.getElementById('loteSelectorContainer').style.display = 'block';
     document.getElementById('entradaFields').style.display = 'none';
+    document.getElementById('repeticoesContainer').style.display = 'none';
     
     modalMovimento.style.display = "flex";
 
@@ -524,7 +570,7 @@
             data.lotes.forEach(lote => {
                 const option = document.createElement('option');
                 option.value = lote.ID;
-                option.textContent = `ID: ${lote.ID} | End: ${lote.ENDERECO || 'N/A'} | Saldo: ${lote.SALDO}`;
+                option.textContent = \`ID: ${lote.ID} | End: ${lote.ENDERECO || 'N/A'} | Saldo: ${lote.SALDO}\`;
                 option.dataset.saldo = lote.SALDO;
                 loteSelect.appendChild(option);
             });
@@ -533,7 +579,7 @@
             loteSelect.innerHTML = '<option value="">Nenhum lote com saldo encontrado.</option>';
         }
     } catch (err) {
-        loteSelect.innerHTML = `<option value="">Erro ao carregar lotes.</option>`;
+        loteSelect.innerHTML = \`<option value="">Erro ao carregar lotes.</option>\`;
         console.error(err);
     }
   });
@@ -561,26 +607,35 @@
             saldo: parseFloat(selectedOption.dataset.saldo)
         };
         // Atualiza o título do modal com o ID selecionado
-        tituloModal.textContent = `📤 Registrar SAÍDA (Lote ID: ${loteSelecionado.id})`;
+        tituloModal.textContent = \`📤 Registrar SAÍDA (Lote ID: ${loteSelecionado.id})\`;
     } else {
         loteSelecionado = null;
-        tituloModal.textContent = `📤 Registrar SAÍDA`;
+        tituloModal.textContent = \`📤 Registrar SAÍDA\`;
     }
   });
 
   // Listener para o botão de reimprimir etiqueta
   document.getElementById('historicoBody').addEventListener('click', function(event) {
-    if (event.target.classList.contains('btn-reimprimir')) {
-        const row = event.target.closest('tr');
+    const target = event.target.closest('.btn-reimprimir');
+    if (target) {
+        const row = target.closest('tr');
+        const operacao = row.cells[1].textContent.trim().replace('⬆️', '').replace('⬇️', '').trim();
+        
+        if (operacao !== 'ENTRADA') {
+            alert('A reimpressão de etiquetas está disponível apenas para movimentações de ENTRADA.');
+            return;
+        }
+
         const dados = {
-            id: row.cells[0].textContent.trim(),
-            codigo: codigoAtual, // Assumindo que o código já está no escopo
+            idMovimento: row.cells[0].textContent.trim(),
+            codigo: codigoAtual,
             descricao: document.getElementById('infoDescricao').textContent.trim(),
             quantidade: row.cells[4].textContent.trim(),
             endereco: row.cells[2].textContent.trim(),
-            data: row.cells[6].textContent.trim(),
-            hora: row.cells[7].textContent.trim(),
-            usuario: row.cells[5].textContent.trim()
+            armazem: row.cells[3].textContent.trim(),
+            usuario: row.cells[5].textContent.trim(),
+            dataHora: \`\${row.cells[6].textContent.trim()} \${row.cells[7].textContent.trim()}\`,
+            tipoMovimento: operacao
         };
         gerarEtiqueta(dados);
     }
@@ -588,17 +643,8 @@
 
   async function handleMovimento() {
     const tipo = inputTipoMovimento.value;
-    
-    // Validação específica para SAÍDA
-    if (tipo === 'SAIDA') {
-        const idLote = document.getElementById('loteIdModal').value;
-        if (!idLote || !loteSelecionado) {
-            alert("Por favor, selecione um lote de saída.");
-            return;
-        }
-    }
-
     const quantidade = Number(document.getElementById("tamanhoLoteModal").value) || 0;
+    const repeticoes = (tipo === 'ENTRADA') ? (Number(document.getElementById("repeticoesModal").value) || 1) : 1;
     const observacao = document.getElementById("observacaoModal").value.trim();
     const endereco = (document.getElementById("enderecoModal").value || "").trim();
     const armazem = (document.getElementById("armazemModal").value || "").trim();
@@ -615,38 +661,53 @@
         return;
       }
       if (quantidade > loteSelecionado.saldo) {
-        alert(`Quantidade inválida. O lote selecionado (${loteSelecionado.id}) possui saldo de apenas ${loteSelecionado.saldo}.`);
+        alert(\`Quantidade inválida. O lote selecionado (${loteSelecionado.id}) possui saldo de apenas ${loteSelecionado.saldo}.\`);
         return;
       }
     }
 
     statusEl.style.color = "#222";
     statusEl.textContent = "Registrando...";
+    const etiquetasParaImprimir = [];
 
     try {
-      const body = {
-        codigo: codigoAtual,
-        tipo,
-        quantidade: quantidade,
-        usuario,
-        endereco,
-        armazem,
-        observacao,
-      };
-      
-      if (tipo === 'SAIDA') {
-          body.idTbResumo = loteSelecionado.id;
+      for (let i = 0; i < repeticoes; i++) {
+        if (repeticoes > 1) {
+          statusEl.textContent = \`Registrando ${i + 1} de ${repeticoes}...\`;
+        }
+        
+        const body = {
+          codigo: codigoAtual,
+          tipo,
+          quantidade: quantidade,
+          usuario,
+          endereco,
+          armazem,
+          observacao,
+        };
+        
+        if (tipo === 'SAIDA') {
+            body.idTbResumo = loteSelecionado.id;
+        }
+
+        const res = await fetch("/api/inventory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.message || \`Erro ao registrar movimento ${i + 1}\`);
+        }
+        
+        if (tipo === 'ENTRADA' && data.labelData) {
+            etiquetasParaImprimir.push(data.labelData);
+        }
       }
 
-      const res = await fetch("/api/inventory", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.message || `Erro ao registrar movimento`);
+      if (etiquetasParaImprimir.length > 0) {
+        gerarEtiqueta(etiquetasParaImprimir);
       }
       
       modalMovimento.style.display = "none";
@@ -658,11 +719,15 @@
       }, 500);
       
       statusEl.style.color = "#28a745";
-      statusEl.textContent = "Movimento registrado com sucesso!";
+      statusEl.textContent = \`${repeticoes} movimento(s) registrado(s) com sucesso!\`;
 
     } catch (err) {
       statusEl.style.color = "#c00";
-      statusEl.textContent = `Erro: ${err.message}`;
+      statusEl.textContent = \`Erro: ${err.message}\`;
+      // Re-consulta mesmo em caso de erro para atualizar a lista com os que deram certo
+      setTimeout(() => {
+        consultar(codigoAtual);
+      }, 500);
     }
   }
 });

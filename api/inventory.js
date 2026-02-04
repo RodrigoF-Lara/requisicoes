@@ -112,12 +112,13 @@ export default async function handler(req, res) {
 
       const operacao = tipo.toUpperCase();
       const transaction = pool.transaction();
+      let responseData = { message: "Movimento registrado com sucesso!" };
       
       try {
         await transaction.begin();
 
         if (operacao === 'ENTRADA') {
-          // Lógica de ENTRADA (mantida como estava)
+          // Lógica de ENTRADA
           const embResult = await transaction
             .request()
             .input("D_E_L_E_T_", sql.VarChar, "")
@@ -170,6 +171,24 @@ export default async function handler(req, res) {
               ([D_E_L_E_T_], [APLICATIVO], [ID_TB_RESUMO], [CODIGO], [ENDERECO], [ARMAZEM], [QNT], [OPERACAO], [USUARIO], [DT], [HR], [MOTIVO], [OBS], [KARDEX], [CAIXA])
               VALUES (@D_E_L_E_T_, @APLICATIVO, @ID_TB_RESUMO, @CODIGO_log, @ENDERECO_log, @ARMAZEM_log, @QNT_log, @OPERACAO_log, @USUARIO_log, @DT_log, @HR_log, @MOTIVO_log, @OBS_log, @KARDEX_log, @CAIXA_log);
             `);
+          
+          // Busca a descrição do produto para retornar para a etiqueta
+          const prod = await transaction.request()
+              .input("CODIGO_PROD", sql.VarChar, codigo)
+              .query("SELECT DESCRICAO FROM [dbo].[CAD_PROD] WHERE CODIGO = @CODIGO_PROD");
+          const descricaoProduto = (prod.recordset[0] && prod.recordset[0].DESCRICAO) || 'N/A';
+
+          responseData.labelData = {
+              idMovimento: ultimoId,
+              codigo: codigo,
+              descricao: descricaoProduto,
+              quantidade: quantidade,
+              endereco: endereco || '',
+              armazem: armazem || '',
+              usuario: usuario,
+              dataHora: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
+              tipoMovimento: 'ENTRADA'
+          };
 
         } else if (operacao === 'SAIDA') {
           // Lógica de SAÍDA (refeita)
@@ -232,7 +251,7 @@ export default async function handler(req, res) {
         }
 
         await transaction.commit();
-        return res.status(201).json({ message: "Movimento registrado com sucesso!" });
+        return res.status(201).json(responseData);
 
       } catch (err) {
         await transaction.rollback();

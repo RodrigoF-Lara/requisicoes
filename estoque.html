@@ -91,6 +91,11 @@
                             <input type="number" id="tamanhoLoteModal" min="1" value="1" required />
                         </div>
 
+                        <div class="form-group-modal" id="repeticoesContainer" style="display: none;">
+                            <label for="repeticoesModal">Número de Etiquetas (Repetições):</label>
+                            <input type="number" id="repeticoesModal" min="1" value="1" />
+                        </div>
+
                         <div class="form-group-modal">
                             <label for="observacaoModal">Observação:</label>
                             <textarea id="observacaoModal" rows="3" placeholder="Digite uma observação (opcional)"></textarea>
@@ -135,6 +140,7 @@
                             <th>Usuário</th>
                             <th>Data</th>
                             <th>Hora</th>
+                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody id="historicoBody"></tbody>
