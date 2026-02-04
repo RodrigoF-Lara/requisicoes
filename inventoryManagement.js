@@ -197,6 +197,11 @@
 
     const janelaEtiqueta = window.open("", "_blank", "width=800,height=600");
 
+    if (!janelaEtiqueta || typeof janelaEtiqueta.closed == 'undefined' || janelaEtiqueta.closed) {
+      alert("A janela de impressão foi bloqueada pelo navegador. Por favor, habilite os pop-ups para este site e tente reimprimir a etiqueta a partir do histórico.");
+      return;
+    }
+
     const etiquetasHtml = etiquetas.map(dados => `
       <div class="etiqueta">
         <div class="header">
@@ -726,6 +731,7 @@
     } catch (err) {
       statusEl.style.color = "#c00";
       statusEl.textContent = `Erro: ${err.message}`;
+      modalMovimento.style.display = "none"; // Garante que o modal feche em caso de erro.
       // Re-consulta mesmo em caso de erro para atualizar a lista com os que deram certo
       setTimeout(() => {
         consultar(codigoAtual);
