@@ -526,8 +526,9 @@
     submitBtn.className = "btn-movimento entrada";
     submitBtn.textContent = "✓ Registrar Entrada";
 
-    // Mostra/oculta campos
+    // Mostra/oculta campos e ajusta validação
     document.getElementById('loteSelectorContainer').style.display = 'none';
+    document.getElementById('loteIdModal').required = false; // <-- Correção
     document.getElementById('entradaFields').style.display = 'block';
     document.getElementById('repeticoesContainer').style.display = 'block';
     
@@ -547,8 +548,9 @@
     submitBtn.className = "btn-movimento saida";
     submitBtn.textContent = "✓ Registrar Saída";
 
-    // Mostra/oculta campos
+    // Mostra/oculta campos e ajusta validação
     document.getElementById('loteSelectorContainer').style.display = 'block';
+    document.getElementById('loteIdModal').required = true; // <-- Correção
     document.getElementById('entradaFields').style.display = 'none';
     document.getElementById('repeticoesContainer').style.display = 'none';
     
