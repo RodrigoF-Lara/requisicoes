@@ -488,7 +488,9 @@
     inputTipoMovimento.value = "ENTRADA";
     submitBtn.style.backgroundColor = "#4caf50";
     submitBtn.textContent = "✓ Registrar Entrada";
-    document.getElementById("quantidadeModal").value = "1";
+    document.getElementById("tamanhoLoteModal").value = "1";
+    document.getElementById("repeticoesModal").value = "1";
+    document.getElementById("observacaoModal").value = "";
     document.getElementById("enderecoModal").value = "";
     document.getElementById("armazemModal").value = "";
     modalMovimento.style.display = "flex";
@@ -503,7 +505,9 @@
     inputTipoMovimento.value = "SAIDA";
     submitBtn.style.backgroundColor = "#f44336";
     submitBtn.textContent = "✓ Registrar Saída";
-    document.getElementById("quantidadeModal").value = "1";
+    document.getElementById("tamanhoLoteModal").value = "1";
+    document.getElementById("repeticoesModal").value = "1";
+    document.getElementById("observacaoModal").value = "";
     document.getElementById("enderecoModal").value = "";
     document.getElementById("armazemModal").value = "";
     modalMovimento.style.display = "flex";
