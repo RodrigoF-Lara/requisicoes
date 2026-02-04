@@ -923,16 +923,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .btn-movimento.entrada {
-    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    background: linear-gradient(135deg, #81c784 0%, #66bb6a 100%);
 }
 
 .btn-movimento.entrada:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 6px 20px rgba(129, 199, 132, 0.4);
 }
 
 .btn-movimento.saida {
-    background: linear-gradient(135deg, #f44336 0%, #e53935 100%);
+    background: linear-gradient(135deg, #e57373 0%, #ef5350 100%);
 }
 
 .btn-movimento.saida:hover:not(:disabled) {
