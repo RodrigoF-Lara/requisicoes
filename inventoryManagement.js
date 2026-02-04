@@ -134,7 +134,7 @@
           <span class="stat-value">${entradas.length}</span>
         </div>
         <div class="stat-card">
-          <i class="fa-solid fa-arrow-down"></i>
+          <i class="fa-solid fa-arrow-down" style="color: #f44336;"></i>
           <span class="stat-label">Total Saídas</span>
           <span class="stat-value">${saidas.length}</span>
         </div>
