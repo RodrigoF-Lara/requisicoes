@@ -62,7 +62,7 @@ export default async function handler(req, res) {
           WHERE CODIGO = @CODIGO 
             AND D_E_L_E_T_ <> '*' 
             AND USUARIO <> 'BJULHAO'
-            AND KARDEX = '2026'
+            AND KARDEX = 2026
           ORDER BY DT DESC, HR DESC
         `);
 
