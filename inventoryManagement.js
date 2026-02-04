@@ -248,7 +248,7 @@
     </div>
     `).join('');
 
-    const htmlEtiqueta = \`
+    const htmlEtiqueta = `
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -491,7 +491,7 @@
         }, 250);
     <\/script>
 </body>
-</html>\`;
+</html>`;
 
     janelaEtiqueta.document.write(htmlEtiqueta);
     janelaEtiqueta.document.close();
