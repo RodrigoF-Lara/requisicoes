@@ -599,14 +599,13 @@
     }
 
     const quantidade = Number(document.getElementById("tamanhoLoteModal").value) || 0;
-    const repeticoes = Number(document.getElementById("repeticoesModal").value) || 1;
     const observacao = document.getElementById("observacaoModal").value.trim();
     const endereco = (document.getElementById("enderecoModal").value || "").trim();
     const armazem = (document.getElementById("armazemModal").value || "").trim();
     const usuario = localStorage.getItem("userName") || "WEB";
 
-    if (!codigoAtual || quantidade <= 0 || repeticoes <= 0) {
-      alert("A quantidade e o número de repetições devem ser maiores que zero.");
+    if (!codigoAtual || quantidade <= 0) {
+      alert("A quantidade deve ser maior que zero.");
       return;
     }
 
@@ -625,30 +624,29 @@
     statusEl.textContent = "Registrando...";
 
     try {
-      for (let i = 0; i < repeticoes; i++) {
-        const body = {
-          codigo: codigoAtual,
-          tipo,
-          quantidade: quantidade,
-          usuario,
-          endereco,
-          armazem,
-          observacao,
-        };
-        
-        if (tipo === 'SAIDA') {
-            body.idTbResumo = loteSelecionado.id;
-        }
+      const body = {
+        codigo: codigoAtual,
+        tipo,
+        quantidade: quantidade,
+        usuario,
+        endereco,
+        armazem,
+        observacao,
+      };
+      
+      if (tipo === 'SAIDA') {
+          body.idTbResumo = loteSelecionado.id;
+      }
 
-        const res = await fetch("/api/inventory", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        if (!res.ok) {
-            const errData = await res.json();
-            throw new Error(errData.message || 'Falha ao registrar');
-        }
+      const res = await fetch("/api/inventory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.message || `Erro ao registrar movimento`);
       }
       
       modalMovimento.style.display = "none";
