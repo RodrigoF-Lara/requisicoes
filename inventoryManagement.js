@@ -489,7 +489,7 @@
             });
             window.focus();
         }, 250);
-    <\/script>
+    </script>
 </body>
 </html>`;
 
