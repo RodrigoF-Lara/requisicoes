@@ -100,28 +100,26 @@ export default async function handler(req, res) {
         // 1. Inserir em KARDEX_2026_EMBALAGEM e obter o ID
         const embResult = await transaction
           .request()
-          .input("CODIGO", sql.VarChar, codigo)
-          .input("ENDERECO", sql.VarChar, endereco || "")
-          .input("ARMAZEM", sql.VarChar, armazem || "")
-          .input("QNT", sql.Float, quantidade)
-          .input("USUARIO", sql.VarChar, usuario)
-          .input("DT", sql.Date, new Date())
-          .input("HR", sql.VarChar, new Date().toTimeString().split(" ")[0])
-          .input("MOTIVO", sql.VarChar, "NOVO") // Corrigido
-          .input("OBS", sql.VarChar, observacao || "")
-          .input("QNT_SAIDA", sql.Float, 0) // Corrigido
-          .input("USUARIO_SAIDA", sql.VarChar, "") // Corrigido
-          .input("DT_SAIDA", sql.VarChar, "") // Corrigido
-          .input("HR_SAIDA", sql.VarChar, "") // Corrigido
-          .input("KARDEX", sql.Int, 2026)
-          .query(`
+        .input("D_E_L_E_T_", sql.VarChar, "")
+        .input("CODIGO", sql.VarChar, codigo)
+        .input("ENDERECO", sql.VarChar, endereco || "")
+        .input("ARMAZEM", sql.VarChar, armazem || "")
+        .input("QNT", sql.Float, quantidade)
+        .input("USUARIO", sql.VarChar, usuario)
+        .input("DT", sql.Date, new Date())
+        .input("HR", sql.VarChar, new Date().toTimeString().split(" ")[0])
+        .input("MOTIVO", sql.VarChar, "NOVO") // Corrigido
+        .input("OBS", sql.VarChar, observacao || "")
+        .input("QNT_SAIDA", sql.Float, 0) // Corrigido
+        .input("USUARIO_SAIDA", sql.VarChar, "") // Corrigido
+        .input("DT_SAIDA", sql.VarChar, "") // Corrigido
+        .input("HR_SAIDA", sql.VarChar, "") // Corrigido
+        .input("KARDEX", sql.Int, 2026)
+        .query(`
             INSERT INTO [dbo].[KARDEX_2026_EMBALAGEM] 
-            ([CODIGO], [ENDERECO], [ARMAZEM], [QNT], [USUARIO], [DT], [HR], [MOTIVO], [OBS], [QNT_SAIDA], [USUARIO_SAIDA], [DT_SAIDA], [HR_SAIDA], [KARDEX])
+            ([D_E_L_E_T_], [CODIGO], [ENDERECO], [ARMAZEM], [QNT], [USUARIO], [DT], [HR], [MOTIVO], [OBS], [QNT_SAIDA], [USUARIO_SAIDA], [DT_SAIDA], [HR_SAIDA], [KARDEX])
             OUTPUT INSERTED.ID
-            VALUES (@CODIGO, @ENDERECO, @ARMAZEM, @QNT, @USUARIO, @DT, @HR, @MOTIVO, @OBS, @QNT_SAIDA, @USUARIO_SAIDA, @DT_SAIDA, @HR_SAIDA, @KARDEX);
-          `);
-
-        const ultimoId = embResult.recordset[0].ID;
+            VALUES (@D_E_L_E_T_, @CODIGO, @ENDERECO, @ARMAZEM, @QNT, @USUARIO, @DT, @HR, @MOTIVO, @OBS, @QNT_SAIDA, @USUARIO_SAIDA, @DT_SAIDA, @HR_SAIDA, @KARDEX);
         if (!ultimoId) {
           throw new Error("Falha ao obter o ID da inserção em EMBALAGEM.");
         }
@@ -129,27 +127,25 @@ export default async function handler(req, res) {
         // 2. Inserir em KARDEX_2026
         await transaction
           .request()
-          .input("APLICATIVO", sql.VarChar, "SGC-WEB")
-          .input("ID_TB_RESUMO", sql.Int, ultimoId)
-          .input("CODIGO", sql.VarChar, codigo)
-          .input("ENDERECO", sql.VarChar, endereco || "")
-          .input("ARMAZEM", sql.VarChar, armazem || "")
-          .input("QNT", sql.Float, quantidade)
-          .input("OPERACAO", sql.VarChar, "ENTRADA")
-          .input("USUARIO", sql.VarChar, usuario)
-          .input("DT", sql.Date, new Date())
-          .input("HR", sql.VarChar, new Date().toTimeString().split(" ")[0])
-          .input("MOTIVO", sql.VarChar, "NOVO") // Corrigido
-          .input("OBS", sql.VarChar, observacao || "")
-          .input("KARDEX", sql.Int, 2026)
-          .input("CAIXA", sql.VarChar, "") // Corrigido
-          .query(`
+        .input("D_E_L_E_T_", sql.VarChar, "")
+        .input("APLICATIVO", sql.VarChar, "SGC-WEB")
+        .input("ID_TB_RESUMO", sql.Int, ultimoId)
+        .input("CODIGO", sql.VarChar, codigo)
+        .input("ENDERECO", sql.VarChar, endereco || "")
+        .input("ARMAZEM", sql.VarChar, armazem || "")
+        .input("QNT", sql.Float, quantidade)
+        .input("OPERACAO", sql.VarChar, "ENTRADA")
+        .input("USUARIO", sql.VarChar, usuario)
+        .input("DT", sql.Date, new Date())
+        .input("HR", sql.VarChar, new Date().toTimeString().split(" ")[0])
+        .input("MOTIVO", sql.VarChar, "NOVO") // Corrigido
+        .input("OBS", sql.VarChar, observacao || "")
+        .input("KARDEX", sql.Int, 2026)
+        .input("CAIXA", sql.VarChar, "") // Corrigido
+        .query(`
             INSERT INTO [dbo].[KARDEX_2026] 
-            ([APLICATIVO], [ID_TB_RESUMO], [CODIGO], [ENDERECO], [ARMAZEM], [QNT], [OPERACAO], [USUARIO], [DT], [HR], [MOTIVO], [OBS], [KARDEX], [CAIXA])
-            VALUES (@APLICATIVO, @ID_TB_RESUMO, @CODIGO, @ENDERECO, @ARMAZEM, @QNT, @OPERACAO, @USUARIO, @DT, @HR, @MOTIVO, @OBS, @KARDEX, @CAIXA);
-          `);
-
-        await transaction.commit();
+            ([D_E_L_E_T_], [APLICATIVO], [ID_TB_RESUMO], [CODIGO], [ENDERECO], [ARMAZEM], [QNT], [OPERACAO], [USUARIO], [DT], [HR], [MOTIVO], [OBS], [KARDEX], [CAIXA])
+            VALUES (@D_E_L_E_T_, @APLICATIVO, @ID_TB_RESUMO, @CODIGO, @ENDERECO, @ARMAZEM, @QNT, @OPERACAO, @USUARIO, @DT, @HR, @MOTIVO, @OBS, @KARDEX, @CAIXA);
         return res.status(201).json({ message: "Movimento registrado com sucesso!" });
       } catch (err) {
         await transaction.rollback();
