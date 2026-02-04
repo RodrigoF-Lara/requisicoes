@@ -523,60 +523,51 @@
     e.preventDefault();
     
     const quantidade = Number(document.getElementById("quantidadeModal").value) || 0;
+    const tamanhoLote = Number(document.getElementById("tamanhoLoteModal").value) || 0;
+    const repeticoes = Number(document.getElementById("repeticoesModal").value) || 0;
+    const observacao = document.getElementById("observacaoModal").value.trim();
     const endereco = (document.getElementById("enderecoModal").value || "").trim();
     const armazem = (document.getElementById("armazemModal").value || "").trim();
     const tipo = inputTipoMovimento.value;
     const usuario = localStorage.getItem("userName") || "WEB";
 
-    if (!codigoAtual || quantidade <= 0) {
-      alert("Código e quantidade válidos são obrigatórios.");
-      return;
+    if (!codigoAtual || quantidade <= 0 || tamanhoLote <= 0) {
+        alert("Código, quantidade e tamanho de lote válidos são obrigatórios.");
+        return;
     }
 
-    statusEl.style.color = "#222";
-    statusEl.textContent = "Registrando...";
-    
     try {
-      const body = { codigo: codigoAtual, tipo, quantidade, usuario, endereco, armazem };
-      const res = await fetch("/api/inventory", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.message || "Erro ao registrar movimento");
-      
-      statusEl.style.color = "green";
-      statusEl.textContent = data.message || "Movimento registrado com sucesso!";
-      
-      // Gera etiqueta apenas para ENTRADA
-      if (tipo === "ENTRADA") {
-        const dadosEtiqueta = {
-          idMovimento: data.resumoId || 'N/A',
-          codigo: codigoAtual,
-          descricao: infoDescricao.textContent,
-          quantidade: quantidade,
-          tipoMovimento: "ENTRADA",
-          endereco: endereco,
-          armazem: armazem,
-          dataHora: new Date().toLocaleString('pt-BR'),
-          usuario: usuario
-        };
-        
-        setTimeout(() => {
-          gerarEtiqueta(dadosEtiqueta);
-        }, 500);
-      }
-      
-      // Fecha modal e atualiza
-      modalMovimento.style.display = "none";
-      setTimeout(() => {
+        statusEl.style.color = "#222";
+        statusEl.textContent = "Registrando...";
+
+        for (let i = 0; i <= repeticoes; i++) {
+            const body = {
+                codigo: codigoAtual,
+                tipo,
+                quantidade: tamanhoLote,
+                usuario,
+                endereco,
+                armazem,
+                observacao,
+            };
+
+            const res = await fetch("/api/inventory", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Erro ao registrar movimento");
+        }
+
+        statusEl.style.color = "green";
+        statusEl.textContent = "Movimento registrado com sucesso!";
+        modalMovimento.style.display = "none";
         consultar(codigoAtual);
-      }, tipo === "ENTRADA" ? 1500 : 500);
-      
     } catch (err) {
-      statusEl.style.color = "#c00";
-      statusEl.textContent = `Erro: ${err.message}`;
+        statusEl.style.color = "#c00";
+        statusEl.textContent = `Erro: ${err.message}`;
     }
   });
 

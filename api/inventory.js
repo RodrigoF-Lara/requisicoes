@@ -85,88 +85,40 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: "Invalid JSON in request body" });
       }
 
-      const { codigo, tipo, quantidade, usuario, endereco, armazem, motivo } = body;
-      if (!codigo || !tipo || quantidade == null || !usuario) {
-        return res.status(400).json({ message: "codigo, tipo, quantidade e usuario são obrigatórios" });
+      const { codigo, tipo, quantidade, usuario, endereco, armazem, observacao } = body;
+      if (!codigo || !quantidade || !usuario) {
+        return res.status(400).json({ message: "Código, quantidade e usuário são obrigatórios." });
       }
 
-      const operacao = (String(tipo).toUpperCase() === "ENTRADA") ? "ENTRADA" : "SAIDA";
-      const qntNumber = Number(quantidade);
-      if (Number.isNaN(qntNumber)) return res.status(400).json({ message: "quantidade inválida" });
-      const qntValue = qntNumber * (operacao === "SAIDA" ? -1 : 1);
+      const operacao = tipo.toUpperCase() === "ENTRADA" ? "ENTRADA" : "SAIDA";
+      const qntValue = operacao === "SAIDA" ? -quantidade : quantidade;
 
       const transaction = pool.transaction();
       try {
         await transaction.begin();
-        const txReq = transaction.request();
 
-        const now = new Date();
-        const dtParam = now;
-        const hrParam = now.toTimeString().split(" ")[0];
-        const KARDEX_CONST_INT = 2026;    // para KARDEX_2026_EMBALAGEM (int)
-        const KARDEX_CONST_STR = "2026"; // para KARDEX_2026 (varchar)
-
-        let resumoId = null;
-
-        // Para ENTRADA: primeiro insere em KARDEX_2025_EMBALAGEM e recupera o ID gerado
-        if (operacao === "ENTRADA") {
-          const insertEmbResult = await txReq
-            .input("D_E_L_E_T__EMB", sql.NChar(2), '')
-            .input("CODIGO2", sql.VarChar(10), codigo)
-            .input("ENDERECO2", sql.VarChar(100), endereco || "")
-            .input("ARMAZEM2", sql.NVarChar(sql.MAX), armazem || "")
-            .input("QNT2", sql.Float, qntNumber) // positivo na embalagem
-            .input("USUARIO2", sql.VarChar(50), usuario)
-            .input("DT2", sql.Date, dtParam)
-            .input("HR2", sql.VarChar(8), hrParam)
-            .input("MOTIVO2", sql.VarChar(30), motivo || "")
-            .input("KARDEX2", sql.Int, KARDEX_CONST_INT)
-            .query(`
-              INSERT INTO [dbo].[KARDEX_2026_EMBALAGEM]
-                ([D_E_L_E_T_],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[USUARIO],[DT],[HR],[MOTIVO],[KARDEX])
-              OUTPUT INSERTED.ID AS NEWID
-              VALUES
-                (@D_E_L_E_T__EMB, @CODIGO2, @ENDERECO2, @ARMAZEM2, @QNT2, @USUARIO2, @DT2, @HR2, @MOTIVO2, @KARDEX2);
-            `);
-
-          if (insertEmbResult && insertEmbResult.recordset && insertEmbResult.recordset[0]) {
-            resumoId = insertEmbResult.recordset[0].NEWID;
-          } else {
-            throw new Error("Falha ao obter ID inserido em KARDEX_2026_EMBALAGEM");
-          }
-        }
-
-        // Em seguida insere em KARDEX_2025 — grava ID_TB_RESUMO quando houver resumoId
-        const insertKardexReq = txReq
-          .input("D_E_L_E_T_", sql.NChar(2), '')
-          .input("APLICATIVO", sql.VarChar(100), "WEB")
+        await transaction.request()
           .input("CODIGO", sql.VarChar(10), codigo)
           .input("ENDERECO", sql.VarChar(100), endereco || "")
-          .input("ARMAZEM", sql.NVarChar(sql.MAX), armazem || "")
+          .input("ARMAZEM", sql.VarChar(50), armazem || "")
           .input("QNT", sql.Float, qntValue)
-          .input("OPERACAO", sql.NVarChar(50), operacao)
           .input("USUARIO", sql.VarChar(50), usuario)
-          .input("DT", sql.Date, dtParam)
-          .input("HR", sql.VarChar(8), hrParam)
-          .input("MOTIVO", sql.VarChar(30), motivo || "")
-          .input("KARDEX", sql.VarChar(50), KARDEX_CONST_STR);
-
-        if (resumoId !== null) insertKardexReq.input("ID_TB_RESUMO", sql.Int, resumoId);
-        else insertKardexReq.input("ID_TB_RESUMO", sql.Int, null);
-
-        await insertKardexReq.query(`
-          INSERT INTO [dbo].[KARDEX_2026]
-            ([D_E_L_E_T_],[APLICATIVO],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[OPERACAO],[USUARIO],[DT],[HR],[MOTIVO],[KARDEX],[ID_TB_RESUMO])
-          VALUES
-            (@D_E_L_E_T_, @APLICATIVO, @CODIGO, @ENDERECO, @ARMAZEM, @QNT, @OPERACAO, @USUARIO, @DT, @HR, @MOTIVO, @KARDEX, @ID_TB_RESUMO);
-        `);
+          .input("OBS", sql.NVarChar(sql.MAX), observacao || "")
+          .input("OPERACAO", sql.VarChar(50), operacao)
+          .input("DT", sql.Date, new Date())
+          .input("HR", sql.Time, new Date())
+          .query(`
+            INSERT INTO [dbo].[KARDEX_2026_EMBALAGEM]
+            ([CODIGO], [ENDERECO], [ARMAZEM], [QNT], [USUARIO], [OBS], [OPERACAO], [DT], [HR])
+            VALUES (@CODIGO, @ENDERECO, @ARMAZEM, @QNT, @USUARIO, @OBS, @OPERACAO, @DT, @HR)
+          `);
 
         await transaction.commit();
-        return res.status(200).json({ message: "Movimento registrado com sucesso.", resumoId });
-      } catch (txErr) {
-        try { await transaction.rollback(); } catch (r) { console.error("Rollback falhou:", r); }
-        console.error("TRANSACTION ERROR /api/inventory:", txErr);
-        return res.status(500).json({ message: "Erro interno durante registro (transação)", error: txErr.message, stack: txErr.stack });
+        return res.status(201).json({ message: "Movimento registrado com sucesso!" });
+      } catch (err) {
+        await transaction.rollback();
+        console.error("Erro ao registrar movimento:", err);
+        return res.status(500).json({ message: "Erro ao registrar movimento", error: err.message });
       }
     }
 
