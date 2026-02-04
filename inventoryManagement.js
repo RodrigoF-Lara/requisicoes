@@ -126,7 +126,7 @@
         <div class="stat-card destaque-saldo">
           <i class="fa-solid fa-boxes-stacked"></i>
           <span class="stat-label">Saldo Total em Estoque</span>
-          <span class="stat-value" style="color: #28a745; font-size: 32px;">${saldoTotal.toLocaleString('pt-BR')}</span>
+          <span class="stat-value" style="color: #030303; font-size: 32px;">${saldoTotal.toLocaleString('pt-BR')}</span>
         </div>
         <div class="stat-card">
           <i class="fa-solid fa-arrow-up"></i>
