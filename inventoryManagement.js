@@ -522,7 +522,6 @@
   formMovimento.addEventListener("submit", async (e) => {
     e.preventDefault();
     
-    const quantidade = Number(document.getElementById("quantidadeModal").value) || 0;
     const tamanhoLote = Number(document.getElementById("tamanhoLoteModal").value) || 0;
     const repeticoes = Number(document.getElementById("repeticoesModal").value) || 1;
     const observacao = document.getElementById("observacaoModal").value.trim();
@@ -531,7 +530,7 @@
     const tipo = inputTipoMovimento.value;
     const usuario = localStorage.getItem("userName") || "WEB";
 
-    if (!codigoAtual || quantidade <= 0 || tamanhoLote <= 0 || repeticoes <= 0) {
+    if (!codigoAtual || tamanhoLote <= 0 || repeticoes <= 0) {
         alert("Preencha todos os campos obrigatórios.");
         return;
     }
