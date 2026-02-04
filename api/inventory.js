@@ -97,22 +97,56 @@ export default async function handler(req, res) {
       try {
         await transaction.begin();
 
-        const insertEmbReq = transaction.request();
-        await insertEmbReq
-          .input("CODIGO", sql.VarChar(10), codigo)
-          .input("ENDERECO", sql.VarChar(100), endereco || "")
-          .input("ARMAZEM", sql.VarChar(50), armazem || "")
-          .input("QNT", sql.Float, qntValue)
-          .input("USUARIO", sql.VarChar(50), usuario)
-          .input("OBS", sql.VarChar(255), observacao || "")
+        // 1. Inserir em KARDEX_2026_EMBALAGEM e obter o ID
+        const embResult = await transaction
+          .request()
+          .input("CODIGO", sql.VarChar, codigo)
+          .input("ENDERECO", sql.VarChar, endereco || "")
+          .input("ARMAZEM", sql.VarChar, armazem || "")
+          .input("QNT", sql.Float, quantidade)
+          .input("USUARIO", sql.VarChar, usuario)
           .input("DT", sql.Date, new Date())
-          .input("HR", sql.VarChar(8), new Date().toTimeString().split(" ")[0])
-          .input("MOTIVO", sql.VarChar(50), "Entrada via sistema")
+          .input("HR", sql.VarChar, new Date().toTimeString().split(" ")[0])
+          .input("MOTIVO", sql.VarChar, "NOVO") // Corrigido
+          .input("OBS", sql.VarChar, observacao || "")
+          .input("QNT_SAIDA", sql.Float, 0) // Corrigido
+          .input("USUARIO_SAIDA", sql.VarChar, "") // Corrigido
+          .input("DT_SAIDA", sql.VarChar, "") // Corrigido
+          .input("HR_SAIDA", sql.VarChar, "") // Corrigido
           .input("KARDEX", sql.Int, 2026)
           .query(`
-            INSERT INTO [dbo].[KARDEX_2026_EMBALAGEM]
-            ([CODIGO], [ENDERECO], [ARMAZEM], [QNT], [USUARIO], [OBS], [DT], [HR], [MOTIVO], [KARDEX])
-            VALUES (@CODIGO, @ENDERECO, @ARMAZEM, @QNT, @USUARIO, @OBS, @DT, @HR, @MOTIVO, @KARDEX)
+            INSERT INTO [dbo].[KARDEX_2026_EMBALAGEM] 
+            ([CODIGO], [ENDERECO], [ARMAZEM], [QNT], [USUARIO], [DT], [HR], [MOTIVO], [OBS], [QNT_SAIDA], [USUARIO_SAIDA], [DT_SAIDA], [HR_SAIDA], [KARDEX])
+            OUTPUT INSERTED.ID
+            VALUES (@CODIGO, @ENDERECO, @ARMAZEM, @QNT, @USUARIO, @DT, @HR, @MOTIVO, @OBS, @QNT_SAIDA, @USUARIO_SAIDA, @DT_SAIDA, @HR_SAIDA, @KARDEX);
+          `);
+
+        const ultimoId = embResult.recordset[0].ID;
+        if (!ultimoId) {
+          throw new Error("Falha ao obter o ID da inserção em EMBALAGEM.");
+        }
+
+        // 2. Inserir em KARDEX_2026
+        await transaction
+          .request()
+          .input("APLICATIVO", sql.VarChar, "SGC-WEB")
+          .input("ID_TB_RESUMO", sql.Int, ultimoId)
+          .input("CODIGO", sql.VarChar, codigo)
+          .input("ENDERECO", sql.VarChar, endereco || "")
+          .input("ARMAZEM", sql.VarChar, armazem || "")
+          .input("QNT", sql.Float, quantidade)
+          .input("OPERACAO", sql.VarChar, "ENTRADA")
+          .input("USUARIO", sql.VarChar, usuario)
+          .input("DT", sql.Date, new Date())
+          .input("HR", sql.VarChar, new Date().toTimeString().split(" ")[0])
+          .input("MOTIVO", sql.VarChar, "NOVO") // Corrigido
+          .input("OBS", sql.VarChar, observacao || "")
+          .input("KARDEX", sql.Int, 2026)
+          .input("CAIXA", sql.VarChar, "") // Corrigido
+          .query(`
+            INSERT INTO [dbo].[KARDEX_2026] 
+            ([APLICATIVO], [ID_TB_RESUMO], [CODIGO], [ENDERECO], [ARMAZEM], [QNT], [OPERACAO], [USUARIO], [DT], [HR], [MOTIVO], [OBS], [KARDEX], [CAIXA])
+            VALUES (@APLICATIVO, @ID_TB_RESUMO, @CODIGO, @ENDERECO, @ARMAZEM, @QNT, @OPERACAO, @USUARIO, @DT, @HR, @MOTIVO, @OBS, @KARDEX, @CAIXA);
           `);
 
         await transaction.commit();
@@ -120,12 +154,14 @@ export default async function handler(req, res) {
       } catch (err) {
         await transaction.rollback();
         console.error("Erro ao registrar movimento:", err);
-        return res.status(500).json({ message: "Erro ao registrar movimento", error: err.message });
+        return res
+          .status(500)
+          .json({ message: "Erro ao registrar movimento", error: err.message });
       }
     }
 
-    res.setHeader("Allow", "GET, POST");
-    return res.status(405).json({ message: "Método não permitido" });
+    res.setHeader("Allow", ["GET", "POST"]);
+    return res.status(405).end(`Method ${req.method} Not Allowed`);
   } catch (err) {
     console.error("ERRO /api/inventory:", err);
     return res.status(500).json({ message: "Erro interno", error: err.message, stack: err.stack });
