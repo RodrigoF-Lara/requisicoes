@@ -154,6 +154,22 @@ async function gerarRelatorioConsumo(req, res) {
 
         const pool = await getConnection();
         
+        // Debug: Verificar quais colunas de fornecedor têm dados
+        const debugQuery = `
+            SELECT TOP 5
+                nc.CAB_ID_NF,
+                nc.CAB_NUM_FORN,
+                nc.CAB_RAZAO,
+                nc.CAB_NUM_NF,
+                nc.CAB_DT_EMISSAO
+            FROM [dbo].[NF_CABECALHO] nc
+            WHERE nc.CAB_RAZAO IS NOT NULL
+            ORDER BY nc.CAB_DT_EMISSAO DESC
+        `;
+        
+        const debugResult = await pool.request().query(debugQuery);
+        console.log('🔍 DEBUG - Amostra de fornecedores em NF_CABECALHO:', debugResult.recordset);
+        
         // Query para buscar saldo atual, preço da última NF e fornecedor
         let query = `
             WITH SaldoAtual AS (
@@ -170,6 +186,7 @@ async function gerarRelatorioConsumo(req, res) {
                     np.PROD_COD_PROD AS CODIGO,
                     np.PROD_CUSTO_FISCAL_MEDIO_NOVO AS PRECO_UNITARIO,
                     nc.CAB_RAZAO AS FORNECEDOR,
+                    nc.CAB_DT_EMISSAO,
                     ROW_NUMBER() OVER (PARTITION BY np.PROD_COD_PROD ORDER BY nc.CAB_DT_EMISSAO DESC) AS RN
                 FROM [dbo].[NF_PRODUTOS] np
                 INNER JOIN [dbo].[NF_CABECALHO] nc ON np.PROD_ID_NF = nc.CAB_ID_NF
@@ -180,7 +197,8 @@ async function gerarRelatorioConsumo(req, res) {
                 SELECT 
                     CODIGO,
                     PRECO_UNITARIO,
-                    FORNECEDOR
+                    FORNECEDOR,
+                    CAB_DT_EMISSAO
                 FROM UltimaNFPorProduto
                 WHERE RN = 1
             )
@@ -190,7 +208,8 @@ async function gerarRelatorioConsumo(req, res) {
                 ISNULL(cp.DESCRICAO, 'SEM DESCRIÇÃO') AS DESCRICAO,
                 ISNULL(uf.PRECO_UNITARIO, 0) AS PRECO_UNITARIO,
                 ISNULL(sa.SALDO_ATUAL, 0) * ISNULL(uf.PRECO_UNITARIO, 0) AS VALOR_TOTAL_ESTOQUE,
-                ISNULL(uf.FORNECEDOR, 'NÃO INFORMADO') AS FORNECEDOR
+                ISNULL(uf.FORNECEDOR, 'NÃO INFORMADO') AS FORNECEDOR,
+                uf.CAB_DT_EMISSAO
             FROM SaldoAtual sa
             LEFT JOIN [dbo].[CAD_PROD] cp ON sa.CODIGO = cp.CODIGO
             LEFT JOIN UltimaFornecedor uf ON sa.CODIGO = uf.CODIGO
@@ -213,6 +232,9 @@ async function gerarRelatorioConsumo(req, res) {
         const result = await request.query(query);
 
         console.log('📦 Produtos encontrados:', result.recordset.length);
+        if (result.recordset.length > 0) {
+            console.log('🔍 DEBUG - Primeiros registros:', result.recordset.slice(0, 3));
+        }
 
         if (result.recordset.length === 0) {
             return res.status(200).json({
