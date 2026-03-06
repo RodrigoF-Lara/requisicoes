@@ -185,7 +185,7 @@ async function gerarRelatorioConsumo(req, res) {
                 SELECT 
                     np.PROD_COD_PROD AS CODIGO,
                     np.PROD_CUSTO_FISCAL_MEDIO_NOVO AS PRECO_UNITARIO,
-                    nc.CAB_RAZAO AS FORNECEDOR,
+                    nc.CAB_NUM_FORN AS COD_FORNECEDOR,
                     nc.CAB_DT_EMISSAO,
                     ROW_NUMBER() OVER (PARTITION BY np.PROD_COD_PROD ORDER BY nc.CAB_DT_EMISSAO DESC) AS RN
                 FROM [dbo].[NF_PRODUTOS] np
@@ -195,12 +195,14 @@ async function gerarRelatorioConsumo(req, res) {
             ),
             UltimaFornecedor AS (
                 SELECT 
-                    CODIGO,
-                    PRECO_UNITARIO,
-                    FORNECEDOR,
-                    CAB_DT_EMISSAO
-                FROM UltimaNFPorProduto
-                WHERE RN = 1
+                    unf.CODIGO,
+                    unf.PRECO_UNITARIO,
+                    unf.COD_FORNECEDOR,
+                    ISNULL(cf.RAZAO_SOCIAL, 'NÃO INFORMADO') AS FORNECEDOR,
+                    unf.CAB_DT_EMISSAO
+                FROM UltimaNFPorProduto unf
+                LEFT JOIN [dbo].[CAD_FORNECEDOR] cf ON unf.COD_FORNECEDOR = cf.COD_FORNECEDOR
+                WHERE unf.RN = 1
             )
             SELECT 
                 sa.CODIGO,
