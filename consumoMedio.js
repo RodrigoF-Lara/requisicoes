@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
         gerarRelatorioBtn.disabled = true;
 
         try {
-            let url = `/api/consumoMedio?acao=gerarRelatorio&periodo=${periodo}`;
+            let url = `/api/relatorios?acao=consumoMedio&periodo=${periodo}`;
             if (fornecedor) {
                 url += `&fornecedor=${encodeURIComponent(fornecedor)}`;
             }
