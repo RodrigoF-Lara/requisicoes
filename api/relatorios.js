@@ -169,7 +169,6 @@ async function gerarRelatorioConsumo(req, res) {
                 SELECT 
                     np.PROD_COD_PROD AS CODIGO,
                     np.PROD_CUSTO_FISCAL_MEDIO_NOVO AS PRECO_UNITARIO,
-                    nc.CAB_FORNEC_RAZAO AS FORNECEDOR,
                     ROW_NUMBER() OVER (PARTITION BY np.PROD_COD_PROD ORDER BY nc.CAB_DT_EMISSAO DESC) AS RN
                 FROM [dbo].[NF_PRODUTOS] np
                 INNER JOIN [dbo].[NF_CABECALHO] nc ON np.PROD_ID_NF = nc.CAB_ID_NF
@@ -179,8 +178,7 @@ async function gerarRelatorioConsumo(req, res) {
             UltimaFornecedor AS (
                 SELECT 
                     CODIGO,
-                    PRECO_UNITARIO,
-                    FORNECEDOR
+                    PRECO_UNITARIO
                 FROM UltimaNFPorProduto
                 WHERE RN = 1
             )
@@ -190,7 +188,7 @@ async function gerarRelatorioConsumo(req, res) {
                 ISNULL(cp.DESCRICAO, 'SEM DESCRIÇÃO') AS DESCRICAO,
                 ISNULL(uf.PRECO_UNITARIO, 0) AS PRECO_UNITARIO,
                 ISNULL(sa.SALDO_ATUAL, 0) * ISNULL(uf.PRECO_UNITARIO, 0) AS VALOR_TOTAL_ESTOQUE,
-                ISNULL(uf.FORNECEDOR, 'NÃO INFORMADO') AS FORNECEDOR
+                'N/A' AS FORNECEDOR
             FROM SaldoAtual sa
             LEFT JOIN [dbo].[CAD_PROD] cp ON sa.CODIGO = cp.CODIGO
             LEFT JOIN UltimaFornecedor uf ON sa.CODIGO = uf.CODIGO
@@ -199,16 +197,13 @@ async function gerarRelatorioConsumo(req, res) {
 
         // Adiciona filtro de fornecedor se especificado
         if (fornecedor && fornecedor.trim()) {
-            query += ` AND uf.FORNECEDOR LIKE '%' + @FORNECEDOR + '%'`;
+            // TODO: Corrigir coluna de fornecedor quando for identificada
+            console.log('Filtro de fornecedor será implementado após identificação da coluna correta');
         }
 
         query += ` ORDER BY VALOR_TOTAL_ESTOQUE DESC`;
 
         const request = pool.request();
-        
-        if (fornecedor && fornecedor.trim()) {
-            request.input('FORNECEDOR', sql.NVarChar, fornecedor);
-        }
 
         const result = await request.query(query);
 
