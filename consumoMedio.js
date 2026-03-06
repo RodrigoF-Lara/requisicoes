@@ -120,6 +120,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         <th>Preço Unit. Últ. NF</th>
                         <th>Valor Total Estoque</th>
                         <th>Fornecedor</th>
+                        <th>Consumo Médio 1 Mês</th>
+                        <th>Consumo Médio Bimestral</th>
+                        <th>Consumo Médio Semestral</th>
+                        <th>Consumo Médio Anual</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -134,6 +138,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             <td>R$ ${(item.PRECO_UNITARIO || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             <td><strong>R$ ${valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></td>
                             <td>${item.FORNECEDOR || 'NÃO INFORMADO'}</td>
+                            <td>${(item.CONSUMO_MEDIO_1MES || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td>${(item.CONSUMO_MEDIO_BIMESTRAL || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td>${(item.CONSUMO_MEDIO_SEMESTRAL || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td>${(item.CONSUMO_MEDIO_ANUAL || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         </tr>
                     `;
                     }).join('')}
@@ -202,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const ws_data = [
             ['CONSUMO DE ESTOQUE REFERENTE À ' + meses[parseInt(mes) - 1] + '/' + ano],
             [],
-            ['#', 'Código', 'Saldo Atual', 'Descrição', 'Preço Unit. Últ. NF', 'Valor Total Estoque', 'Fornecedor'],
+            ['#', 'Código', 'Saldo Atual', 'Descrição', 'Preço Unit. Últ. NF', 'Valor Total Estoque', 'Fornecedor', 'Consumo Médio 1 Mês', 'Consumo Médio Bimestral', 'Consumo Médio Semestral', 'Consumo Médio Anual'],
             ...dadosRelatorio.map((item, index) => {
                 const valorTotal = (item.SALDO_ATUAL || 0) * (item.PRECO_UNITARIO || 0);
                 return [
@@ -212,7 +220,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     item.DESCRICAO || 'SEM DESCRIÇÃO',
                     item.PRECO_UNITARIO || 0,
                     valorTotal,
-                    item.FORNECEDOR || 'NÃO INFORMADO'
+                    item.FORNECEDOR || 'NÃO INFORMADO',
+                    item.CONSUMO_MEDIO_1MES || 0,
+                    item.CONSUMO_MEDIO_BIMESTRAL || 0,
+                    item.CONSUMO_MEDIO_SEMESTRAL || 0,
+                    item.CONSUMO_MEDIO_ANUAL || 0
                 ];
             }),
             [],

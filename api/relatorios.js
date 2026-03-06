@@ -203,6 +203,19 @@ async function gerarRelatorioConsumo(req, res) {
                 FROM UltimaNFPorProduto unf
                 LEFT JOIN [dbo].[CAD_FORNECEDOR] cf ON unf.COD_FORNECEDOR = cf.COD_FORNECEDOR
                 WHERE unf.RN = 1
+            ),
+            ConsumoMedio AS (
+                SELECT 
+                    k.CODIGO,
+                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -30, GETDATE()) THEN ABS(k.QNT) ELSE 0 END) / 30.0, 0) AS CONSUMO_1MES,
+                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -60, GETDATE()) THEN ABS(k.QNT) ELSE 0 END) / 60.0 * 2, 0) AS CONSUMO_BIMESTRAL,
+                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -180, GETDATE()) THEN ABS(k.QNT) ELSE 0 END) / 180.0 * 6, 0) AS CONSUMO_SEMESTRAL,
+                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -365, GETDATE()) THEN ABS(k.QNT) ELSE 0 END) / 365.0 * 12, 0) AS CONSUMO_ANUAL
+                FROM [dbo].[KARDEX_2026] k
+                WHERE k.OPERACAO = 'SAÍDA'
+                    AND k.D_E_L_E_T_ <> '*'
+                    AND k.USUARIO <> 'BEATRIZ JULHAO'
+                GROUP BY k.CODIGO
             )
             SELECT 
                 sa.CODIGO,
@@ -211,10 +224,15 @@ async function gerarRelatorioConsumo(req, res) {
                 ISNULL(uf.PRECO_UNITARIO, 0) AS PRECO_UNITARIO,
                 ISNULL(sa.SALDO_ATUAL, 0) * ISNULL(uf.PRECO_UNITARIO, 0) AS VALOR_TOTAL_ESTOQUE,
                 ISNULL(uf.FORNECEDOR, 'NÃO INFORMADO') AS FORNECEDOR,
+                ISNULL(cm.CONSUMO_1MES, 0) AS CONSUMO_MEDIO_1MES,
+                ISNULL(cm.CONSUMO_BIMESTRAL, 0) AS CONSUMO_MEDIO_BIMESTRAL,
+                ISNULL(cm.CONSUMO_SEMESTRAL, 0) AS CONSUMO_MEDIO_SEMESTRAL,
+                ISNULL(cm.CONSUMO_ANUAL, 0) AS CONSUMO_MEDIO_ANUAL,
                 uf.CAB_DT_EMISSAO
             FROM SaldoAtual sa
             LEFT JOIN [dbo].[CAD_PROD] cp ON sa.CODIGO = cp.CODIGO
             LEFT JOIN UltimaFornecedor uf ON sa.CODIGO = uf.CODIGO
+            LEFT JOIN ConsumoMedio cm ON sa.CODIGO = cm.CODIGO
             WHERE ISNULL(uf.PRECO_UNITARIO, 0) > 0
         `;
 
