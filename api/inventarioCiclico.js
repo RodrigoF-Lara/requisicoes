@@ -464,10 +464,12 @@ async function salvarInventario(req, res) {
                 .input('CONTAGEM_FISICA', sql.Float, item.CONTAGEM_FISICA || 0)
                 .input('TOTAL_MOVIMENTACOES', sql.Int, item.TOTAL_MOVIMENTACOES || 0)
                 .input('BLOCO', sql.NVarChar, item.BLOCO || 'MOVIMENTACAO')
+                .input('CUSTO_UNITARIO', sql.Float, item.CUSTO_UNITARIO || 0)
+                .input('VALOR_TOTAL_ESTOQUE', sql.Float, item.VALOR_TOTAL_ESTOQUE || 0)
                 .query(`
                     INSERT INTO [dbo].[TB_INVENTARIO_CICLICO_ITEM]
-                    (ID_INVENTARIO, CODIGO, DESCRICAO, SALDO_SISTEMA, CONTAGEM_FISICA, TOTAL_MOVIMENTACOES, BLOCO)
-                    VALUES (@ID_INVENTARIO, @CODIGO, @DESCRICAO, @SALDO_SISTEMA, @CONTAGEM_FISICA, @TOTAL_MOVIMENTACOES, @BLOCO);
+                    (ID_INVENTARIO, CODIGO, DESCRICAO, SALDO_SISTEMA, CONTAGEM_FISICA, TOTAL_MOVIMENTACOES, BLOCO, CUSTO_UNITARIO, VALOR_TOTAL_ESTOQUE)
+                    VALUES (@ID_INVENTARIO, @CODIGO, @DESCRICAO, @SALDO_SISTEMA, @CONTAGEM_FISICA, @TOTAL_MOVIMENTACOES, @BLOCO, @CUSTO_UNITARIO, @VALOR_TOTAL_ESTOQUE);
                 `);
         }
 
@@ -549,7 +551,8 @@ async function abrirInventario(req, res) {
         const itemsResult = await pool.request()
             .input('ID_INVENTARIO', sql.Int, id)
             .query(`
-                SELECT * FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM]
+                SELECT CODIGO, DESCRICAO, SALDO_SISTEMA, CONTAGEM_FISICA, TOTAL_MOVIMENTACOES, BLOCO, USUARIO_CONTAGEM, DT_CONTAGEM, CUSTO_UNITARIO, VALOR_TOTAL_ESTOQUE
+                FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM]
                 WHERE ID_INVENTARIO = @ID_INVENTARIO
                 ORDER BY CODIGO;
             `);
