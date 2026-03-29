@@ -781,9 +781,11 @@ document.addEventListener('DOMContentLoaded', function() {
         tbody tr:nth-child(even) { background-color: #f8f9fa; }
         tbody tr:hover { background-color: #e9ecef; }
         .bloco-badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 8pt; font-weight: bold; white-space: nowrap; }
-        .bloco-movimentacao { background-color: #2196F3; color: white; }
-        .bloco-baixa-acuracidade { background-color: #ff9800; color: white; }
-        .bloco-maior-valor { background-color: #4caf50; color: white; }
+        .bloco-movimentacao { background-color: #cfe2ff; color: #084298; }
+        .bloco-baixa-acuracidade { background-color: #f8d7da; color: #721c24; }
+        .bloco-maior-valor { background-color: #d1e7dd; color: #0f5132; }
+        .bloco-maior-valor-unitario { background-color: #cff4fc; color: #055160; }
+        .bloco-nao-contado { background-color: #fff3cd; color: #856404; }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
         .footer { margin-top: 20px; padding-top: 10px; border-top: 2px solid #2c3e50; font-size: 8pt; text-align: center; color: #666; }
