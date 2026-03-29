@@ -62,8 +62,8 @@ async function relatorioBaixaPorPeriodo(req, res) {
             .query(`
                 SELECT COUNT(*) as TOTAL
                 FROM [dbo].[KARDEX_2026] k
-                WHERE k.D_E_L_E_T_ <> '*'
-                    AND k.OPERACAO = 'SAÍDA'
+                -- WHERE k.D_E_L_E_T_ <> '*'
+                WHERE k.OPERACAO = 'SAÍDA'
                     AND k.USUARIO <> 'BEATRIZ JULHAO'
                     AND k.DT >= @DATA_INICIO
                     AND k.DT < @DATA_FIM
@@ -84,8 +84,8 @@ async function relatorioBaixaPorPeriodo(req, res) {
                     MAX(k.DT) AS ULTIMA_BAIXA
                 FROM [dbo].[KARDEX_2026] k
                 LEFT JOIN [dbo].[CAD_PROD] cp ON k.CODIGO = cp.CODIGO
-                WHERE k.D_E_L_E_T_ <> '*'
-                    AND k.OPERACAO = 'SAÍDA'
+                -- WHERE k.D_E_L_E_T_ <> '*'
+                WHERE k.OPERACAO = 'SAÍDA'
                     AND k.USUARIO <> 'BEATRIZ JULHAO'
                     AND k.DT >= @DATA_INICIO
                     AND k.DT < @DATA_FIM
@@ -177,7 +177,7 @@ async function gerarRelatorioConsumo(req, res) {
                     CODIGO,
                     ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
                 FROM [dbo].[KARDEX_2026_EMBALAGEM]
-                WHERE D_E_L_E_T_ <> '*'
+                -- WHERE D_E_L_E_T_ <> '*'
                 GROUP BY CODIGO
                 HAVING ISNULL(SUM(SALDO), 0) > 0
             ),
@@ -213,7 +213,7 @@ async function gerarRelatorioConsumo(req, res) {
                     ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -365, GETDATE()) THEN ABS(k.QNT) ELSE 0 END) / 365.0 * 12, 0) AS CONSUMO_ANUAL
                 FROM [dbo].[KARDEX_2026] k
                 WHERE k.OPERACAO = 'SAÍDA'
-                    AND k.D_E_L_E_T_ <> '*'
+                    -- AND k.D_E_L_E_T_ <> '*'
                     AND k.USUARIO <> 'BEATRIZ JULHAO'
                 GROUP BY k.CODIGO
             )
