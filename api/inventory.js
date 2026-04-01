@@ -248,8 +248,6 @@ export default async function handler(req, res) {
                 ([D_E_L_E_T_],[APLICATIVO],[ID_TB_RESUMO],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[OPERACAO],[USUARIO],[DT],[HR],[MOTIVO],[OBS],[KARDEX],[CAIXA])
                 VALUES (@D_E_L_E_T_, @APLICATIVO, @ID_TB_RESUMO, @CODIGO_log, @ENDERECO_log, @ARMAZEM_log, @QNT_log, @OPERACAO_log, @USUARIO_log, @DT_log, @HR_log, @MOTIVO_log, @OBS_log, @KARDEX_log, @CAIXA_log);
             `);
-        }
-
         } else if (operacao === 'ZERAR_ENDERECO') {
           // Lógica de ZERAR ENDEREÇO: saída total de todos os lotes de um endereço
           const { armazem: arm, endereco: end } = req.body;
