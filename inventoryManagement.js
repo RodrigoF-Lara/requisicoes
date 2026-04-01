@@ -221,7 +221,7 @@
             <div class="header-top">
                 <span class="id-badge">ID: ${dados.idMovimento || "N/A"}</span>
                 <h1>KARDEX SYSTEM</h1>
-                <canvas id="qr-${dados.idMovimento}" class="qr-code"></canvas>
+        <div id="qr-${dados.idMovimento}" class="qr-code"></div>
             </div>
         </div>
         
@@ -272,7 +272,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Etiqueta - ${etiquetas[0].codigo}</title>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"><\/script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"><\/script>
     <style>
         @media print {
             @page { 
@@ -359,6 +359,13 @@
         }
 
         .qr-code {
+            width: 18mm !important;
+            height: 18mm !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .qr-code img, .qr-code canvas {
             width: 18mm !important;
             height: 18mm !important;
         }
@@ -489,7 +496,7 @@
     ${etiquetasHtml}    
     <script>
         const etiquetasData = ${JSON.stringify(etiquetas)};
-        setTimeout(() => {
+        window.onload = function() {
             etiquetasData.forEach(dados => {
                 if (dados.idMovimento && document.getElementById('barcode-' + dados.idMovimento)) {
                     JsBarcode("#barcode-" + dados.idMovimento, dados.codigo, {
@@ -503,17 +510,17 @@
                     });
                 }
                 if (dados.idMovimento && document.getElementById('qr-' + dados.idMovimento)) {
-                    QRCode.toCanvas(
-                        document.getElementById('qr-' + dados.idMovimento),
-                        String(dados.idMovimento),
-                        { width: 68, margin: 1 },
-                        function() {}
-                    );
+                    new QRCode(document.getElementById('qr-' + dados.idMovimento), {
+                        text: String(dados.idMovimento),
+                        width: 68,
+                        height: 68,
+                        correctLevel: QRCode.CorrectLevel.L
+                    });
                 }
             });
             window.focus();
-        }, 250);
-    </script>
+        };
+    <\/script>
 </body>
 </html>`;
 
