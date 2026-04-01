@@ -106,7 +106,13 @@ export default async function handler(req, res) {
         idTbResumo, // ID do lote para a saída
       } = req.body;
       
-      if (!codigo || !tipo || !quantidade || !usuario) {
+      if (!codigo || !tipo || !usuario) {
+        return res.status(400).json({ message: "Dados insuficientes para registrar movimento." });
+      }
+
+      // Operações que não usam quantidade direta não precisam valida-la
+      const operacoesSeQuantidade = ['ZERAR_ENDERECO', 'ZERAR_CODIGO', 'ALTERAR_ENDERECO'];
+      if (!operacoesSeQuantidade.includes(tipo.toUpperCase()) && !quantidade) {
         return res.status(400).json({ message: "Dados insuficientes para registrar movimento." });
       }
 
