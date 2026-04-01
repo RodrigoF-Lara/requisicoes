@@ -221,7 +221,7 @@
             <div class="header-top">
                 <span class="id-badge">ID: ${dados.idMovimento || "N/A"}</span>
                 <h1>KARDEX SYSTEM</h1>
-                <span class="tipo-movimento">${dados.tipoMovimento}</span>
+                <canvas id="qr-${dados.idMovimento}" class="qr-code"></canvas>
             </div>
         </div>
         
@@ -272,6 +272,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Etiqueta - ${etiquetas[0].codigo}</title>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"><\/script>
     <style>
         @media print {
             @page { 
@@ -354,13 +355,12 @@
         }
         
         .header .tipo-movimento {
-            display: inline-block;
-            background-color: #4caf50;
-            color: white;
-            padding: 1.5mm 4mm;
-            border-radius: 3mm;
-            font-size: 11pt;
-            font-weight: bold;
+            display: none;
+        }
+
+        .qr-code {
+            width: 18mm !important;
+            height: 18mm !important;
         }
         
         .codigo-barras {
@@ -501,6 +501,14 @@
                         margin: 2,
                         fontOptions: "bold"
                     });
+                }
+                if (dados.idMovimento && document.getElementById('qr-' + dados.idMovimento)) {
+                    QRCode.toCanvas(
+                        document.getElementById('qr-' + dados.idMovimento),
+                        String(dados.idMovimento),
+                        { width: 68, margin: 1 },
+                        function() {}
+                    );
                 }
             });
             window.focus();
