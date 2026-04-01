@@ -65,6 +65,10 @@
                             <i class="fa-solid fa-arrow-down"></i>
                             <span>SAÍDA</span>
                         </button>
+                        <button id="btnZerarEndereco" class="btn-movimento zerar" disabled>
+                            <i class="fa-solid fa-location-crosshairs"></i>
+                            <span>ZERAR ENDEREÇO</span>
+                        </button>
                     </div>
 
                     <div id="status" class="status-message"></div>
@@ -146,6 +150,36 @@
                     <tbody id="historicoBody"></tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL para Zerar Endereço -->
+    <div id="modalZerarEndereco" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span style="font-size: 32px; margin-right: 10px;">🗑️</span>
+                <h2 id="tituloModalZerar" style="color: #e65100;">Zerar Endereço</h2>
+                <span id="closeModalZerar" class="close-btn">&times;</span>
+            </div>
+            <form id="formZerarEndereco">
+                <div class="form-group-modal">
+                    <label for="armazemZerar">Armazém:</label>
+                    <input type="text" id="armazemZerar" placeholder="Ex: 01" required />
+                </div>
+                <div class="form-group-modal">
+                    <label for="enderecoZerar">Endereço:</label>
+                    <input type="text" id="enderecoZerar" placeholder="Ex: 30-04-355" required />
+                </div>
+                <div id="confirmarZerarContainer" style="display:none; margin-top:12px; padding:12px; background:#fff3e0; border-radius:6px; border-left:4px solid #e65100;">
+                    <p id="mensagemConfirmarZerar" style="margin:0; font-weight:bold; color:#e65100;"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancelar" id="cancelarZerar">Cancelar</button>
+                    <button type="submit" id="submitZerarEndereco" class="btn-movimento zerar-confirm" style="padding:10px 20px;">
+                        ✓ Localizar Saldo
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

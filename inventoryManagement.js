@@ -27,6 +27,9 @@
   const estatisticasContainer = document.getElementById("estatisticasContainer");
   const saldoPorLocalContainer = document.getElementById("saldoPorLocalContainer");
 
+  const btnZerarEndereco = document.getElementById("btnZerarEndereco");
+  const modalZerarEndereco = document.getElementById("modalZerarEndereco");
+
   let codigoAtual = "";
   let loteSelecionado = null;
 
@@ -65,7 +68,8 @@
       
       // Habilita botões de entrada e saída
       btnEntrada.disabled = false;
-      btnSaida.disabled = false; 
+      btnSaida.disabled = false;
+      btnZerarEndereco.disabled = false;
       loteSelecionado = null; // Reseta lote selecionado
 
     } catch (err) {
@@ -73,6 +77,7 @@
       statusEl.textContent = `Erro: ${err.message}`;
       btnEntrada.disabled = true;
       btnSaida.disabled = true;
+      btnZerarEndereco.disabled = true;
     }
   }
 
@@ -503,6 +508,107 @@
       janelaEtiqueta.print();
     }, 500);
   }
+
+  // --- Lógica de Zerar Endereço ---
+
+  btnZerarEndereco.addEventListener("click", () => {
+    if (!codigoAtual) return;
+    document.getElementById("armazemZerar").value = "";
+    document.getElementById("enderecoZerar").value = "";
+    document.getElementById("confirmarZerarContainer").style.display = "none";
+    const submitBtn = document.getElementById("submitZerarEndereco");
+    submitBtn.textContent = "✓ Localizar Saldo";
+    submitBtn.dataset.step = "localizar";
+    modalZerarEndereco.style.display = "flex";
+  });
+
+  document.getElementById("closeModalZerar").addEventListener("click", () => {
+    modalZerarEndereco.style.display = "none";
+  });
+
+  document.getElementById("cancelarZerar").addEventListener("click", () => {
+    modalZerarEndereco.style.display = "none";
+  });
+
+  window.addEventListener("click", (e) => {
+    if (e.target === modalZerarEndereco) {
+      modalZerarEndereco.style.display = "none";
+    }
+  });
+
+  document.getElementById("formZerarEndereco").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const arm = document.getElementById("armazemZerar").value.trim();
+    const end = document.getElementById("enderecoZerar").value.trim();
+    const usuario = localStorage.getItem("userName") || "WEB";
+    const submitBtn = document.getElementById("submitZerarEndereco");
+    const step = submitBtn.dataset.step || "localizar";
+
+    if (step === "localizar") {
+      // Passo 1: buscar o saldo do endereço e confirmar
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Buscando...";
+      try {
+        const res = await fetch(`/api/inventory?action=saldoPorLote&codigo=${encodeURIComponent(codigoAtual)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+
+        const lotesFiltrados = (data.lotes || []).filter(l =>
+          String(l.ARMAZEM).trim() === arm && String(l.ENDERECO).trim() === end
+        );
+
+        if (lotesFiltrados.length === 0) {
+          alert(`Nenhum saldo encontrado para o produto ${codigoAtual} no armazém ${arm} / endereço ${end}.`);
+          submitBtn.disabled = false;
+          submitBtn.textContent = "✓ Localizar Saldo";
+          return;
+        }
+
+        const totalSaldo = lotesFiltrados.reduce((sum, l) => sum + (l.SALDO || 0), 0);
+        const descricao = document.getElementById("infoDescricao").textContent.trim();
+        document.getElementById("mensagemConfirmarZerar").textContent =
+          `Confirmar SAÍDA de ${totalSaldo} unidades do produto ${descricao} (${codigoAtual}) ` +
+          `no armazém ${arm} / endereço ${end}?`;
+        document.getElementById("confirmarZerarContainer").style.display = "block";
+        submitBtn.textContent = "⚠️ CONFIRMAR ZERAMENTO";
+        submitBtn.dataset.step = "confirmar";
+        submitBtn.disabled = false;
+      } catch (err) {
+        alert(`Erro: ${err.message}`);
+        submitBtn.disabled = false;
+        submitBtn.textContent = "✓ Localizar Saldo";
+      }
+    } else {
+      // Passo 2: executar o zeramento
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Zerando...";
+      try {
+        const res = await fetch("/api/inventory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            codigo: codigoAtual,
+            tipo: "ZERAR_ENDERECO",
+            quantidade: 0,
+            usuario,
+            armazem: arm,
+            endereco: end,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+
+        modalZerarEndereco.style.display = "none";
+        statusEl.style.color = "#28a745";
+        statusEl.textContent = data.message || "Endereço zerado com sucesso!";
+        setTimeout(() => consultar(codigoAtual), 500);
+      } catch (err) {
+        alert(`Erro ao zerar endereço: ${err.message}`);
+        submitBtn.disabled = false;
+        submitBtn.textContent = "⚠️ CONFIRMAR ZERAMENTO";
+      }
+    }
+  });
 
   // --- Lógica de Eventos ---
 

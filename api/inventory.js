@@ -250,6 +250,80 @@ export default async function handler(req, res) {
             `);
         }
 
+        } else if (operacao === 'ZERAR_ENDERECO') {
+          // Lógica de ZERAR ENDEREÇO: saída total de todos os lotes de um endereço
+          const { armazem: arm, endereco: end } = req.body;
+          if (!arm || !end) {
+            throw new Error("Armazém e endereço são obrigatórios para zerar endereço.");
+          }
+
+          const lotesResult = await transaction.request()
+            .input("CODIGO", sql.VarChar(10), codigo)
+            .input("ARMAZEM", sql.VarChar(20), arm)
+            .input("ENDERECO", sql.VarChar(50), end)
+            .query(`
+              SELECT ID, SALDO, QNT_SAIDA, QNT
+              FROM [dbo].[KARDEX_2026_EMBALAGEM]
+              WHERE [D_E_L_E_T_] = ''
+                AND CODIGO = @CODIGO
+                AND ARMAZEM = @ARMAZEM
+                AND ENDERECO = @ENDERECO
+                AND SALDO > 0
+                AND KARDEX = 2026
+            `);
+
+          if (lotesResult.recordset.length === 0) {
+            throw new Error("Nenhum lote com saldo encontrado neste endereço.");
+          }
+
+          let totalZerado = 0;
+          for (const lote of lotesResult.recordset) {
+            const { ID, SALDO, QNT_SAIDA, QNT: TAM_LOTE } = lote;
+            const novaQntSaida = (QNT_SAIDA || 0) + SALDO;
+
+            await transaction.request()
+              .input('ID_upd', sql.Int, ID)
+              .input('NOVA_QNT_SAIDA', sql.Float, novaQntSaida)
+              .input('USUARIO_SAIDA', sql.VarChar, usuario)
+              .input('DT_SAIDA', sql.Date, new Date())
+              .input('HR_SAIDA', sql.VarChar, new Date().toTimeString().split(" ")[0])
+              .query(`
+                UPDATE [dbo].[KARDEX_2026_EMBALAGEM]
+                SET [QNT_SAIDA] = @NOVA_QNT_SAIDA,
+                    [USUARIO_SAIDA] = @USUARIO_SAIDA,
+                    [DT_SAIDA] = @DT_SAIDA,
+                    [HR_SAIDA] = @HR_SAIDA
+                WHERE ID = @ID_upd
+              `);
+
+            await transaction.request()
+              .input("D_E_L_E_T_", sql.VarChar, "")
+              .input("APLICATIVO", sql.VarChar, "SGC-WEB")
+              .input("ID_TB_RESUMO", sql.Int, ID)
+              .input("CODIGO_log", sql.VarChar, codigo)
+              .input("ENDERECO_log", sql.VarChar, end)
+              .input("ARMAZEM_log", sql.VarChar, arm)
+              .input("QNT_log", sql.Float, -SALDO)
+              .input("OPERACAO_log", sql.VarChar, "SAÍDA")
+              .input("USUARIO_log", sql.VarChar, usuario)
+              .input("DT_log", sql.Date, new Date())
+              .input("HR_log", sql.VarChar, new Date().toTimeString().split(" ")[0])
+              .input("MOTIVO_log", sql.VarChar, "ZERAR ENDEREÇO")
+              .input("OBS_log", sql.VarChar, observacao || "")
+              .input("KARDEX_log", sql.Int, 2026)
+              .input("CAIXA_log", sql.Float, TAM_LOTE)
+              .query(`
+                INSERT INTO [dbo].[KARDEX_2026]
+                ([D_E_L_E_T_],[APLICATIVO],[ID_TB_RESUMO],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[OPERACAO],[USUARIO],[DT],[HR],[MOTIVO],[OBS],[KARDEX],[CAIXA])
+                VALUES (@D_E_L_E_T_, @APLICATIVO, @ID_TB_RESUMO, @CODIGO_log, @ENDERECO_log, @ARMAZEM_log, @QNT_log, @OPERACAO_log, @USUARIO_log, @DT_log, @HR_log, @MOTIVO_log, @OBS_log, @KARDEX_log, @CAIXA_log);
+              `);
+
+            totalZerado += SALDO;
+          }
+
+          responseData = { message: `Endereço zerado com sucesso! ${totalZerado} unidade(s) removida(s) em ${lotesResult.recordset.length} lote(s).`, totalZerado };
+        }
+
         await transaction.commit();
         return res.status(201).json(responseData);
 

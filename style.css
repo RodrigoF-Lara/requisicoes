@@ -995,6 +995,30 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
 }
 
+.btn-movimento.zerar {
+    background: linear-gradient(135deg, #ffb74d 0%, #f57c00 100%);
+    grid-column: span 2;
+}
+
+.btn-movimento.zerar:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 124, 0, 0.4);
+}
+
+.btn-movimento.zerar-confirm {
+    background: linear-gradient(135deg, #ffb74d 0%, #f57c00 100%);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-movimento.zerar-confirm:hover {
+    background: linear-gradient(135deg, #ffa726 0%, #e65100 100%);
+}
+
 .btn-movimento:disabled {
     background: #bdc3c7;
     cursor: not-allowed;
