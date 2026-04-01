@@ -192,7 +192,7 @@ export default async function handler(req, res) {
               endereco: endereco || '',
               armazem: armazem || '',
               usuario: usuario,
-              dataHora: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
+              dataHora: null, // será preenchido pelo frontend com horário local
               tipoMovimento: 'ENTRADA'
           };
 

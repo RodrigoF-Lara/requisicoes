@@ -283,10 +283,15 @@
             body { 
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact;
+                padding: 0 !important;
+                background: white !important;
+                display: block !important;
             }
             .no-print { display: none !important; }
             .etiqueta {
-                page-break-inside: avoid; /* Evita que a etiqueta seja cortada */
+                page-break-inside: avoid;
+                margin-bottom: 0 !important;
+                border: none !important;
             }
         }
         
@@ -982,6 +987,7 @@
         }
         
         if (tipo === 'ENTRADA' && data.labelData) {
+            data.labelData.dataHora = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
             etiquetasParaImprimir.push(data.labelData);
         }
       }
