@@ -69,6 +69,10 @@
                             <i class="fa-solid fa-location-crosshairs"></i>
                             <span>ZERAR ENDEREÇO</span>
                         </button>
+                        <button id="btnZerarCodigo" class="btn-movimento zerar-codigo" disabled>
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>ZERAR CÓDIGO</span>
+                        </button>
                     </div>
 
                     <div id="status" class="status-message"></div>
@@ -149,6 +153,30 @@
                     </thead>
                     <tbody id="historicoBody"></tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL para Zerar Código -->
+    <div id="modalZerarCodigo" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span style="font-size: 32px; margin-right: 10px;">⚠️</span>
+                <h2 style="color: #c62828;">Zerar Código</h2>
+                <span id="closeModalZerarCodigo" class="close-btn">&times;</span>
+            </div>
+            <div style="padding: 16px 0;">
+                <div style="background:#ffebee; border:2px solid #c62828; border-radius:8px; padding:16px; margin-bottom:16px;">
+                    <p style="margin:0 0 8px 0; font-weight:bold; color:#c62828; font-size:15px;">⚠️ AÇÃO IRREVERSÍVEL</p>
+                    <p id="msgZerarCodigo" style="margin:0; color:#333;"></p>
+                </div>
+                <p style="margin:0; color:#555; font-size:13px;">Serão dadas saídas em <strong>todos os lotes</strong> do produto em <strong>todos os endereços</strong>. Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancelar" id="cancelarZerarCodigo">Cancelar</button>
+                <button type="button" id="confirmarZerarCodigo" style="padding:10px 20px; background:linear-gradient(135deg,#e53935,#c62828); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:14px;">
+                    ⚠️ SIM, ZERAR TUDO
+                </button>
             </div>
         </div>
     </div>

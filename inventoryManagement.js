@@ -29,6 +29,8 @@
 
   const btnZerarEndereco = document.getElementById("btnZerarEndereco");
   const modalZerarEndereco = document.getElementById("modalZerarEndereco");
+  const btnZerarCodigo = document.getElementById("btnZerarCodigo");
+  const modalZerarCodigo = document.getElementById("modalZerarCodigo");
 
   let codigoAtual = "";
   let loteSelecionado = null;
@@ -70,6 +72,7 @@
       btnEntrada.disabled = false;
       btnSaida.disabled = false;
       btnZerarEndereco.disabled = false;
+      btnZerarCodigo.disabled = false;
       loteSelecionado = null; // Reseta lote selecionado
 
     } catch (err) {
@@ -78,6 +81,7 @@
       btnEntrada.disabled = true;
       btnSaida.disabled = true;
       btnZerarEndereco.disabled = true;
+      btnZerarCodigo.disabled = true;
     }
   }
 
@@ -508,6 +512,61 @@
       janelaEtiqueta.print();
     }, 500);
   }
+
+  // --- Lógica de Zerar Código ---
+
+  btnZerarCodigo.addEventListener("click", () => {
+    if (!codigoAtual) return;
+    const descricao = document.getElementById("infoDescricao").textContent.trim();
+    const saldo = document.getElementById("infoQuantidade").textContent.trim();
+    document.getElementById("msgZerarCodigo").textContent =
+      `Você está prestes a zerar TODAS as ${saldo} unidades do produto ${descricao} (${codigoAtual}) em todos os endereços.`;
+    modalZerarCodigo.style.display = "flex";
+  });
+
+  document.getElementById("closeModalZerarCodigo").addEventListener("click", () => {
+    modalZerarCodigo.style.display = "none";
+  });
+
+  document.getElementById("cancelarZerarCodigo").addEventListener("click", () => {
+    modalZerarCodigo.style.display = "none";
+  });
+
+  window.addEventListener("click", (e) => {
+    if (e.target === modalZerarCodigo) modalZerarCodigo.style.display = "none";
+  });
+
+  document.getElementById("confirmarZerarCodigo").addEventListener("click", async () => {
+    const btn = document.getElementById("confirmarZerarCodigo");
+    btn.disabled = true;
+    btn.textContent = "Zerando...";
+    const usuario = localStorage.getItem("userName") || "WEB";
+
+    try {
+      const res = await fetch("/api/inventory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          codigo: codigoAtual,
+          tipo: "ZERAR_CODIGO",
+          quantidade: 0,
+          usuario,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      modalZerarCodigo.style.display = "none";
+      statusEl.style.color = "#28a745";
+      statusEl.textContent = data.message || "Código zerado com sucesso!";
+      setTimeout(() => consultar(codigoAtual), 500);
+    } catch (err) {
+      alert(`Erro ao zerar código: ${err.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "⚠️ SIM, ZERAR TUDO";
+    }
+  });
 
   // --- Lógica de Zerar Endereço ---
 

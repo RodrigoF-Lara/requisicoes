@@ -1005,6 +1005,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     box-shadow: 0 6px 20px rgba(245, 124, 0, 0.4);
 }
 
+.btn-movimento.zerar-codigo {
+    background: linear-gradient(135deg, #e57373 0%, #c62828 100%);
+    grid-column: span 2;
+}
+
+.btn-movimento.zerar-codigo:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(198, 40, 40, 0.4);
+}
+
 .btn-movimento.zerar-confirm {
     background: linear-gradient(135deg, #ffb74d 0%, #f57c00 100%);
     border: none;
