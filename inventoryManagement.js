@@ -277,7 +277,7 @@
     <style>
         @media print {
             @page { 
-                size: 145mm 104mm;
+                size: 100mm 150mm;
                 margin: 0;
             }
             body { 
@@ -306,8 +306,8 @@
         }
         
         .etiqueta {
-            width: 145mm;
-            height: 104mm;
+            width: 100mm;
+            height: 150mm;
             border: 1px dashed #666;
             padding: 3mm;
             background: white;
