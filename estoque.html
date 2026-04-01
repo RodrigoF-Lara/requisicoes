@@ -73,6 +73,10 @@
                             <i class="fa-solid fa-triangle-exclamation"></i>
                             <span>ZERAR CÓDIGO</span>
                         </button>
+                        <button id="btnAlterarEndereco" class="btn-movimento alterar" disabled>
+                            <i class="fa-solid fa-right-left"></i>
+                            <span>ALTERAR ENDEREÇO</span>
+                        </button>
                     </div>
 
                     <div id="status" class="status-message"></div>
@@ -154,6 +158,47 @@
                     <tbody id="historicoBody"></tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL para Alterar Endereço -->
+    <div id="modalAlterarEndereco" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span style="font-size: 32px; margin-right: 10px;">🔄</span>
+                <h2 id="tituloModalAlterar" style="color: #1565c0;">Alterar Endereço</h2>
+                <span id="closeModalAlterar" class="close-btn">&times;</span>
+            </div>
+            <form id="formAlterarEndereco">
+                <p style="margin-bottom:12px; color:#555; font-size:13px;">Informe o endereço atual e o novo endereço. O sistema dará saída no endereço atual e entrada no novo.</p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div class="form-group-modal">
+                        <label for="armAtualAlterar">Armazém Atual:</label>
+                        <input type="text" id="armAtualAlterar" placeholder="Ex: 01" required />
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="endAtualAlterar">Endereço Atual:</label>
+                        <input type="text" id="endAtualAlterar" placeholder="Ex: 30-04-355" required />
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="armNovoAlterar">Novo Armazém:</label>
+                        <input type="text" id="armNovoAlterar" placeholder="Ex: 01" required />
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="endNovoAlterar">Novo Endereço:</label>
+                        <input type="text" id="endNovoAlterar" placeholder="Ex: 30-04-360" required />
+                    </div>
+                </div>
+                <div id="confirmarAlterarContainer" style="display:none; margin-top:12px; padding:12px; background:#e3f2fd; border-radius:6px; border-left:4px solid #1565c0;">
+                    <p id="mensagemConfirmarAlterar" style="margin:0; font-weight:bold; color:#1565c0;"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancelar" id="cancelarAlterar">Cancelar</button>
+                    <button type="submit" id="submitAlterar" class="btn-movimento alterar-confirm" style="padding:10px 20px;">
+                        🔍 Localizar Saldo
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

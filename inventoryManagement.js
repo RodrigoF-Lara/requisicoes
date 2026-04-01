@@ -31,6 +31,8 @@
   const modalZerarEndereco = document.getElementById("modalZerarEndereco");
   const btnZerarCodigo = document.getElementById("btnZerarCodigo");
   const modalZerarCodigo = document.getElementById("modalZerarCodigo");
+  const btnAlterarEndereco = document.getElementById("btnAlterarEndereco");
+  const modalAlterarEndereco = document.getElementById("modalAlterarEndereco");
 
   let codigoAtual = "";
   let loteSelecionado = null;
@@ -73,6 +75,7 @@
       btnSaida.disabled = false;
       btnZerarEndereco.disabled = false;
       btnZerarCodigo.disabled = false;
+      btnAlterarEndereco.disabled = false;
       loteSelecionado = null; // Reseta lote selecionado
 
     } catch (err) {
@@ -82,6 +85,7 @@
       btnSaida.disabled = true;
       btnZerarEndereco.disabled = true;
       btnZerarCodigo.disabled = true;
+      btnAlterarEndereco.disabled = true;
     }
   }
 
@@ -565,6 +569,109 @@
     } finally {
       btn.disabled = false;
       btn.textContent = "⚠️ SIM, ZERAR TUDO";
+    }
+  });
+
+  // --- Lógica de Alterar Endereço ---
+
+  btnAlterarEndereco.addEventListener("click", () => {
+    if (!codigoAtual) return;
+    document.getElementById("armAtualAlterar").value = "";
+    document.getElementById("endAtualAlterar").value = "";
+    document.getElementById("armNovoAlterar").value = "";
+    document.getElementById("endNovoAlterar").value = "";
+    document.getElementById("confirmarAlterarContainer").style.display = "none";
+    const btn = document.getElementById("submitAlterar");
+    btn.textContent = "🔍 Localizar Saldo";
+    btn.dataset.step = "localizar";
+    modalAlterarEndereco.style.display = "flex";
+  });
+
+  document.getElementById("closeModalAlterar").addEventListener("click", () => {
+    modalAlterarEndereco.style.display = "none";
+  });
+
+  document.getElementById("cancelarAlterar").addEventListener("click", () => {
+    modalAlterarEndereco.style.display = "none";
+  });
+
+  window.addEventListener("click", (e) => {
+    if (e.target === modalAlterarEndereco) modalAlterarEndereco.style.display = "none";
+  });
+
+  document.getElementById("formAlterarEndereco").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const armAtual = document.getElementById("armAtualAlterar").value.trim();
+    const endAtual = document.getElementById("endAtualAlterar").value.trim();
+    const armNovo = document.getElementById("armNovoAlterar").value.trim();
+    const endNovo = document.getElementById("endNovoAlterar").value.trim();
+    const usuario = localStorage.getItem("userName") || "WEB";
+    const btn = document.getElementById("submitAlterar");
+    const step = btn.dataset.step || "localizar";
+
+    if (step === "localizar") {
+      btn.disabled = true;
+      btn.textContent = "Buscando...";
+      try {
+        const res = await fetch(`/api/inventory?action=saldoPorLote&codigo=${encodeURIComponent(codigoAtual)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+
+        const lotesFiltrados = (data.lotes || []).filter(l =>
+          String(l.ARMAZEM).trim() === armAtual && String(l.ENDERECO).trim() === endAtual
+        );
+
+        if (lotesFiltrados.length === 0) {
+          alert(`Nenhum saldo encontrado para o produto ${codigoAtual} no armazém ${armAtual} / endereço ${endAtual}.`);
+          btn.disabled = false;
+          btn.textContent = "🔍 Localizar Saldo";
+          return;
+        }
+
+        const totalSaldo = lotesFiltrados.reduce((sum, l) => sum + (l.SALDO || 0), 0);
+        const descricao = document.getElementById("infoDescricao").textContent.trim();
+        document.getElementById("mensagemConfirmarAlterar").textContent =
+          `Transferir ${totalSaldo} unidades de "${descricao}" (${codigoAtual}) ` +
+          `de ARM:${armAtual} END:${endAtual} → ARM:${armNovo} END:${endNovo}?`;
+        document.getElementById("confirmarAlterarContainer").style.display = "block";
+        btn.textContent = "✓ CONFIRMAR TRANSFERÊNCIA";
+        btn.dataset.step = "confirmar";
+        btn.disabled = false;
+      } catch (err) {
+        alert(`Erro: ${err.message}`);
+        btn.disabled = false;
+        btn.textContent = "🔍 Localizar Saldo";
+      }
+    } else {
+      btn.disabled = true;
+      btn.textContent = "Transferindo...";
+      try {
+        const res = await fetch("/api/inventory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            codigo: codigoAtual,
+            tipo: "ALTERAR_ENDERECO",
+            quantidade: 0,
+            usuario,
+            armazem: armAtual,
+            endereco: endAtual,
+            novoArmazem: armNovo,
+            novoEndereco: endNovo,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+
+        modalAlterarEndereco.style.display = "none";
+        statusEl.style.color = "#28a745";
+        statusEl.textContent = data.message || "Endereço alterado com sucesso!";
+        setTimeout(() => consultar(codigoAtual), 500);
+      } catch (err) {
+        alert(`Erro ao alterar endereço: ${err.message}`);
+        btn.disabled = false;
+        btn.textContent = "✓ CONFIRMAR TRANSFERÊNCIA";
+      }
     }
   });
 

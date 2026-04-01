@@ -383,6 +383,131 @@ export default async function handler(req, res) {
           }
 
           responseData = { message: `Código zerado com sucesso! ${totalZerado} unidade(s) removida(s) em ${lotesResult.recordset.length} lote(s).`, totalZerado };
+        } else if (operacao === 'ALTERAR_ENDERECO') {
+          // Lógica de ALTERAR ENDEREÇO: saída no endereço antigo + entrada no novo
+          const { armazem: armAtual, endereco: endAtual, novoArmazem, novoEndereco } = req.body;
+          if (!armAtual || !endAtual || !novoArmazem || !novoEndereco) {
+            throw new Error("Armazém/endereço atual e novo são obrigatórios.");
+          }
+
+          const obsTransferencia = `TRANSFERIDO DE ARM:${armAtual} END:${endAtual} PARA ARM:${novoArmazem} END:${novoEndereco}`;
+
+          const lotesResult = await transaction.request()
+            .input("CODIGO", sql.VarChar(10), codigo)
+            .input("ARMAZEM", sql.VarChar(20), armAtual)
+            .input("ENDERECO", sql.VarChar(50), endAtual)
+            .query(`
+              SELECT ID, SALDO, QNT_SAIDA, QNT
+              FROM [dbo].[KARDEX_2026_EMBALAGEM]
+              WHERE [D_E_L_E_T_] = ''
+                AND CODIGO = @CODIGO
+                AND ARMAZEM = @ARMAZEM
+                AND ENDERECO = @ENDERECO
+                AND SALDO > 0
+                AND KARDEX = 2026
+            `);
+
+          if (lotesResult.recordset.length === 0) {
+            throw new Error("Nenhum lote com saldo encontrado neste endereço.");
+          }
+
+          let totalTransferido = 0;
+          for (const lote of lotesResult.recordset) {
+            const { ID, SALDO, QNT_SAIDA, QNT: TAM_LOTE } = lote;
+            const novaQntSaida = (QNT_SAIDA || 0) + SALDO;
+
+            // 1. Atualiza EMBALAGEM: registra saída no lote original
+            await transaction.request()
+              .input('ID_upd', sql.Int, ID)
+              .input('NOVA_QNT_SAIDA', sql.Float, novaQntSaida)
+              .input('USUARIO_SAIDA', sql.VarChar, usuario)
+              .input('DT_SAIDA', sql.Date, new Date())
+              .input('HR_SAIDA', sql.VarChar, new Date().toTimeString().split(" ")[0])
+              .query(`
+                UPDATE [dbo].[KARDEX_2026_EMBALAGEM]
+                SET [QNT_SAIDA] = @NOVA_QNT_SAIDA,
+                    [USUARIO_SAIDA] = @USUARIO_SAIDA,
+                    [DT_SAIDA] = @DT_SAIDA,
+                    [HR_SAIDA] = @HR_SAIDA
+                WHERE ID = @ID_upd
+              `);
+
+            // 2. Log de SAÍDA no KARDEX_2026
+            await transaction.request()
+              .input("D_E_L_E_T_", sql.VarChar, "")
+              .input("APLICATIVO", sql.VarChar, "SGC-WEB")
+              .input("ID_TB_RESUMO", sql.Int, ID)
+              .input("CODIGO_log", sql.VarChar, codigo)
+              .input("ENDERECO_log", sql.VarChar, endAtual)
+              .input("ARMAZEM_log", sql.VarChar, armAtual)
+              .input("QNT_log", sql.Float, -SALDO)
+              .input("OPERACAO_log", sql.VarChar, "SAÍDA")
+              .input("USUARIO_log", sql.VarChar, usuario)
+              .input("DT_log", sql.Date, new Date())
+              .input("HR_log", sql.VarChar, new Date().toTimeString().split(" ")[0])
+              .input("MOTIVO_log", sql.VarChar, "ALTERAR ENDEREÇO")
+              .input("OBS_log", sql.VarChar, obsTransferencia)
+              .input("KARDEX_log", sql.Int, 2026)
+              .input("CAIXA_log", sql.Float, TAM_LOTE)
+              .query(`
+                INSERT INTO [dbo].[KARDEX_2026]
+                ([D_E_L_E_T_],[APLICATIVO],[ID_TB_RESUMO],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[OPERACAO],[USUARIO],[DT],[HR],[MOTIVO],[OBS],[KARDEX],[CAIXA])
+                VALUES (@D_E_L_E_T_, @APLICATIVO, @ID_TB_RESUMO, @CODIGO_log, @ENDERECO_log, @ARMAZEM_log, @QNT_log, @OPERACAO_log, @USUARIO_log, @DT_log, @HR_log, @MOTIVO_log, @OBS_log, @KARDEX_log, @CAIXA_log);
+              `);
+
+            // 3. Cria novo registro na EMBALAGEM com novo endereço
+            const embNovoResult = await transaction.request()
+              .input("D_E_L_E_T_", sql.VarChar, "")
+              .input("CODIGO", sql.VarChar, codigo)
+              .input("ENDERECO", sql.VarChar, novoEndereco)
+              .input("ARMAZEM", sql.VarChar, novoArmazem)
+              .input("QNT", sql.Float, TAM_LOTE)
+              .input("USUARIO", sql.VarChar, usuario)
+              .input("DT", sql.Date, new Date())
+              .input("HR", sql.VarChar, new Date().toTimeString().split(" ")[0])
+              .input("MOTIVO", sql.VarChar, "ALTERAR ENDEREÇO")
+              .input("OBS", sql.VarChar, obsTransferencia)
+              .input("QNT_SAIDA", sql.Float, 0)
+              .input("USUARIO_SAIDA", sql.VarChar, "")
+              .input("DT_SAIDA", sql.VarChar, "")
+              .input("HR_SAIDA", sql.VarChar, "")
+              .input("KARDEX", sql.Int, 2026)
+              .query(`
+                INSERT INTO [dbo].[KARDEX_2026_EMBALAGEM]
+                ([D_E_L_E_T_],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[USUARIO],[DT],[HR],[MOTIVO],[OBS],[QNT_SAIDA],[USUARIO_SAIDA],[DT_SAIDA],[HR_SAIDA],[KARDEX])
+                OUTPUT INSERTED.ID
+                VALUES (@D_E_L_E_T_, @CODIGO, @ENDERECO, @ARMAZEM, @QNT, @USUARIO, @DT, @HR, @MOTIVO, @OBS, @QNT_SAIDA, @USUARIO_SAIDA, @DT_SAIDA, @HR_SAIDA, @KARDEX);
+              `);
+
+            const novoId = embNovoResult.recordset[0]?.ID;
+
+            // 4. Log de ENTRADA no KARDEX_2026
+            await transaction.request()
+              .input("D_E_L_E_T_", sql.VarChar, "")
+              .input("APLICATIVO", sql.VarChar, "SGC-WEB")
+              .input("ID_TB_RESUMO", sql.Int, novoId)
+              .input("CODIGO_log", sql.VarChar, codigo)
+              .input("ENDERECO_log", sql.VarChar, novoEndereco)
+              .input("ARMAZEM_log", sql.VarChar, novoArmazem)
+              .input("QNT_log", sql.Float, SALDO)
+              .input("OPERACAO_log", sql.VarChar, "ENTRADA")
+              .input("USUARIO_log", sql.VarChar, usuario)
+              .input("DT_log", sql.Date, new Date())
+              .input("HR_log", sql.VarChar, new Date().toTimeString().split(" ")[0])
+              .input("MOTIVO_log", sql.VarChar, "ALTERAR ENDEREÇO")
+              .input("OBS_log", sql.VarChar, obsTransferencia)
+              .input("KARDEX_log", sql.Int, 2026)
+              .input("CAIXA_log", sql.Float, TAM_LOTE)
+              .query(`
+                INSERT INTO [dbo].[KARDEX_2026]
+                ([D_E_L_E_T_],[APLICATIVO],[ID_TB_RESUMO],[CODIGO],[ENDERECO],[ARMAZEM],[QNT],[OPERACAO],[USUARIO],[DT],[HR],[MOTIVO],[OBS],[KARDEX],[CAIXA])
+                VALUES (@D_E_L_E_T_, @APLICATIVO, @ID_TB_RESUMO, @CODIGO_log, @ENDERECO_log, @ARMAZEM_log, @QNT_log, @OPERACAO_log, @USUARIO_log, @DT_log, @HR_log, @MOTIVO_log, @OBS_log, @KARDEX_log, @CAIXA_log);
+              `);
+
+            totalTransferido += SALDO;
+          }
+
+          responseData = { message: `Endereço alterado com sucesso! ${totalTransferido} unidade(s) transferida(s) em ${lotesResult.recordset.length} lote(s) de ARM:${armAtual} END:${endAtual} → ARM:${novoArmazem} END:${novoEndereco}.`, totalTransferido };
         }
 
         await transaction.commit();
