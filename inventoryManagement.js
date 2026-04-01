@@ -226,6 +226,7 @@
         </div>
         
         <div class="codigo-principal">
+            <div class="descricao-text">${dados.descricao || "N/A"}</div>
             <div class="codigo-texto">${dados.codigo}</div>
         </div>
         
@@ -248,11 +249,6 @@
                 <span class="info-label">ARMAZÉM:</span>
                 <span class="info-value">${dados.armazem ? String(dados.armazem).padStart(2, "0") : "-"}</span>
             </div>
-        </div>
-        
-        <div class="descricao">
-            <div class="descricao-label">DESCRIÇÃO DO PRODUTO:</div>
-            <div class="descricao-text">${dados.descricao || "N/A"}</div>
         </div>
         
         <div class="footer">
@@ -413,28 +409,13 @@
             flex: 1;
         }
         
-        .descricao {
-            margin: 2mm 0;
-            padding: 2mm;
-            background-color: #fff3e0;
-            border: 1px solid #ff9800;
-            border-radius: 2mm;
-        }
-        
-        .descricao-label {
-            font-weight: bold;
-            font-size: 8pt;
-            color: #e65100;
-            margin-bottom: 1mm;
-        }
-        
         .descricao-text {
-            font-size: 10pt;
+            font-size: 13pt;
             color: #000;
-            font-weight: 600;
+            font-weight: 700;
             line-height: 1.2;
-            max-height: 2.4em;
-            overflow: hidden;
+            text-align: center;
+            margin-bottom: 1mm;
         }
         
         .footer {
