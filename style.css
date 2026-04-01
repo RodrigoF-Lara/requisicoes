@@ -1031,7 +1031,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     border-radius: 8px;
     color: white;
     font-weight: bold;
-    cursor: pointer;
+    cursor: pointer !important;
     transition: all 0.3s ease;
 }
 
@@ -1045,7 +1045,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     border-radius: 8px;
     color: white;
     font-weight: bold;
-    cursor: pointer;
+    cursor: pointer !important;
     transition: all 0.3s ease;
 }
 

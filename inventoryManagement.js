@@ -584,6 +584,7 @@
     const btn = document.getElementById("submitAlterar");
     btn.textContent = "🔍 Localizar Saldo";
     btn.dataset.step = "localizar";
+    btn.disabled = false;
     modalAlterarEndereco.style.display = "flex";
   });
 
@@ -663,6 +664,7 @@
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
 
+        btn.disabled = false;
         modalAlterarEndereco.style.display = "none";
         statusEl.style.color = "#28a745";
         statusEl.textContent = data.message || "Endereço alterado com sucesso!";
@@ -685,6 +687,7 @@
     const submitBtn = document.getElementById("submitZerarEndereco");
     submitBtn.textContent = "✓ Localizar Saldo";
     submitBtn.dataset.step = "localizar";
+    submitBtn.disabled = false;
     modalZerarEndereco.style.display = "flex";
   });
 
@@ -764,6 +767,7 @@
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
 
+        submitBtn.disabled = false;
         modalZerarEndereco.style.display = "none";
         statusEl.style.color = "#28a745";
         statusEl.textContent = data.message || "Endereço zerado com sucesso!";
