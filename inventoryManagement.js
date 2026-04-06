@@ -584,7 +584,8 @@
           <div class="meio-info">
             <div class="info-linha"><span class="info-label">ID:</span> ${dados.idMovimento || '-'}</div>
             <div class="info-linha"><span class="info-label">END:</span> ${dados.endereco || '-'} / ARM: ${dados.armazem ? String(dados.armazem).padStart(2,'0') : '-'}</div>
-            <div class="rodape">${dados.dataHora || ''} | ${dados.usuario || ''}</div>
+            <div class="rodape data">${dados.dataHora || ''}</div>
+            <div class="rodape usuario">${dados.usuario || ''}</div>
           </div>
         </div>
       </div>
@@ -680,8 +681,8 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            gap: 0.8mm;
+            justify-content: space-between;
+            gap: 0.5mm;
             overflow: hidden;
         }
         .descricao {
@@ -711,6 +712,13 @@
             font-size: 4.5pt;
             color: #888;
             font-style: italic;
+        }
+        .rodape.usuario {
+            margin-top: auto;
+            padding-top: 1mm;
+            border-top: 0.5pt solid #eee;
+            font-weight: bold;
+            color: #555;
         }
         .btn-imprimir {
             position: fixed;
