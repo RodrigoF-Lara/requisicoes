@@ -735,7 +735,7 @@
             etiquetasData.forEach(dados => {
                 if (dados.idMovimento && document.getElementById('qr-' + dados.idMovimento)) {
                     new QRCode(document.getElementById('qr-' + dados.idMovimento), {
-                        text: dados.codigo,
+                        text: String(dados.idMovimento),
                         width: 64,
                         height: 64,
                         correctLevel: QRCode.CorrectLevel.L
