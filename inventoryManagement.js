@@ -578,10 +578,10 @@
           <span class="codigo-text">${dados.codigo}</span>
           <span class="qtd-text">QTD: ${dados.quantidade}</span>
         </div>
+        <div class="descricao">${(dados.descricao || '')}</div>
         <div class="meio">
           <div id="qr-${dados.idMovimento}" class="qr-area"></div>
           <div class="meio-info">
-            <div class="descricao">${(dados.descricao || '').substring(0, 32)}</div>
             <div class="info-linha"><span class="info-label">ID:</span> ${dados.idMovimento || '-'}</div>
             <div class="info-linha"><span class="info-label">END:</span> ${dados.endereco || '-'} / ARM: ${dados.armazem ? String(dados.armazem).padStart(2,'0') : '-'}</div>
             <div class="rodape">${dados.dataHora || ''} | ${dados.usuario || ''}</div>
@@ -693,6 +693,8 @@
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
+            border-bottom: 0.5pt solid #eee;
+            padding-bottom: 0.5mm;
         }
         .info-linha {
             font-size: 5pt;
