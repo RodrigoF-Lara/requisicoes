@@ -578,11 +578,14 @@
           <span class="codigo-text">${dados.codigo}</span>
           <span class="qtd-text">QTD: ${dados.quantidade}</span>
         </div>
-        <div class="barcode-area">
-          <svg id="barcode-${dados.idMovimento}"></svg>
+        <div class="meio">
+          <div id="qr-${dados.idMovimento}" class="qr-area"></div>
+          <div class="meio-info">
+            <div class="descricao">${(dados.descricao || '').substring(0, 32)}</div>
+            <div class="rodape">${dados.dataHora || ''}</div>
+            <div class="rodape">${dados.usuario || ''}</div>
+          </div>
         </div>
-        <div class="descricao">${(dados.descricao || '').substring(0, 38)}</div>
-        <div class="rodape">${dados.dataHora || ''} | ${dados.usuario || ''}</div>
       </div>
     `).join('');
 
@@ -592,7 +595,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Etiqueta 40x30 - ${etiquetas[0].codigo}</title>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"><\/script>
     <style>
         @media print {
             @page {
@@ -652,31 +655,47 @@
             font-weight: bold;
             color: #1565c0;
         }
-        .barcode-area {
+        .meio {
             flex: 1;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 1.5mm;
+            overflow: hidden;
+        }
+        .qr-area {
+            flex-shrink: 0;
+            width: 17mm;
+            height: 17mm;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
         }
-        .barcode-area svg {
-            width: 100% !important;
-            max-height: 14mm !important;
-            height: auto !important;
+        .qr-area img, .qr-area canvas {
+            width: 17mm !important;
+            height: 17mm !important;
+        }
+        .meio-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 0.8mm;
+            overflow: hidden;
         }
         .descricao {
             font-size: 5.5pt;
             color: #222;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            text-align: center;
             font-weight: bold;
+            line-height: 1.3;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
         }
         .rodape {
             font-size: 4.5pt;
             color: #888;
-            text-align: right;
             font-style: italic;
         }
         .btn-imprimir {
@@ -702,15 +721,12 @@
         const etiquetasData = ${JSON.stringify(etiquetas)};
         window.onload = function() {
             etiquetasData.forEach(dados => {
-                if (dados.idMovimento && document.getElementById('barcode-' + dados.idMovimento)) {
-                    JsBarcode("#barcode-" + dados.idMovimento, dados.codigo, {
-                        format: "CODE128",
-                        width: 1.5,
-                        height: 28,
-                        displayValue: true,
-                        fontSize: 8,
-                        margin: 1,
-                        fontOptions: "bold"
+                if (dados.idMovimento && document.getElementById('qr-' + dados.idMovimento)) {
+                    new QRCode(document.getElementById('qr-' + dados.idMovimento), {
+                        text: dados.codigo,
+                        width: 64,
+                        height: 64,
+                        correctLevel: QRCode.CorrectLevel.L
                     });
                 }
             });
