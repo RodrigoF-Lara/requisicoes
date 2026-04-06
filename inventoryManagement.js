@@ -201,10 +201,39 @@
     });
   }
 
-  function gerarEtiqueta(dadosOuArray) {
+  let _pendingLabelData = null;
+
+  function selecionarEImprimirEtiqueta(dadosOuArray) {
+    _pendingLabelData = dadosOuArray;
+    document.getElementById('modalEtiqueta').style.display = 'flex';
+  }
+
+  document.getElementById('closeModalEtiqueta').addEventListener('click', () => {
+    document.getElementById('modalEtiqueta').style.display = 'none';
+    _pendingLabelData = null;
+  });
+
+  document.getElementById('btnEtiqueta100x150').addEventListener('click', () => {
+    document.getElementById('modalEtiqueta').style.display = 'none';
+    if (_pendingLabelData) gerarEtiqueta100x150(_pendingLabelData);
+    _pendingLabelData = null;
+  });
+
+  document.getElementById('btnEtiqueta40x30').addEventListener('click', () => {
+    document.getElementById('modalEtiqueta').style.display = 'none';
+    if (_pendingLabelData) gerarEtiqueta40x30(_pendingLabelData);
+    _pendingLabelData = null;
+  });
+
+  window.addEventListener('click', (e) => {
+    const modal = document.getElementById('modalEtiqueta');
+    if (e.target === modal) { modal.style.display = 'none'; _pendingLabelData = null; }
+  });
+
+  function gerarEtiqueta100x150(dadosOuArray) {
     const etiquetas = Array.isArray(dadosOuArray) ? dadosOuArray : [dadosOuArray];
     if (etiquetas.length === 0) {
-      console.error("gerarEtiqueta foi chamada sem dados de etiqueta válidos.");
+      console.error("gerarEtiqueta100x150 foi chamada sem dados de etiqueta válidos.");
       return;
     }
 
@@ -531,6 +560,169 @@
     setTimeout(() => {
       janelaEtiqueta.print();
     }, 500);
+  }
+
+  function gerarEtiqueta40x30(dadosOuArray) {
+    const etiquetas = Array.isArray(dadosOuArray) ? dadosOuArray : [dadosOuArray];
+    if (etiquetas.length === 0) return;
+
+    const janelaEtiqueta = window.open("", "_blank", "width=420,height=360");
+    if (!janelaEtiqueta || typeof janelaEtiqueta.closed == 'undefined' || janelaEtiqueta.closed) {
+      alert("A janela de impressão foi bloqueada pelo navegador. Por favor, habilite os pop-ups para este site e tente reimprimir a etiqueta a partir do histórico.");
+      return;
+    }
+
+    const etiquetasHtml = etiquetas.map(dados => `
+      <div class="etiqueta">
+        <div class="topo">
+          <span class="codigo-text">${dados.codigo}</span>
+          <span class="qtd-text">QTD: ${dados.quantidade}</span>
+        </div>
+        <div class="barcode-area">
+          <svg id="barcode-${dados.idMovimento}"></svg>
+        </div>
+        <div class="descricao">${(dados.descricao || '').substring(0, 38)}</div>
+        <div class="rodape">${dados.dataHora || ''} | ${dados.usuario || ''}</div>
+      </div>
+    `).join('');
+
+    const htmlEtiqueta40 = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Etiqueta 40x30 - ${etiquetas[0].codigo}</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+    <style>
+        @media print {
+            @page {
+                size: 40mm 30mm;
+                margin: 0;
+            }
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                padding: 0 !important;
+                background: white !important;
+                display: block !important;
+            }
+            .no-print { display: none !important; }
+            .etiqueta {
+                page-break-inside: avoid;
+                border: none !important;
+                margin: 0 !important;
+            }
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #ccc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4mm;
+            gap: 4mm;
+        }
+        .etiqueta {
+            width: 40mm;
+            height: 30mm;
+            background: white;
+            border: 1px dashed #999;
+            padding: 1.2mm 1.5mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+        .topo {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 0.5pt solid #ccc;
+            padding-bottom: 0.5mm;
+        }
+        .codigo-text {
+            font-size: 7pt;
+            font-weight: bold;
+            color: #000;
+            letter-spacing: 0.3px;
+        }
+        .qtd-text {
+            font-size: 7pt;
+            font-weight: bold;
+            color: #1565c0;
+        }
+        .barcode-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .barcode-area svg {
+            width: 100% !important;
+            max-height: 14mm !important;
+            height: auto !important;
+        }
+        .descricao {
+            font-size: 5.5pt;
+            color: #222;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: center;
+            font-weight: bold;
+        }
+        .rodape {
+            font-size: 4.5pt;
+            color: #888;
+            text-align: right;
+            font-style: italic;
+        }
+        .btn-imprimir {
+            position: fixed;
+            top: 8px;
+            right: 8px;
+            padding: 8px 16px;
+            background: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .btn-imprimir:hover { background: #1565c0; }
+    </style>
+</head>
+<body>
+    <button class="btn-imprimir no-print" onclick="window.print()">🖨️ Imprimir Etiqueta</button>
+    ${etiquetasHtml}
+    <script>
+        const etiquetasData = ${JSON.stringify(etiquetas)};
+        window.onload = function() {
+            etiquetasData.forEach(dados => {
+                if (dados.idMovimento && document.getElementById('barcode-' + dados.idMovimento)) {
+                    JsBarcode("#barcode-" + dados.idMovimento, dados.codigo, {
+                        format: "CODE128",
+                        width: 1.5,
+                        height: 28,
+                        displayValue: true,
+                        fontSize: 8,
+                        margin: 1,
+                        fontOptions: "bold"
+                    });
+                }
+            });
+            window.focus();
+        };
+    <\/script>
+</body>
+</html>`;
+
+    janelaEtiqueta.document.write(htmlEtiqueta40);
+    janelaEtiqueta.document.close();
+    setTimeout(() => { janelaEtiqueta.print(); }, 500);
   }
 
   // --- Lógica de Zerar Código ---
@@ -933,7 +1125,7 @@
             dataHora: `${row.cells[6].textContent.trim()} ${row.cells[7].textContent.trim()}`,
             tipoMovimento: operacao
         };
-        gerarEtiqueta(dados);
+        selecionarEImprimirEtiqueta(dados);
     }
   });
 
@@ -1004,7 +1196,7 @@
       }
 
       if (etiquetasParaImprimir.length > 0) {
-        gerarEtiqueta(etiquetasParaImprimir);
+        selecionarEImprimirEtiqueta(etiquetasParaImprimir);
       }
       
       modalMovimento.style.display = "none";
