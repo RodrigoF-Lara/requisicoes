@@ -920,17 +920,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* === CARD GERENCIAR === */
 .produto-info h2 {
-    font-size: 22px;
-    margin-bottom: 12px;
+    font-size: 28px;
+    margin-bottom: 16px;
 }
 
 .produto-info p {
-    font-size: 18px;
-    margin: 6px 0;
+    font-size: 28px;
+    margin: 10px 0;
 }
 
 .produto-info span {
-    font-size: 18px;
+    font-size: 28px;
 }
 
 .gerenciar-card {
