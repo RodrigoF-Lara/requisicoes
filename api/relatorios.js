@@ -1,5 +1,4 @@
-import { getConnection } from "../db.js";
-import sql from "mssql";
+﻿import { getConnection, sql } from "../db.js";
 
 // Habilitar CORS
 const setCorsHeaders = (res) => {

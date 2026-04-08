@@ -1,5 +1,4 @@
-﻿import { getConnection } from "../db.js";
-import sql from "mssql";
+﻿import { getConnection, sql } from "../db.js";
 
 // ============================================================
 // API de LanÃ§amento de NF

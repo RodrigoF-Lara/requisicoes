@@ -33,3 +33,5 @@ export async function getConnection() {
         throw err;
     }
 }
+
+export { sql };

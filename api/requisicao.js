@@ -1,5 +1,4 @@
-import { getConnection } from "../db.js";
-import sql from "mssql";
+﻿import { getConnection, sql } from "../db.js";
 
 // Função Principal que decide o que fazer
 export default async function handler(req, res) {
