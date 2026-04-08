@@ -15,11 +15,11 @@ export default async function handler(req, res) {
     let pool;
     try {
         pool = await getConnection();
-        const now = new Date();
+        const nowBRT = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
 
-        // Formata data e hora
-        const dt = now.toISOString().split("T")[0]; // YYYY-MM-DD
-        const hh = now.toTimeString().split(" ")[0]; // HH:MM:SS
+        // Formata data e hora em BRT
+        const dt = nowBRT.toISOString().split("T")[0]; // YYYY-MM-DD
+        const hh = nowBRT.toTimeString().split(" ")[0]; // HH:MM:SS
 
         await pool.request()
             .input("ID_NF", sql.Int, id_nf ? Number(id_nf) : null)
@@ -43,9 +43,5 @@ export default async function handler(req, res) {
     } catch (err) {
         console.error("ERRO /api/atualizarStatusNF:", err);
         return res.status(500).json({ message: "Erro interno ao atualizar processo.", error: err.message });
-    } finally {
-        if (pool && typeof pool.close === "function") {
-            try { await pool.close(); } catch (e) { console.warn("Falha ao fechar pool:", e.message); }
-        }
     }
 }
