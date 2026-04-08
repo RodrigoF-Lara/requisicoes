@@ -1,23 +1,23 @@
-import { getConnection } from "../db.js";
+﻿import { getConnection } from "../db.js";
 import sql from "mssql";
 
 // ============================================================
-// API de Lançamento de NF
+// API de LanÃ§amento de NF
 // Rotas:
-//   GET  ?action=fornecedor&cod=XXX            → busca fornecedor
-//   GET  ?action=nfs_fornecedor&cod=XXX        → lista NFs do fornecedor
-//   GET  ?action=cabecalho&id_nf=XXX           → dados do cabeçalho de uma NF
-//   GET  ?action=produtos&id_nf=XXX            → produtos de uma NF
-//   GET  ?action=saldo_produto&codigo=XXX      → saldo e custo atual do produto
-//   GET  ?action=pesquisa_nf&num_nf=XXX        → pesquisa NF por número
-//   POST ?action=criar_cabecalho               → insere NF_CABECALHO
-//   POST ?action=inserir_produto               → insere item em NF_PRODUTOS
-//   POST ?action=alterar_produto               → atualiza item de NF_PRODUTOS
-//   POST ?action=remover_produto               → remove item de NF_PRODUTOS
-//   POST ?action=finalizar_nf                  → marca NF como LANÇADA + valida totais
-//   POST ?action=excluir_nf                    → remove cabeçalho e produtos
-//   PUT  ?action=atualizar_cabecalho           → atualiza campo específico do cabeçalho
-//   POST ?action=primeiro_custo                → insere/atualiza custo base de produto
+//   GET  ?action=fornecedor&cod=XXX            â†’ busca fornecedor
+//   GET  ?action=nfs_fornecedor&cod=XXX        â†’ lista NFs do fornecedor
+//   GET  ?action=cabecalho&id_nf=XXX           â†’ dados do cabeÃ§alho de uma NF
+//   GET  ?action=produtos&id_nf=XXX            â†’ produtos de uma NF
+//   GET  ?action=saldo_produto&codigo=XXX      â†’ saldo e custo atual do produto
+//   GET  ?action=pesquisa_nf&num_nf=XXX        â†’ pesquisa NF por nÃºmero
+//   POST ?action=criar_cabecalho               â†’ insere NF_CABECALHO
+//   POST ?action=inserir_produto               â†’ insere item em NF_PRODUTOS
+//   POST ?action=alterar_produto               â†’ atualiza item de NF_PRODUTOS
+//   POST ?action=remover_produto               â†’ remove item de NF_PRODUTOS
+//   POST ?action=finalizar_nf                  â†’ marca NF como LANÃ‡ADA + valida totais
+//   POST ?action=excluir_nf                    â†’ remove cabeÃ§alho e produtos
+//   PUT  ?action=atualizar_cabecalho           â†’ atualiza campo especÃ­fico do cabeÃ§alho
+//   POST ?action=primeiro_custo                â†’ insere/atualiza custo base de produto
 // ============================================================
 
 export default async function handler(req, res) {
@@ -26,30 +26,30 @@ export default async function handler(req, res) {
     try {
         const pool = await getConnection();
 
-        // ── GET ─────────────────────────────────────────────────────────────
+        // â”€â”€ GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (req.method === "GET") {
 
-            // Autocomplete de fornecedor por código ou razão social
+            // Autocomplete de fornecedor por cÃ³digo ou razÃ£o social
             if (action === "buscar_fornecedor") {
                 const q   = req.query.q;
                 const cod = req.query.cod;
 
                 if (cod) {
                     const result = await pool.request()
-                        .input("COD", sql.VarChar(20), cod)
+                        .input("COD", sql.VarChar, cod)
                         .query(`
                             SELECT COD_FORNECEDOR, RAZAO_SOCIAL
                             FROM [dbo].[CAD_FORNECEDOR]
                             WHERE COD_FORNECEDOR = @COD
                         `);
                     if (result.recordset.length === 0)
-                        return res.status(404).json({ message: "Fornecedor não encontrado." });
+                        return res.status(404).json({ message: "Fornecedor nÃ£o encontrado." });
                     return res.status(200).json(result.recordset[0]);
                 }
 
                 if (q) {
                     const result = await pool.request()
-                        .input("Q", sql.VarChar(100), `%${q}%`)
+                        .input("Q", sql.VarChar, `%${q}%`)
                         .query(`
                             SELECT TOP 20 COD_FORNECEDOR, RAZAO_SOCIAL
                             FROM [dbo].[CAD_FORNECEDOR]
@@ -62,13 +62,13 @@ export default async function handler(req, res) {
                 return res.status(400).json({ message: "Informe 'q' ou 'cod'." });
             }
 
-            // Busca fornecedor pelo código (busca exata)
+            // Busca fornecedor pelo cÃ³digo (busca exata)
             if (action === "fornecedor") {
                 const cod = req.query.cod;
-                if (!cod) return res.status(400).json({ message: "Parâmetro 'cod' obrigatório." });
+                if (!cod) return res.status(400).json({ message: "ParÃ¢metro 'cod' obrigatÃ³rio." });
 
                 const result = await pool.request()
-                    .input("COD", sql.VarChar(20), cod)
+                    .input("COD", sql.VarChar, cod)
                     .query(`
                         SELECT COD_FORNECEDOR, RAZAO_SOCIAL, TIPO_FORN
                         FROM [dbo].[CAD_FORNECEDOR]
@@ -76,7 +76,7 @@ export default async function handler(req, res) {
                     `);
 
                 if (result.recordset.length === 0)
-                    return res.status(404).json({ message: "Fornecedor não encontrado." });
+                    return res.status(404).json({ message: "Fornecedor nÃ£o encontrado." });
 
                 return res.status(200).json(result.recordset[0]);
             }
@@ -84,10 +84,10 @@ export default async function handler(req, res) {
             // Lista NFs existentes de um fornecedor (para o ComboBox de NF)
             if (action === "nfs_fornecedor") {
                 const cod = req.query.cod;
-                if (!cod) return res.status(400).json({ message: "Parâmetro 'cod' obrigatório." });
+                if (!cod) return res.status(400).json({ message: "ParÃ¢metro 'cod' obrigatÃ³rio." });
 
                 const result = await pool.request()
-                    .input("COD", sql.VarChar(20), cod)
+                    .input("COD", sql.VarChar, cod)
                     .query(`
                         SELECT CAB_NUM_NF, CAB_ID_NF, CAB_STATUS
                         FROM [dbo].[NF_CABECALHO]
@@ -98,10 +98,10 @@ export default async function handler(req, res) {
                 return res.status(200).json(result.recordset);
             }
 
-            // Cabeçalho completo de uma NF
+            // CabeÃ§alho completo de uma NF
             if (action === "cabecalho") {
                 const id_nf = req.query.id_nf;
-                if (!id_nf) return res.status(400).json({ message: "Parâmetro 'id_nf' obrigatório." });
+                if (!id_nf) return res.status(400).json({ message: "ParÃ¢metro 'id_nf' obrigatÃ³rio." });
 
                 const result = await pool.request()
                     .input("ID_NF", sql.Int, Number(id_nf))
@@ -115,7 +115,7 @@ export default async function handler(req, res) {
                     `);
 
                 if (result.recordset.length === 0)
-                    return res.status(404).json({ message: "NF não encontrada." });
+                    return res.status(404).json({ message: "NF nÃ£o encontrada." });
 
                 return res.status(200).json(result.recordset[0]);
             }
@@ -123,7 +123,7 @@ export default async function handler(req, res) {
             // Produtos de uma NF
             if (action === "produtos") {
                 const id_nf = req.query.id_nf;
-                if (!id_nf) return res.status(400).json({ message: "Parâmetro 'id_nf' obrigatório." });
+                if (!id_nf) return res.status(400).json({ message: "ParÃ¢metro 'id_nf' obrigatÃ³rio." });
 
                 const result = await pool.request()
                     .input("ID_NF", sql.Int, Number(id_nf))
@@ -141,15 +141,15 @@ export default async function handler(req, res) {
             // Saldo e custo atual de um produto
             if (action === "saldo_produto") {
                 const codigo = req.query.codigo;
-                if (!codigo) return res.status(400).json({ message: "Parâmetro 'codigo' obrigatório." });
+                if (!codigo) return res.status(400).json({ message: "ParÃ¢metro 'codigo' obrigatÃ³rio." });
 
                 const [descResult, saldoResult, custoResult] = await Promise.all([
                     pool.request()
-                        .input("COD", sql.VarChar(20), codigo)
+                        .input("COD", sql.VarChar, codigo)
                         .query("SELECT DESCRICAO FROM [dbo].[CAD_PROD] WHERE CODIGO = @COD"),
 
                     pool.request()
-                        .input("COD", sql.VarChar(20), codigo)
+                        .input("COD", sql.VarChar, codigo)
                         .query(`
                             SELECT ISNULL(SUM(SALDO), 0) AS SALDO
                             FROM [dbo].[KARDEX_2026_EMBALAGEM]
@@ -157,7 +157,7 @@ export default async function handler(req, res) {
                         `),
 
                     pool.request()
-                        .input("COD", sql.VarChar(20), codigo)
+                        .input("COD", sql.VarChar, codigo)
                         .query(`
                             SELECT TOP 1
                                 PROD_CUSTO_CONTABIL_MEDIO_NOVO,
@@ -171,7 +171,7 @@ export default async function handler(req, res) {
                 ]);
 
                 if (descResult.recordset.length === 0)
-                    return res.status(404).json({ message: "Produto não encontrado." });
+                    return res.status(404).json({ message: "Produto nÃ£o encontrado." });
 
                 return res.status(200).json({
                     descricao: descResult.recordset[0].DESCRICAO,
@@ -180,13 +180,13 @@ export default async function handler(req, res) {
                 });
             }
 
-            // Pesquisa NF por número (para a aba Pesquisa)
+            // Pesquisa NF por nÃºmero (para a aba Pesquisa)
             if (action === "pesquisa_nf") {
                 const num_nf = req.query.num_nf;
-                if (!num_nf) return res.status(400).json({ message: "Parâmetro 'num_nf' obrigatório." });
+                if (!num_nf) return res.status(400).json({ message: "ParÃ¢metro 'num_nf' obrigatÃ³rio." });
 
                 const result = await pool.request()
-                    .input("NUM_NF", sql.VarChar(50), `%${num_nf}%`)
+                    .input("NUM_NF", sql.VarChar, `%${num_nf}%`)
                     .query(`
                         SELECT 
                             c.CAB_ID_NF,
@@ -207,13 +207,13 @@ export default async function handler(req, res) {
                 return res.status(200).json(result.recordset);
             }
 
-            return res.status(400).json({ message: `Action GET '${action}' não reconhecida.` });
+            return res.status(400).json({ message: `Action GET '${action}' nÃ£o reconhecida.` });
         }
 
-        // ── POST ────────────────────────────────────────────────────────────
+        // â”€â”€ POST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (req.method === "POST") {
 
-            // Cria o cabeçalho da NF
+            // Cria o cabeÃ§alho da NF
             if (action === "criar_cabecalho") {
                 const {
                     cod_forn, num_nf, qnt_itens, pedido_compra, razao,
@@ -223,35 +223,35 @@ export default async function handler(req, res) {
                 } = req.body;
 
                 if (!cod_forn || !num_nf || !usuario)
-                    return res.status(400).json({ message: "Campos obrigatórios: cod_forn, num_nf, usuario." });
+                    return res.status(400).json({ message: "Campos obrigatÃ³rios: cod_forn, num_nf, usuario." });
 
                 if (!tipo_forn)
-                    return res.status(400).json({ message: "Tipo de fornecedor é obrigatório." });
+                    return res.status(400).json({ message: "Tipo de fornecedor Ã© obrigatÃ³rio." });
 
                 if (tipo_forn === "SIMPLES NACIONAL" && !aliquota)
-                    return res.status(400).json({ message: "Alíquota obrigatória para Simples Nacional." });
+                    return res.status(400).json({ message: "AlÃ­quota obrigatÃ³ria para Simples Nacional." });
 
                 // Verifica duplicata
                 const dup = await pool.request()
-                    .input("NUM_FORN", sql.VarChar(20), cod_forn)
-                    .input("NUM_NF", sql.VarChar(50), num_nf)
+                    .input("NUM_FORN", sql.VarChar, cod_forn)
+                    .input("NUM_NF", sql.VarChar, num_nf)
                     .query("SELECT CAB_ID_NF FROM [dbo].[NF_CABECALHO] WHERE CAB_NUM_FORN = @NUM_FORN AND CAB_NUM_NF = @NUM_NF");
 
                 if (dup.recordset.length > 0)
-                    return res.status(409).json({ message: "NF já cadastrada para este fornecedor.", id_nf: dup.recordset[0].CAB_ID_NF });
+                    return res.status(409).json({ message: "NF jÃ¡ cadastrada para este fornecedor.", id_nf: dup.recordset[0].CAB_ID_NF });
 
                 const nowBRT = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
 
                 const result = await pool.request()
-                    .input("COD_FORN",   sql.VarChar(20),    cod_forn)
-                    .input("NUM_NF",     sql.VarChar(50),    num_nf)
+                    .input("COD_FORN",   sql.VarChar,    cod_forn)
+                    .input("NUM_NF",     sql.VarChar,    num_nf)
                     .input("QNT_ITENS",  sql.Float,          Number(qnt_itens) || 0)
-                    .input("PC",         sql.VarChar(50),    pedido_compra || "")
-                    .input("RAZAO",      sql.VarChar(200),   razao || "")
+                    .input("PC",         sql.VarChar,    pedido_compra || "")
+                    .input("RAZAO",      sql.VarChar,   razao || "")
                     .input("DT_EMISSAO", sql.Date,           dt_emissao ? new Date(dt_emissao + "T12:00:00") : null)
                     .input("DT_RECEB",   sql.Date,           dt_receb ? new Date(dt_receb + "T12:00:00") : null)
                     .input("DT_DIG",     sql.Date,           nowBRT)
-                    .input("HR_DIG",     sql.VarChar(8),     nowBRT.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false }))
+                    .input("HR_DIG",     sql.VarChar,     nowBRT.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false }))
                     .input("ICMS",       sql.Float,          Number(icms) || 0)
                     .input("ST",         sql.Float,          Number(st) || 0)
                     .input("FRETE",      sql.Float,          Number(frete) || 0)
@@ -259,11 +259,11 @@ export default async function handler(req, res) {
                     .input("IPI",        sql.Float,          Number(ipi) || 0)
                     .input("VALOR_PROD", sql.Float,          Number(valor_prod) || 0)
                     .input("VALOR_TT",   sql.Float,          Number(valor_total_nf) || 0)
-                    .input("USUARIO",    sql.VarChar(100),   usuario)
-                    .input("TIPO_FORN",  sql.VarChar(50),    tipo_forn)
+                    .input("USUARIO",    sql.VarChar,   usuario)
+                    .input("TIPO_FORN",  sql.VarChar,    tipo_forn)
                     .input("BC_ICMS",    sql.Float,          Number(bc_icms) || 0)
                     .input("ALIQUOTA",   sql.Float,          Number(aliquota) || 0)
-                    .input("STATUS",     sql.VarChar(20),    "ABERTA")
+                    .input("STATUS",     sql.VarChar,    "ABERTA")
                     .query(`
                         INSERT INTO [dbo].[NF_CABECALHO] (
                             [CAB_NUM_FORN],[CAB_NUM_NF],[CAB_QNT_TOTAL_ITENS],[CAB_PC],
@@ -283,7 +283,7 @@ export default async function handler(req, res) {
                     `);
 
                 const id_nf_novo = result.recordset[0].CAB_ID_NF;
-                return res.status(201).json({ message: "Cabeçalho criado com sucesso.", id_nf: id_nf_novo });
+                return res.status(201).json({ message: "CabeÃ§alho criado com sucesso.", id_nf: id_nf_novo });
             }
 
             // Insere produto na NF
@@ -301,11 +301,11 @@ export default async function handler(req, res) {
                 } = req.body;
 
                 if (!id_nf || !codigo || !finalidade)
-                    return res.status(400).json({ message: "Campos obrigatórios: id_nf, codigo, finalidade." });
+                    return res.status(400).json({ message: "Campos obrigatÃ³rios: id_nf, codigo, finalidade." });
 
-                // Calcula PIS/COFINS automático conforme tipo do fornecedor
+                // Calcula PIS/COFINS automÃ¡tico conforme tipo do fornecedor
                 let pis_valor = 0, pis_percent = 0, cofins_valor = 0, cofins_percent = 0;
-                if (tipo_forn === "TRIBUTAÇÃO NORMAL") {
+                if (tipo_forn === "TRIBUTAÃ‡ÃƒO NORMAL") {
                     pis_percent = 0.0065;
                     cofins_percent = 0.03;
                     const base = (Number(valor_total) - Number(icms || 0) - Number(desconto || 0));
@@ -315,7 +315,7 @@ export default async function handler(req, res) {
 
                 const result = await pool.request()
                     .input("ID_NF",                     sql.Int,    Number(id_nf))
-                    .input("COD_PROD",                  sql.VarChar(20), codigo)
+                    .input("COD_PROD",                  sql.VarChar, codigo)
                     .input("QNT",                       sql.Float,  Number(qnt) || 0)
                     .input("VALOR_UNIT",                sql.Float,  Number(valor_unit) || 0)
                     .input("VALOR_TOTAL",               sql.Float,  Number(valor_total) || 0)
@@ -337,7 +337,7 @@ export default async function handler(req, res) {
                     .input("PIS_PERCENT",               sql.Float,  pis_percent)
                     .input("COFINS_VALOR",              sql.Float,  cofins_valor)
                     .input("COFINS_PERCENT",            sql.Float,  cofins_percent)
-                    .input("FINALIDADE",                sql.VarChar(50), finalidade)
+                    .input("FINALIDADE",                sql.VarChar, finalidade)
                     .input("CUSTO_CONTABIL",            sql.Float,  Number(custo_contabil) || 0)
                     .input("CUSTO_CONTABIL_MED_ATU",    sql.Float,  Number(custo_contabil_medio_atual) || 0)
                     .input("CUSTO_CONTABIL_MED_NOV",    sql.Float,  Number(custo_contabil_medio_novo) || 0)
@@ -393,11 +393,11 @@ export default async function handler(req, res) {
                 await pool.request()
                     .input("ID_NF",    sql.Int,        Number(id_nf))
                     .input("ID_PROD",  sql.Int,        id_prod)
-                    .input("NF",       sql.VarChar(50), num_nf || "")
-                    .input("CODIGO",   sql.VarChar(20), codigo)
-                    .input("USUARIO",  sql.VarChar(100), usuario || "WEB")
+                    .input("NF",       sql.VarChar, num_nf || "")
+                    .input("CODIGO",   sql.VarChar, codigo)
+                    .input("USUARIO",  sql.VarChar, usuario || "WEB")
                     .input("DT",       sql.Date,        nowBRT)
-                    .input("HH",       sql.VarChar(8),  nowBRT.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false }))
+                    .input("HH",       sql.VarChar,  nowBRT.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false }))
                     .input("QNT",      sql.Float,       Number(qnt) || 0)
                     .query(`
                         INSERT INTO [dbo].[TB_LOG_NF]
@@ -423,10 +423,10 @@ export default async function handler(req, res) {
                     saldo_atual, dt_emissao, usuario, id_nf, num_nf
                 } = req.body;
 
-                if (!id_prod) return res.status(400).json({ message: "Campo 'id_prod' obrigatório." });
+                if (!id_prod) return res.status(400).json({ message: "Campo 'id_prod' obrigatÃ³rio." });
 
                 let pis_valor = 0, pis_percent = 0, cofins_valor = 0, cofins_percent = 0;
-                if (tipo_forn === "TRIBUTAÇÃO NORMAL") {
+                if (tipo_forn === "TRIBUTAÃ‡ÃƒO NORMAL") {
                     pis_percent = 0.0065;
                     cofins_percent = 0.03;
                     const base = (Number(valor_total) - Number(icms || 0) - Number(desconto || 0));
@@ -436,7 +436,7 @@ export default async function handler(req, res) {
 
                 await pool.request()
                     .input("ID_PROD",               sql.Int,         Number(id_prod))
-                    .input("COD_PROD",               sql.VarChar(20), codigo)
+                    .input("COD_PROD",               sql.VarChar, codigo)
                     .input("QNT",                    sql.Float,       Number(qnt) || 0)
                     .input("VALOR_UNIT",             sql.Float,       Number(valor_unit) || 0)
                     .input("VALOR_TOTAL",            sql.Float,       Number(valor_total) || 0)
@@ -458,7 +458,7 @@ export default async function handler(req, res) {
                     .input("PIS_PERCENT",            sql.Float,       pis_percent)
                     .input("COFINS_VALOR",           sql.Float,       cofins_valor)
                     .input("COFINS_PERCENT",         sql.Float,       cofins_percent)
-                    .input("FINALIDADE",             sql.VarChar(50), finalidade || "")
+                    .input("FINALIDADE",             sql.VarChar, finalidade || "")
                     .input("CUSTO_CONTABIL",         sql.Float,       Number(custo_contabil) || 0)
                     .input("CUSTO_CONTABIL_MED_ATU", sql.Float,       Number(custo_contabil_medio_atual) || 0)
                     .input("CUSTO_CONTABIL_MED_NOV", sql.Float,       Number(custo_contabil_medio_novo) || 0)
@@ -497,10 +497,10 @@ export default async function handler(req, res) {
                 const nowBRT = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
                 await pool.request()
                     .input("ID_PROD",  sql.Int,         Number(id_prod))
-                    .input("CODIGO",   sql.VarChar(20),  codigo)
-                    .input("USUARIO",  sql.VarChar(100), usuario || "WEB")
+                    .input("CODIGO",   sql.VarChar,  codigo)
+                    .input("USUARIO",  sql.VarChar, usuario || "WEB")
                     .input("DT",       sql.Date,         nowBRT)
-                    .input("HH",       sql.VarChar(8),   nowBRT.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false }))
+                    .input("HH",       sql.VarChar,   nowBRT.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false }))
                     .input("QNT",      sql.Float,        Number(qnt) || 0)
                     .query(`
                         UPDATE [dbo].[TB_LOG_NF]
@@ -514,7 +514,7 @@ export default async function handler(req, res) {
             // Remove produto da NF
             if (action === "remover_produto") {
                 const { id_prod } = req.body;
-                if (!id_prod) return res.status(400).json({ message: "Campo 'id_prod' obrigatório." });
+                if (!id_prod) return res.status(400).json({ message: "Campo 'id_prod' obrigatÃ³rio." });
 
                 await pool.request()
                     .input("ID_PROD", sql.Int, Number(id_prod))
@@ -527,12 +527,12 @@ export default async function handler(req, res) {
                 return res.status(200).json({ message: "Produto removido com sucesso." });
             }
 
-            // Finaliza a NF: valida totais e marca como LANÇADA
+            // Finaliza a NF: valida totais e marca como LANÃ‡ADA
             if (action === "finalizar_nf") {
                 const { id_nf } = req.body;
-                if (!id_nf) return res.status(400).json({ message: "Campo 'id_nf' obrigatório." });
+                if (!id_nf) return res.status(400).json({ message: "Campo 'id_nf' obrigatÃ³rio." });
 
-                // Busca dados do cabeçalho
+                // Busca dados do cabeÃ§alho
                 const cab = await pool.request()
                     .input("ID_NF", sql.Int, Number(id_nf))
                     .query(`
@@ -577,10 +577,10 @@ export default async function handler(req, res) {
                 const temErro = Object.values(diferencas).some(v => Math.abs(v) > 0.01);
 
                 if (!temErro) {
-                    // Marca como LANÇADA
+                    // Marca como LANÃ‡ADA
                     await pool.request()
                         .input("ID_NF", sql.Int, Number(id_nf))
-                        .query("UPDATE [dbo].[NF_CABECALHO] SET CAB_STATUS = 'LANÇADA' WHERE CAB_ID_NF = @ID_NF");
+                        .query("UPDATE [dbo].[NF_CABECALHO] SET CAB_STATUS = 'LANÃ‡ADA' WHERE CAB_ID_NF = @ID_NF");
                 }
 
                 return res.status(200).json({
@@ -588,14 +588,14 @@ export default async function handler(req, res) {
                     diferencas,
                     cabecalho: c,
                     somaProdutos: p,
-                    status: temErro ? "COM ERRO" : "LANÇADA"
+                    status: temErro ? "COM ERRO" : "LANÃ‡ADA"
                 });
             }
 
             // Exclui NF e todos os produtos
             if (action === "excluir_nf") {
                 const { id_nf, num_nf } = req.body;
-                if (!id_nf) return res.status(400).json({ message: "Campo 'id_nf' obrigatório." });
+                if (!id_nf) return res.status(400).json({ message: "Campo 'id_nf' obrigatÃ³rio." });
 
                 const transaction = pool.transaction();
                 await transaction.begin();
@@ -609,7 +609,7 @@ export default async function handler(req, res) {
                         .query("DELETE FROM [dbo].[NF_CABECALHO] WHERE CAB_ID_NF = @ID_NF");
 
                     await transaction.commit();
-                    return res.status(200).json({ message: `NF ${num_nf || id_nf} excluída com sucesso.` });
+                    return res.status(200).json({ message: `NF ${num_nf || id_nf} excluÃ­da com sucesso.` });
                 } catch (err) {
                     await transaction.rollback();
                     throw err;
@@ -619,15 +619,15 @@ export default async function handler(req, res) {
             // Insere/atualiza primeiro custo de um produto
             if (action === "primeiro_custo") {
                 const { codigo, custo_contabil, custo_fiscal, custo_pago } = req.body;
-                if (!codigo) return res.status(400).json({ message: "Campo 'codigo' obrigatório." });
+                if (!codigo) return res.status(400).json({ message: "Campo 'codigo' obrigatÃ³rio." });
 
                 const existe = await pool.request()
-                    .input("COD", sql.VarChar(20), codigo)
+                    .input("COD", sql.VarChar, codigo)
                     .query("SELECT PROD_ID_PROD FROM [dbo].[NF_PRODUTOS] WHERE PROD_COD_PROD = @COD AND PROD_DT_EMISSAO = '2000-01-01'");
 
                 if (existe.recordset.length === 0) {
                     await pool.request()
-                        .input("COD",    sql.VarChar(20), codigo)
+                        .input("COD",    sql.VarChar, codigo)
                         .input("CC",     sql.Float, Number(custo_contabil) || 0)
                         .input("CF",     sql.Float, Number(custo_fiscal) || 0)
                         .input("CP",     sql.Float, Number(custo_pago) || 0)
@@ -655,19 +655,19 @@ export default async function handler(req, res) {
                 return res.status(200).json({ message: "Primeiro custo salvo com sucesso." });
             }
 
-            return res.status(400).json({ message: `Action POST '${action}' não reconhecida.` });
+            return res.status(400).json({ message: `Action POST '${action}' nÃ£o reconhecida.` });
         }
 
-        // ── PUT: atualiza campo individual do cabeçalho ──────────────────────
+        // â”€â”€ PUT: atualiza campo individual do cabeÃ§alho â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (req.method === "PUT") {
             if (action === "atualizar_cabecalho") {
                 const { id_nf, campo, valor } = req.body;
-                if (!id_nf || !campo) return res.status(400).json({ message: "Campos 'id_nf' e 'campo' obrigatórios." });
+                if (!id_nf || !campo) return res.status(400).json({ message: "Campos 'id_nf' e 'campo' obrigatÃ³rios." });
 
                 // Whitelist de campos permitidos para evitar SQL injection
                 const camposPermitidos = {
                     "CAB_QNT_TOTAL_ITENS": sql.Float,
-                    "CAB_PC":              sql.VarChar(50),
+                    "CAB_PC":              sql.VarChar,
                     "CAB_DT_EMISSAO":      sql.Date,
                     "CAB_DT_RECEB":        sql.Date,
                     "CAB_ICMS":            sql.Float,
@@ -678,12 +678,12 @@ export default async function handler(req, res) {
                     "CAB_VALOR_PROD":      sql.Float,
                     "CAB_VALOR_TT_NF":     sql.Float,
                     "CAB_BC_ICMS":         sql.Float,
-                    "CAB_TP_FORN":         sql.VarChar(50),
+                    "CAB_TP_FORN":         sql.VarChar,
                     "CAB_ALIQUOTA":        sql.Float,
                 };
 
                 if (!camposPermitidos[campo])
-                    return res.status(400).json({ message: `Campo '${campo}' não permitido para atualização.` });
+                    return res.status(400).json({ message: `Campo '${campo}' nÃ£o permitido para atualizaÃ§Ã£o.` });
 
                 const tipo = camposPermitidos[campo];
                 let valorConv = valor;
@@ -698,10 +698,10 @@ export default async function handler(req, res) {
                 return res.status(200).json({ message: `${campo} atualizado com sucesso.` });
             }
 
-            return res.status(400).json({ message: `Action PUT '${action}' não reconhecida.` });
+            return res.status(400).json({ message: `Action PUT '${action}' nÃ£o reconhecida.` });
         }
 
-        return res.status(405).json({ message: "Método não permitido." });
+        return res.status(405).json({ message: "MÃ©todo nÃ£o permitido." });
 
     } catch (err) {
         console.error("ERRO /api/lancamentoNF:", err);
@@ -712,3 +712,4 @@ export default async function handler(req, res) {
 function round2(v) {
     return Math.round((v || 0) * 100) / 100;
 }
+
