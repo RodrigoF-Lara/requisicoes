@@ -74,7 +74,7 @@ async function buscarFornecedor() {
     const cod = v("cod-forn");
     if (!cod) return showToast("Informe o código do fornecedor.", "error");
     try {
-        const data = await apiFetch(`/api/fornecedoresNF?cod=${encodeURIComponent(cod)}`);
+        const data = await apiFetch(`/api/lancamentoNF?action=buscar_fornecedor&cod=${encodeURIComponent(cod)}`);
         $("razao-social").value = data.RAZAO_SOCIAL;
         state.codForn = data.COD_FORNECEDOR;
         state.razaoSocial = data.RAZAO_SOCIAL;
@@ -773,7 +773,7 @@ async function pesquisarNF() {
 
                 // Busca razão social
                 try {
-                    const forn = await apiFetch(`/api/fornecedoresNF?cod=${encodeURIComponent(codForn)}`);
+                    const forn = await apiFetch(`/api/lancamentoNF?action=buscar_fornecedor&cod=${encodeURIComponent(codForn)}`);
                     $("razao-social").value = forn.RAZAO_SOCIAL;
                     state.razaoSocial = forn.RAZAO_SOCIAL;
                 } catch {}

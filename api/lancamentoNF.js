@@ -29,7 +29,40 @@ export default async function handler(req, res) {
         // ── GET ─────────────────────────────────────────────────────────────
         if (req.method === "GET") {
 
-            // Busca fornecedor pelo código
+            // Autocomplete de fornecedor por código ou razão social
+            if (action === "buscar_fornecedor") {
+                const q   = req.query.q;
+                const cod = req.query.cod;
+
+                if (cod) {
+                    const result = await pool.request()
+                        .input("COD", sql.VarChar(20), cod)
+                        .query(`
+                            SELECT COD_FORNECEDOR, RAZAO_SOCIAL
+                            FROM [dbo].[CAD_FORNECEDOR]
+                            WHERE COD_FORNECEDOR = @COD
+                        `);
+                    if (result.recordset.length === 0)
+                        return res.status(404).json({ message: "Fornecedor não encontrado." });
+                    return res.status(200).json(result.recordset[0]);
+                }
+
+                if (q) {
+                    const result = await pool.request()
+                        .input("Q", sql.VarChar(100), `%${q}%`)
+                        .query(`
+                            SELECT TOP 20 COD_FORNECEDOR, RAZAO_SOCIAL
+                            FROM [dbo].[CAD_FORNECEDOR]
+                            WHERE COD_FORNECEDOR LIKE @Q OR RAZAO_SOCIAL LIKE @Q
+                            ORDER BY RAZAO_SOCIAL
+                        `);
+                    return res.status(200).json(result.recordset);
+                }
+
+                return res.status(400).json({ message: "Informe 'q' ou 'cod'." });
+            }
+
+            // Busca fornecedor pelo código (busca exata)
             if (action === "fornecedor") {
                 const cod = req.query.cod;
                 if (!cod) return res.status(400).json({ message: "Parâmetro 'cod' obrigatório." });
