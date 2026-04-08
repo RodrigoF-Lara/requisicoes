@@ -1194,11 +1194,18 @@
 
     statusEl.style.color = "#222";
     statusEl.textContent = "Registrando...";
+
+    // Bloqueia o botão para evitar cliques duplicados
+    submitBtn.disabled = true;
+    const textoOriginalBtn = submitBtn.textContent;
+    submitBtn.textContent = "⏳ Aguarde...";
+
     const etiquetasParaImprimir = [];
 
     try {
       for (let i = 0; i < repeticoes; i++) {
         if (repeticoes > 1) {
+          submitBtn.textContent = `⏳ Registrando ${i + 1}/${repeticoes}...`;
           statusEl.textContent = `Registrando ${i + 1} de ${repeticoes}...`;
         }
         
@@ -1239,6 +1246,8 @@
       
       modalMovimento.style.display = "none";
       formMovimento.reset();
+      submitBtn.disabled = false;
+      submitBtn.textContent = textoOriginalBtn;
       
       // Atraso para dar tempo ao DB de atualizar antes de reconsultar
       setTimeout(() => {
@@ -1249,6 +1258,8 @@
       statusEl.textContent = `${repeticoes} movimento(s) registrado(s) com sucesso!`;
 
     } catch (err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = textoOriginalBtn;
       statusEl.style.color = "#c00";
       statusEl.textContent = `Erro: ${err.message}`;
       modalMovimento.style.display = "none"; // Garante que o modal feche em caso de erro.
