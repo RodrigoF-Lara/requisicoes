@@ -1,5 +1,5 @@
 // filepath: api/statusNF.js
-import { getConnection } from "./db.js"; // <<< MUDANÇA AQUI
+import { getConnection } from "../db.js";
 import sql from "mssql";
 
 export default async function handler(req, res) {

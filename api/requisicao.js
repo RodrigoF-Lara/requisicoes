@@ -1,4 +1,4 @@
-import { getConnection } from "./db.js";
+import { getConnection } from "../db.js";
 import sql from "mssql";
 
 // Função Principal que decide o que fazer

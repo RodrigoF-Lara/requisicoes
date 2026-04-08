@@ -1,5 +1,5 @@
 // filepath: api/login.js
-import { getConnection } from "./db.js"; // Corrigido: Removido 'closeConnection'
+import { getConnection } from "../db.js";
 import sql from "mssql";
 
 export default async function handler(req, res) {

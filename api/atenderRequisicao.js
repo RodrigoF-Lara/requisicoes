@@ -1,5 +1,5 @@
 // filepath: api/atenderRequisicao.js
-import { getConnection } from "./db.js";
+import { getConnection } from "../db.js";
 import sql from "mssql";
 
 export default async function handler(req, res) {
