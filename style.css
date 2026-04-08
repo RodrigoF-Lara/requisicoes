@@ -919,6 +919,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* === CARD GERENCIAR === */
+.produto-info h2 {
+    font-size: 22px;
+    margin-bottom: 12px;
+}
+
+.produto-info p {
+    font-size: 18px;
+    margin: 6px 0;
+}
+
+.produto-info span {
+    font-size: 18px;
+}
+
 .gerenciar-card {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white !important;
