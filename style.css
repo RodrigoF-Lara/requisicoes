@@ -947,13 +947,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .botoes-movimento {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
     margin: 20px 0;
 }
 
 .btn-movimento {
-    padding: 20px;
+    padding: 14px 10px;
     border: none;
     border-radius: 8px;
     font-size: 16px;
@@ -962,19 +962,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     transition: all 0.3s ease;
     color: white;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .btn-movimento i {
-    font-size: 32px;
+    font-size: 22px;
 }
 
 .btn-movimento span {
-    font-size: 14px;
-    letter-spacing: 1px;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    text-align: center;
 }
 
 .btn-movimento.entrada {
@@ -997,7 +998,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .btn-movimento.zerar {
     background: linear-gradient(135deg, #ffb74d 0%, #f57c00 100%);
-    grid-column: span 2;
 }
 
 .btn-movimento.zerar:hover:not(:disabled) {
@@ -1007,7 +1007,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .btn-movimento.zerar-codigo {
     background: linear-gradient(135deg, #e57373 0%, #c62828 100%);
-    grid-column: span 2;
 }
 
 .btn-movimento.zerar-codigo:hover:not(:disabled) {
@@ -1017,7 +1016,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .btn-movimento.alterar {
     background: linear-gradient(135deg, #64b5f6 0%, #1565c0 100%);
-    grid-column: span 2;
 }
 
 .btn-movimento.alterar:hover:not(:disabled) {
@@ -1203,7 +1201,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* === RESPONSIVO === */
 @media (max-width: 768px) {
     .botoes-movimento {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .modal-content {
