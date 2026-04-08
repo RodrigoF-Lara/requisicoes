@@ -154,7 +154,7 @@
         <div class="stat-card">
           <i class="fa-solid fa-calendar-days"></i>
           <span class="stat-label">Última Movimentação</span>
-          <span class="stat-value">${movimentos[0]?.DT ? new Date(movimentos[0].DT).toLocaleDateString('pt-BR') : '-'}</span>
+          <span class="stat-value">${movimentos[0]?.DT ? movimentos[0].DT.split('-').reverse().join('/') : '-'}</span>
         </div>
       </div>
     `;
@@ -183,9 +183,7 @@
           <td>${row.ARMAZEM ? String(row.ARMAZEM).padStart(2, "0") : "-"}</td>
           <td class="text-right"><strong>${row.QNT || 0}</strong></td>
           <td>${row.USUARIO || "-"}</td>
-          <td>${
-            row.DT ? new Date(row.DT).toLocaleDateString("pt-BR") : "-"
-          }</td>
+          <td>${row.DT ? row.DT.split('-').reverse().join('/') : '-'}</td>
           <td>${row.HR || "-"}</td>
           <td class="actions-cell">
             ${
