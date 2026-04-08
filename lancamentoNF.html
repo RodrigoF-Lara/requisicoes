@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lançamento de NF</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <style>
+        /* ─── Tabs ─────────────────────────────────────────────── */
+        .nf-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
+        .nf-tab-btn {
+            padding: 10px 22px; cursor: pointer; border: none;
+            background: #f0f0f0; color: #555; font-size: 14px;
+            border-radius: 6px 6px 0 0; font-weight: 600;
+            transition: background .2s, color .2s;
+        }
+        .nf-tab-btn.active { background: #007bff; color: #fff; }
+        .nf-tab-panel { display: none; }
+        .nf-tab-panel.active { display: block; }
+
+        /* ─── Grid de campos ────────────────────────────────────── */
+        .nf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px; }
+        .nf-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+        .nf-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+        .nf-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+        .nf-grid.cols-5 { grid-template-columns: repeat(5, 1fr); }
+        .nf-field { display: flex; flex-direction: column; gap: 4px; }
+        .nf-field label { font-size: 12px; font-weight: 600; color: #444; }
+        .nf-field input, .nf-field select {
+            padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px;
+            font-size: 14px; background: #fff;
+        }
+        .nf-field input:disabled, .nf-field select:disabled {
+            background: #f4f4f4; color: #888;
+        }
+        .nf-field input.campo-erro { border-color: #e53935; }
+        .nf-field input.campo-ok { border-color: #43a047; }
+
+        /* ─── Linha de ação (fornecedor) ───────────────────────── */
+        .nf-busca-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 18px; }
+        .nf-busca-row .nf-field { flex: 1; }
+        .nf-busca-row button { height: 38px; }
+
+        /* ─── Botões ─────────────────────────────────────────────── */
+        .nf-actions { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+        .btn-nf-lancr { background: #007bff; color: #fff; border: none; padding: 10px 22px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 14px; }
+        .btn-nf-lancr:hover { background: #0056b3; }
+        .btn-nf-insert { background: #28a745; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-nf-insert:hover { background: #1e7e34; }
+        .btn-nf-alter { background: #fd7e14; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-nf-alter:hover { background: #e56610; }
+        .btn-nf-remove { background: #dc3545; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-nf-remove:hover { background: #a71d2a; }
+        .btn-nf-finish { background: #6f42c1; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 700; cursor: pointer; }
+        .btn-nf-finish:hover { background: #5a32a3; }
+        .btn-nf-custo { background: #17a2b8; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-nf-custo:hover { background: #138496; }
+        .btn-nf-excluir { background: #6c757d; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-nf-excluir:hover { background: #545b62; }
+        .btn-nf-pesq { background: #007bff; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        button:disabled { opacity: .55; cursor: not-allowed; }
+
+        /* ─── Tabelas ────────────────────────────────────────────── */
+        .nf-tabela-wrap { overflow-x: auto; margin-top: 10px; }
+        .nf-tabela { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .nf-tabela th { background: #343a40; color: #fff; padding: 8px 10px; text-align: left; white-space: nowrap; }
+        .nf-tabela td { padding: 7px 10px; border-bottom: 1px solid #eee; white-space: nowrap; }
+        .nf-tabela tr:hover td { background: #f0f7ff; }
+        .nf-tabela tr.selecionado td { background: #d0e8ff; font-weight: 600; }
+
+        /* ─── Validação final ────────────────────────────────────── */
+        .nf-validacao-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-top: 14px; }
+        .nf-validacao-item { background: #f8f9fa; border-radius: 6px; padding: 10px; text-align: center; }
+        .nf-validacao-item.erro { background: #ffe0e0; border: 1px solid #e53935; }
+        .nf-validacao-item.ok   { background: #e6f9ee; border: 1px solid #43a047; }
+        .nf-validacao-item .label { font-size: 11px; color: #666; font-weight: 600; text-transform: uppercase; }
+        .nf-validacao-item .valor { font-size: 18px; font-weight: 700; margin-top: 4px; }
+
+        /* ─── Status badge ───────────────────────────────────────── */
+        .nf-status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: .4px; }
+        .nf-status.ABERTA  { background: #fff3cd; color: #856404; }
+        .nf-status.LANCADA { background: #d4edda; color: #155724; }
+        .nf-status.ERRO    { background: #f8d7da; color: #721c24; }
+
+        /* ─── Seção separada ─────────────────────────────────────── */
+        .nf-section { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px; margin-bottom: 18px; }
+        .nf-section h3 { margin: 0 0 14px; font-size: 15px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+
+        /* ─── Histórico de custos ────────────────────────────────── */
+        .custo-info-box { background: #f8f9fa; border-radius: 8px; padding: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+        .custo-info-item { text-align: center; }
+        .custo-info-item .ci-label { font-size: 11px; color: #666; font-weight: 600; }
+        .custo-info-item .ci-valor { font-size: 20px; font-weight: 700; color: #333; }
+    </style>
+</head>
+<body>
+    <div id="sidebar-container" class="sidebar"></div>
+
+    <div class="main-content">
+        <div class="container">
+            <h1><i class="fa fa-file-invoice"></i> Lançamento de Nota Fiscal</h1>
+
+            <!-- Info da NF ativa -->
+            <div id="nf-ativa-info" style="display:none; margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:12px; background:#e8f4fd; border:1px solid #bee5eb; border-radius:8px; padding:10px 16px;">
+                    <span style="font-weight:700; font-size:15px;">NF: <span id="nf-ativa-num"></span></span>
+                    <span>Fornecedor: <strong id="nf-ativa-forn"></strong></span>
+                    <span id="nf-ativa-status-badge"></span>
+                    <button class="btn-nf-excluir" id="btn-excluir-nf" style="margin-left:auto;">
+                        <i class="fa fa-trash"></i> Excluir NF
+                    </button>
+                </div>
+            </div>
+
+            <!-- TABS -->
+            <div class="nf-tabs">
+                <button class="nf-tab-btn active" data-tab="dados-gerais">Dados Gerais</button>
+                <button class="nf-tab-btn" data-tab="produtos">Produtos</button>
+                <button class="nf-tab-btn" data-tab="custos">Custos</button>
+                <button class="nf-tab-btn" data-tab="pesquisa">Pesquisa</button>
+            </div>
+
+            <!-- ══════════════ TAB: DADOS GERAIS ══════════════ -->
+            <div class="nf-tab-panel active" id="tab-dados-gerais">
+                <div class="nf-section">
+                    <h3><i class="fa fa-building"></i> Fornecedor</h3>
+                    <div class="nf-busca-row">
+                        <div class="nf-field" style="max-width:160px;">
+                            <label>Código do Fornecedor</label>
+                            <input type="text" id="cod-forn" placeholder="Ex: 1234" />
+                        </div>
+                        <button class="btn-nf-lancr" id="btn-buscar-forn">
+                            <i class="fa fa-search"></i> Buscar
+                        </button>
+                        <div class="nf-field" style="flex:2;">
+                            <label>Razão Social</label>
+                            <input type="text" id="razao-social" disabled placeholder="Preenchido ao buscar fornecedor" />
+                        </div>
+                        <div class="nf-field" style="max-width:220px;">
+                            <label>NF existente (selecione ou crie nova)</label>
+                            <select id="sel-nf-existente">
+                                <option value="">-- Nova NF --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nf-section">
+                    <h3><i class="fa fa-file-alt"></i> Dados da NF</h3>
+                    <div class="nf-grid cols-4">
+                        <div class="nf-field">
+                            <label>Número da NF *</label>
+                            <input type="text" id="num-nf" placeholder="Ex: 123456" />
+                        </div>
+                        <div class="nf-field">
+                            <label>Pedido de Compra</label>
+                            <input type="text" id="pedido-compra" placeholder="Opcional" />
+                        </div>
+                        <div class="nf-field">
+                            <label>Qtd. Total de Itens</label>
+                            <input type="number" id="qnt-total-itens" min="0" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>Tipo Fornecedor *</label>
+                            <select id="tipo-forn">
+                                <option value="">Selecione...</option>
+                                <option value="TRIBUTAÇÃO NORMAL">TRIBUTAÇÃO NORMAL</option>
+                                <option value="SIMPLES NACIONAL">SIMPLES NACIONAL</option>
+                                <option value="IMPORTAÇÃO">IMPORTAÇÃO</option>
+                            </select>
+                        </div>
+                        <div class="nf-field">
+                            <label>Data Emissão</label>
+                            <input type="date" id="dt-emissao" />
+                        </div>
+                        <div class="nf-field">
+                            <label>Data Recebimento</label>
+                            <input type="date" id="dt-receb" />
+                        </div>
+                        <div class="nf-field">
+                            <label>% Alíquota (Simples Nac.)</label>
+                            <input type="number" id="aliquota" min="0" max="100" step="any" disabled placeholder="0" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nf-section">
+                    <h3><i class="fa fa-calculator"></i> Valores da NF</h3>
+                    <div class="nf-grid cols-4">
+                        <div class="nf-field">
+                            <label>BC ICMS</label>
+                            <input type="number" id="cab-bc-icms" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>ICMS</label>
+                            <input type="number" id="cab-icms" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>ST</label>
+                            <input type="number" id="cab-st" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>Frete</label>
+                            <input type="number" id="cab-frete" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>Desconto</label>
+                            <input type="number" id="cab-desconto" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>IPI</label>
+                            <input type="number" id="cab-ipi" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>Valor Produtos</label>
+                            <input type="number" id="cab-valor-prod" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>Valor Total NF</label>
+                            <input type="number" id="cab-valor-total-nf" step="any" value="0" />
+                        </div>
+                    </div>
+
+                    <div class="nf-actions">
+                        <button class="btn-nf-lancr" id="btn-lancar-nf">
+                            <i class="fa fa-save"></i> Lançar NF
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════ TAB: PRODUTOS ══════════════ -->
+            <div class="nf-tab-panel" id="tab-produtos">
+
+                <div class="nf-section">
+                    <h3><i class="fa fa-box"></i> Adicionar / Editar Produto</h3>
+                    <div class="nf-grid cols-4">
+                        <div class="nf-field">
+                            <label>Código do Produto *</label>
+                            <input type="text" id="prod-codigo" placeholder="Ex: 1234" />
+                        </div>
+                        <div class="nf-field" style="grid-column: span 2;">
+                            <label>Descrição</label>
+                            <input type="text" id="prod-descricao" disabled />
+                        </div>
+                        <div class="nf-field">
+                            <label>Saldo Atual</label>
+                            <input type="number" id="prod-saldo" disabled value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>Quantidade *</label>
+                            <input type="number" id="prod-qnt" min="0" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>Finalidade *</label>
+                            <select id="prod-finalidade">
+                                <option value="">Selecione...</option>
+                                <option value="INDUSTRIALIZAÇÃO">INDUSTRIALIZAÇÃO</option>
+                                <option value="REVENDA">REVENDA</option>
+                                <option value="AMOSTRA">AMOSTRA</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="nf-grid cols-4">
+                        <div class="nf-field">
+                            <label>Valor Unit.</label>
+                            <input type="number" id="prod-valor-unit" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>Valor Total</label>
+                            <input type="number" id="prod-valor-total" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>IPI Unit.</label>
+                            <input type="number" id="prod-ipi-unit" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>IPI Total</label>
+                            <input type="number" id="prod-ipi" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>ICMS Unit.</label>
+                            <input type="number" id="prod-icms-unit" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>ICMS Total</label>
+                            <input type="number" id="prod-icms" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>ST Unit.</label>
+                            <input type="number" id="prod-st-unit" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>ST Total</label>
+                            <input type="number" id="prod-st" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>Frete Unit.</label>
+                            <input type="number" id="prod-frete-unit" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>Frete Linha</label>
+                            <input type="number" id="prod-frete" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>Desconto Unit.</label>
+                            <input type="number" id="prod-desc-unit" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>Desconto Total</label>
+                            <input type="number" id="prod-desconto" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>BC ICMS Unit.</label>
+                            <input type="number" id="prod-bc-icms-unit" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>BC ICMS Total</label>
+                            <input type="number" id="prod-bc-icms" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>Importação Unit.</label>
+                            <input type="number" id="prod-import-unit" step="any" value="0" />
+                        </div>
+                        <div class="nf-field">
+                            <label>Importação Linha</label>
+                            <input type="number" id="prod-import-linha" step="any" value="0" />
+                        </div>
+                    </div>
+
+                    <div class="nf-actions">
+                        <button class="btn-nf-insert" id="btn-inserir-prod">
+                            <i class="fa fa-plus"></i> Inserir
+                        </button>
+                        <button class="btn-nf-alter" id="btn-alterar-prod" disabled>
+                            <i class="fa fa-edit"></i> Alterar
+                        </button>
+                        <button class="btn-nf-remove" id="btn-remover-prod" disabled>
+                            <i class="fa fa-trash"></i> Remover
+                        </button>
+                        <button class="btn-nf-finish" id="btn-finalizar-nf">
+                            <i class="fa fa-check-double"></i> Finalizar Lançamento
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Resultado da validação final -->
+                <div id="validacao-result" style="display:none;" class="nf-section">
+                    <h3>Conferência de Totais</h3>
+                    <div id="validacao-grid" class="nf-validacao-grid"></div>
+                </div>
+
+                <!-- Lista de produtos -->
+                <div class="nf-section">
+                    <h3><i class="fa fa-list"></i> Produtos da NF</h3>
+                    <div class="nf-tabela-wrap">
+                        <table class="nf-tabela" id="tabela-produtos">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Descrição</th>
+                                    <th>Qtd</th>
+                                    <th>Vlr Unit.</th>
+                                    <th>Vlr Total</th>
+                                    <th>IPI</th>
+                                    <th>ICMS</th>
+                                    <th>ST</th>
+                                    <th>Frete</th>
+                                    <th>Desconto</th>
+                                    <th>Finalidade</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbProdBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════ TAB: CUSTOS ══════════════ -->
+            <div class="nf-tab-panel" id="tab-custos">
+                <div class="nf-section">
+                    <h3><i class="fa fa-dollar-sign"></i> Custo Inicial do Produto</h3>
+                    <div class="nf-busca-row">
+                        <div class="nf-field" style="max-width:180px;">
+                            <label>Código do Produto</label>
+                            <input type="text" id="custo-codigo" placeholder="Ex: 1234" />
+                        </div>
+                        <button class="btn-nf-pesq" id="btn-buscar-custo">
+                            <i class="fa fa-search"></i> Buscar
+                        </button>
+                    </div>
+
+                    <div id="custo-info" style="display:none;">
+                        <div class="custo-info-box">
+                            <div class="custo-info-item">
+                                <div class="ci-label">Saldo Atual</div>
+                                <div class="ci-valor" id="custo-saldo">0</div>
+                            </div>
+                            <div class="custo-info-item">
+                                <div class="ci-label">Custo Contábil Atual</div>
+                                <div class="ci-valor" id="custo-cont-atual">R$ 0,00</div>
+                            </div>
+                            <div class="custo-info-item">
+                                <div class="ci-label">Custo Fiscal Atual</div>
+                                <div class="ci-valor" id="custo-fisc-atual">R$ 0,00</div>
+                            </div>
+                        </div>
+
+                        <div class="nf-grid cols-3">
+                            <div class="nf-field">
+                                <label>Custo Contábil (Novo)</label>
+                                <input type="number" id="custo-contabil-novo" step="any" value="0" />
+                            </div>
+                            <div class="nf-field">
+                                <label>Custo Fiscal (Novo)</label>
+                                <input type="number" id="custo-fiscal-novo" step="any" value="0" />
+                            </div>
+                            <div class="nf-field">
+                                <label>Custo Pago</label>
+                                <input type="number" id="custo-pago-novo" step="any" value="0" />
+                            </div>
+                        </div>
+
+                        <div class="nf-actions">
+                            <button class="btn-nf-custo" id="btn-salvar-primeiro-custo">
+                                <i class="fa fa-save"></i> Inserir / Alterar Primeiro Custo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nf-section">
+                    <h3><i class="fa fa-history"></i> Histórico de Custos</h3>
+                    <div class="nf-tabela-wrap">
+                        <table class="nf-tabela" id="tabela-custos">
+                            <thead>
+                                <tr>
+                                    <th>Data Emissão</th>
+                                    <th>NF (ID)</th>
+                                    <th>Qtd</th>
+                                    <th>Vlr Pago</th>
+                                    <th>Custo Contábil Médio</th>
+                                    <th>Custo Fiscal Médio</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbCustoBody">
+                                <tr><td colspan="6" style="text-align:center; color:#999;">Busque um produto para ver o histórico.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════ TAB: PESQUISA ══════════════ -->
+            <div class="nf-tab-panel" id="tab-pesquisa">
+                <div class="nf-section">
+                    <h3><i class="fa fa-search"></i> Pesquisar NF</h3>
+                    <div class="nf-busca-row">
+                        <div class="nf-field">
+                            <label>Número da NF</label>
+                            <input type="text" id="pesq-num-nf" placeholder="Ex: 123456" />
+                        </div>
+                        <button class="btn-nf-pesq" id="btn-pesquisar-nf">
+                            <i class="fa fa-search"></i> Pesquisar
+                        </button>
+                    </div>
+
+                    <div class="nf-tabela-wrap">
+                        <table class="nf-tabela" id="tabela-pesquisa">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Num. NF</th>
+                                    <th>Fornecedor</th>
+                                    <th>Razão Social</th>
+                                    <th>Data Digitação</th>
+                                    <th>Valor Total</th>
+                                    <th>Tipo</th>
+                                    <th>Status</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbPesqBody">
+                                <tr><td colspan="9" style="text-align:center; color:#999;">Pesquise por número de NF.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="layout.js"></script>
+    <script src="lancamentoNF.js"></script>
+</body>
+</html>
