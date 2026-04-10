@@ -528,28 +528,40 @@ $("btn-finalizar-nf").addEventListener("click", async () => {
         const valDiv = $("validacao-result");
         const grid   = $("validacao-grid");
         valDiv.style.display = "block";
-        grid.innerHTML = "";
 
         const campos = [
-            { key: "qnt",      label: "Qtd Itens" },
-            { key: "valor",    label: "Valor Prod." },
-            { key: "ipi",      label: "IPI" },
-            { key: "icms",     label: "ICMS" },
-            { key: "st",       label: "ST" },
-            { key: "frete",    label: "Frete" },
-            { key: "desconto", label: "Desconto" },
-            { key: "bc_icms",  label: "BC ICMS" },
+            { key: "qnt",      label: "QTD ITENS",  cabKey: "CAB_QNT_TOTAL_ITENS", sumKey: "SUM_QNT",      money: false },
+            { key: "valor",    label: "VALOR PROD",  cabKey: "CAB_VALOR_PROD",      sumKey: "SUM_VALOR",    money: true  },
+            { key: "ipi",      label: "IPI",         cabKey: "CAB_IPI",             sumKey: "SUM_IPI",      money: true  },
+            { key: "icms",     label: "ICMS",        cabKey: "CAB_ICMS",            sumKey: "SUM_ICMS",     money: true  },
+            { key: "st",       label: "ST",          cabKey: "CAB_ST",              sumKey: "SUM_ST",       money: true  },
+            { key: "frete",    label: "FRETE",       cabKey: "CAB_FRETE",           sumKey: "SUM_FRETE",    money: true  },
+            { key: "desconto", label: "DESCONTO",    cabKey: "CAB_DESCONTO",        sumKey: "SUM_DESCONTO", money: true  },
+            { key: "bc_icms",  label: "BC ICMS",     cabKey: "CAB_BC_ICMS",         sumKey: "SUM_BC_ICMS",  money: true  },
         ];
 
-        campos.forEach(({ key, label }) => {
+        const fmt = (v, money) => money ? moeda(v == null ? 0 : v) : (v == null ? 0 : v);
+        const semProdutos = data.somaProdutos.SUM_QNT == null;
+
+        let html = "";
+        if (semProdutos) {
+            html += `<div class="conf-aviso-sem-produtos">⚠️ Nenhum produto encontrado nesta NF. Insira os produtos antes de finalizar.</div>`;
+        }
+        html += `<table class="conf-table">
+            <thead><tr><th>Campo</th><th>Cabeçalho (NF)</th><th>Soma Produtos</th><th>Diferença</th></tr></thead>
+            <tbody>`;
+        campos.forEach(({ key, label, cabKey, sumKey, money }) => {
             const diff = data.diferencas[key];
-            const ok = Math.abs(diff) < 0.02;
-            const item = document.createElement("div");
-            item.className = `nf-validacao-item ${ok ? "ok" : "erro"}`;
-            item.innerHTML = `<div class="label">${label}</div>
-                <div class="valor">${key === "qnt" ? diff : moeda(diff)}</div>`;
-            grid.appendChild(item);
+            const ok   = Math.abs(diff) < 0.02;
+            html += `<tr class="${ok ? "ok" : "erro"}">
+                <td>${label}</td>
+                <td>${fmt(data.cabecalho[cabKey], money)}</td>
+                <td>${fmt(data.somaProdutos[sumKey], money)}</td>
+                <td class="diff-cell">${money ? moeda(diff) : diff}</td>
+            </tr>`;
         });
+        html += "</tbody></table>";
+        grid.innerHTML = html;
 
         if (!data.temErro) {
             state.statusNF = "LANÇADA";

@@ -70,12 +70,15 @@
         .nf-tabela tr.selecionado td { background: #d0e8ff; font-weight: 600; }
 
         /* ─── Validação final ────────────────────────────────────── */
-        .nf-validacao-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-top: 14px; }
-        .nf-validacao-item { background: #f8f9fa; border-radius: 6px; padding: 10px; text-align: center; }
-        .nf-validacao-item.erro { background: #ffe0e0; border: 1px solid #e53935; }
-        .nf-validacao-item.ok   { background: #e6f9ee; border: 1px solid #43a047; }
-        .nf-validacao-item .label { font-size: 11px; color: #666; font-weight: 600; text-transform: uppercase; }
-        .nf-validacao-item .valor { font-size: 18px; font-weight: 700; margin-top: 4px; }
+        .nf-validacao-grid { margin-top: 14px; }
+        .conf-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .conf-table thead th { background: #f0f0f0; padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #555; border-bottom: 2px solid #ddd; }
+        .conf-table tbody td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+        .conf-table tbody tr.ok  td { background: #e6f9ee; }
+        .conf-table tbody tr.erro td { background: #ffe0e0; }
+        .conf-table tbody tr.erro td.diff-cell { color: #c62828; font-weight: 700; }
+        .conf-table tbody tr.ok  td.diff-cell { color: #2e7d32; font-weight: 700; }
+        .conf-aviso-sem-produtos { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 10px 14px; margin-bottom: 10px; font-size: 13px; color: #856404; font-weight: 600; }
 
         /* ─── Status badge ───────────────────────────────────────── */
         .nf-status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: .4px; }
