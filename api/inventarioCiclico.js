@@ -69,8 +69,105 @@ async function gerarListaInventario(req, res) {
             BLOCO1_QTD, BLOCO1_DIAS, BLOCO2_QTD, BLOCO2_ACURACIDADE, 
             BLOCO3_QTD, BLOCO4_QTD, BLOCO5_QTD, BLOCO5_INV_ATRAS
         });
-        
-        // BLOCO 1: Mais movimentados (usando configuração)
+
+        // ── BLOCO 2 roda PRIMEIRO (tem prioridade sobre movimentação) ──────────
+        // Itens com baixa acuracidade no último inventário FINALIZADO
+        const debugBloco2 = { etapa: 'nao_iniciado' };
+        try {
+            const ultimoInv = await pool.request().query(`
+                SELECT TOP 1 ID_INVENTARIO, STATUS, DT_CRIACAO
+                FROM [dbo].[TB_INVENTARIO_CICLICO]
+                WHERE STATUS = 'FINALIZADO'
+                ORDER BY ID_INVENTARIO DESC;
+            `);
+
+            console.log('🔍 Último inventário FINALIZADO encontrado:', ultimoInv.recordset);
+
+            if (ultimoInv.recordset.length === 0) {
+                console.log('⚠️ Nenhum inventário FINALIZADO encontrado. Pulando Bloco 2.');
+                debugBloco2.etapa = 'sem_inventario_finalizado';
+            } else {
+                const idUltimoInventario = ultimoInv.recordset[0].ID_INVENTARIO;
+                debugBloco2.idInventarioFinalizado = idUltimoInventario;
+                debugBloco2.acuracidadeMinima = BLOCO2_ACURACIDADE;
+                debugBloco2.qtdMaxima = BLOCO2_QTD;
+                console.log(`📋 Buscando itens com acuracidade < ${BLOCO2_ACURACIDADE}% do inventário #${idUltimoInventario}`);
+
+                // Diagnóstico completo
+                const todosItensInv = await pool.request()
+                    .input('ID_INV_DEBUG', sql.Int, idUltimoInventario)
+                    .query(`
+                        SELECT CODIGO, ACURACIDADE, ISNULL(ACURACIDADE, 0) AS ACURACIDADE_TRATADA
+                        FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM]
+                        WHERE ID_INVENTARIO = @ID_INV_DEBUG
+                        ORDER BY ACURACIDADE ASC;
+                    `);
+                debugBloco2.totalItensNoInventarioFinalizado = todosItensInv.recordset.length;
+                debugBloco2.itensComAcuracidadeNull = todosItensInv.recordset.filter(i => i.ACURACIDADE === null).length;
+                debugBloco2.itensBaixaAcuracidadeSemFiltro = todosItensInv.recordset
+                    .filter(i => (i.ACURACIDADE === null ? 0 : i.ACURACIDADE) < BLOCO2_ACURACIDADE)
+                    .map(i => ({ CODIGO: i.CODIGO, ACURACIDADE: i.ACURACIDADE }));
+                debugBloco2.etapa = 'filtro_aplicado';
+
+                const bloco2 = await pool.request()
+                    .input('ID_INV', sql.Int, idUltimoInventario)
+                    .input('ACURACIDADE_MIN', sql.Float, BLOCO2_ACURACIDADE)
+                    .input('QTD_ITENS', sql.Int, BLOCO2_QTD)
+                    .query(`
+                    WITH ItensBaixaAcuracidade AS (
+                        SELECT 
+                            i.CODIGO,
+                            i.DESCRICAO,
+                            ISNULL(i.ACURACIDADE, 0) AS ACURACIDADE,
+                            i.SALDO_SISTEMA
+                        FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] i
+                        WHERE i.ID_INVENTARIO = @ID_INV
+                            AND ISNULL(i.ACURACIDADE, 0) < @ACURACIDADE_MIN
+                    ),
+                    SaldoAtual AS (
+                        SELECT 
+                            CODIGO,
+                            ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
+                        FROM [dbo].[KARDEX_2026_EMBALAGEM]
+                        WHERE D_E_L_E_T_ <> '*'
+                        GROUP BY CODIGO
+                    ),
+                    CustoUnitario AS (
+                        SELECT 
+                            np.PROD_COD_PROD AS CODIGO,
+                            np.PROD_CUSTO_FISCAL_MEDIO_NOVO AS CUSTO_UNIT,
+                            ROW_NUMBER() OVER (PARTITION BY np.PROD_COD_PROD ORDER BY nc.CAB_DT_EMISSAO DESC) AS RN
+                        FROM [dbo].[NF_PRODUTOS] np
+                        INNER JOIN [dbo].[NF_CABECALHO] nc ON np.PROD_ID_NF = nc.CAB_ID_NF
+                        WHERE np.PROD_CUSTO_FISCAL_MEDIO_NOVO IS NOT NULL 
+                            AND np.PROD_CUSTO_FISCAL_MEDIO_NOVO > 0
+                    )
+                    SELECT TOP (@QTD_ITENS)
+                        iba.CODIGO,
+                        iba.DESCRICAO,
+                        iba.ACURACIDADE AS ACURACIDADE_ANTERIOR,
+                        ISNULL(s.SALDO_ATUAL, 0) AS SALDO_ATUAL,
+                        ISNULL(cu.CUSTO_UNIT, 0) AS CUSTO_UNITARIO,
+                        ISNULL(s.SALDO_ATUAL, 0) * ISNULL(cu.CUSTO_UNIT, 0) AS VALOR_TOTAL_ESTOQUE,
+                        'BAIXA_ACURACIDADE' AS BLOCO
+                    FROM ItensBaixaAcuracidade iba
+                    LEFT JOIN SaldoAtual s ON iba.CODIGO = s.CODIGO
+                    LEFT JOIN CustoUnitario cu ON iba.CODIGO = cu.CODIGO AND cu.RN = 1
+                    ORDER BY iba.ACURACIDADE ASC;
+                `);
+
+                debugBloco2.retornouDaQuery = bloco2.recordset.length;
+                console.log(`✅ Bloco 2 retornou ${bloco2.recordset.length} itens`);
+                todosItens.push(...bloco2.recordset);
+            }
+        } catch (err) {
+            debugBloco2.erro = err.message;
+            console.error('❌ Erro COMPLETO ao buscar bloco 2:', err);
+        }
+
+        const codigosBloco2 = todosItens.map(item => item.CODIGO);
+
+        // ── BLOCO 1: Mais movimentados (exclui o que bloco 2 já pegou) ──────────
         try {
             const bloco1 = await pool.request()
                 .input('DIAS', sql.Int, BLOCO1_DIAS)
@@ -118,6 +215,7 @@ async function gerarListaInventario(req, res) {
                 LEFT JOIN [dbo].[CAD_PROD] cp ON m.CODIGO = cp.CODIGO
                 LEFT JOIN SaldoAtual s ON m.CODIGO = s.CODIGO
                 LEFT JOIN CustoUnitario cu ON m.CODIGO = cu.CODIGO AND cu.RN = 1
+                ${codigosBloco2.length > 0 ? `WHERE m.CODIGO NOT IN ('${codigosBloco2.join("','")}')` : ''}
                 ORDER BY m.TOTAL_MOVIMENTACOES DESC, m.TOTAL_QUANTIDADE_MOVIMENTADA DESC;
             `);
             console.log(`✅ Bloco 1 retornou ${bloco1.recordset.length} itens`);
@@ -126,108 +224,7 @@ async function gerarListaInventario(req, res) {
             console.warn('Erro ao buscar bloco 1 (movimentação):', err.message);
         }
 
-        const codigosBloco1 = todosItens.map(item => item.CODIGO);
-        
-        // BLOCO 2: Itens com acuracidade < 95% do último inventário FINALIZADO
-        const debugBloco2 = { etapa: 'nao_iniciado' };
-        try {
-            // Primeiro, vamos verificar qual é o último inventário finalizado
-            const ultimoInv = await pool.request().query(`
-                SELECT TOP 1 ID_INVENTARIO, STATUS, DT_CRIACAO
-                FROM [dbo].[TB_INVENTARIO_CICLICO]
-                WHERE STATUS = 'FINALIZADO'
-                ORDER BY ID_INVENTARIO DESC;
-            `);
-            
-            console.log('🔍 Último inventário FINALIZADO encontrado:', ultimoInv.recordset);
-            
-            if (ultimoInv.recordset.length === 0) {
-                console.log('⚠️ Nenhum inventário FINALIZADO encontrado. Pulando Bloco 2.');
-                debugBloco2.etapa = 'sem_inventario_finalizado';
-            } else {
-                const idUltimoInventario = ultimoInv.recordset[0].ID_INVENTARIO;
-                debugBloco2.idInventarioFinalizado = idUltimoInventario;
-                debugBloco2.acuracidadeMinima = BLOCO2_ACURACIDADE;
-                debugBloco2.qtdMaxima = BLOCO2_QTD;
-                debugBloco2.codigosExcluidosBloco1 = codigosBloco1;
-                console.log(`📋 Buscando itens com acuracidade < ${BLOCO2_ACURACIDADE}% do inventário #${idUltimoInventario}`);
-
-                // Diagnóstico: busca todos os itens do inventário (sem filtro) para expor no debug
-                const todosItensInv = await pool.request()
-                    .input('ID_INV_DEBUG', sql.Int, idUltimoInventario)
-                    .query(`
-                        SELECT CODIGO, ACURACIDADE, ISNULL(ACURACIDADE, 0) AS ACURACIDADE_TRATADA
-                        FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM]
-                        WHERE ID_INVENTARIO = @ID_INV_DEBUG
-                        ORDER BY ACURACIDADE ASC;
-                    `);
-                debugBloco2.totalItensNoInventarioFinalizado = todosItensInv.recordset.length;
-                debugBloco2.itensComAcuracidadeNull = todosItensInv.recordset.filter(i => i.ACURACIDADE === null).length;
-                debugBloco2.itensBaixaAcuracidadeSemFiltro = todosItensInv.recordset
-                    .filter(i => (i.ACURACIDADE === null ? 0 : i.ACURACIDADE) < BLOCO2_ACURACIDADE)
-                    .map(i => ({ CODIGO: i.CODIGO, ACURACIDADE: i.ACURACIDADE }));
-                debugBloco2.itensBaixaAcuracidadeAposExcluirBloco1 = debugBloco2.itensBaixaAcuracidadeSemFiltro
-                    .filter(i => !codigosBloco1.includes(i.CODIGO));
-                debugBloco2.etapa = 'filtro_aplicado';
-                
-                const bloco2 = await pool.request()
-                    .input('ID_INV', sql.Int, idUltimoInventario)
-                    .input('ACURACIDADE_MIN', sql.Float, BLOCO2_ACURACIDADE)
-                    .input('QTD_ITENS', sql.Int, BLOCO2_QTD)
-                    .query(`
-                    WITH ItensBaixaAcuracidade AS (
-                        SELECT 
-                            i.CODIGO,
-                            i.DESCRICAO,
-                            ISNULL(i.ACURACIDADE, 0) AS ACURACIDADE,
-                            i.SALDO_SISTEMA
-                        FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] i
-                        WHERE i.ID_INVENTARIO = @ID_INV
-                            AND ISNULL(i.ACURACIDADE, 0) < @ACURACIDADE_MIN
-                            ${codigosBloco1.length > 0 ? `AND i.CODIGO NOT IN ('${codigosBloco1.join("','")}')` : ''}
-                    ),
-                    SaldoAtual AS (
-                        SELECT 
-                            CODIGO,
-                            ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
-                        FROM [dbo].[KARDEX_2026_EMBALAGEM]
-                        WHERE D_E_L_E_T_ <> '*'
-                        GROUP BY CODIGO
-                    ),
-                    CustoUnitario AS (
-                        SELECT 
-                            np.PROD_COD_PROD AS CODIGO,
-                            np.PROD_CUSTO_FISCAL_MEDIO_NOVO AS CUSTO_UNIT,
-                            ROW_NUMBER() OVER (PARTITION BY np.PROD_COD_PROD ORDER BY nc.CAB_DT_EMISSAO DESC) AS RN
-                        FROM [dbo].[NF_PRODUTOS] np
-                        INNER JOIN [dbo].[NF_CABECALHO] nc ON np.PROD_ID_NF = nc.CAB_ID_NF
-                        WHERE np.PROD_CUSTO_FISCAL_MEDIO_NOVO IS NOT NULL 
-                            AND np.PROD_CUSTO_FISCAL_MEDIO_NOVO > 0
-                    )
-                    SELECT TOP (@QTD_ITENS)
-                        iba.CODIGO,
-                        iba.DESCRICAO,
-                        iba.ACURACIDADE AS ACURACIDADE_ANTERIOR,
-                        ISNULL(s.SALDO_ATUAL, 0) AS SALDO_ATUAL,
-                        ISNULL(cu.CUSTO_UNIT, 0) AS CUSTO_UNITARIO,
-                        ISNULL(s.SALDO_ATUAL, 0) * ISNULL(cu.CUSTO_UNIT, 0) AS VALOR_TOTAL_ESTOQUE,
-                        'BAIXA_ACURACIDADE' AS BLOCO
-                    FROM ItensBaixaAcuracidade iba
-                    LEFT JOIN SaldoAtual s ON iba.CODIGO = s.CODIGO
-                    LEFT JOIN CustoUnitario cu ON iba.CODIGO = cu.CODIGO AND cu.RN = 1
-                    ORDER BY iba.ACURACIDADE ASC;
-                `);
-
-                debugBloco2.retornouDaQuery = bloco2.recordset.length;
-                console.log(`✅ Bloco 2 retornou ${bloco2.recordset.length} itens`);
-                todosItens.push(...bloco2.recordset);
-            }
-        } catch (err) {
-            debugBloco2.erro = err.message;
-            console.error('❌ Erro COMPLETO ao buscar bloco 2:', err);
-        }
-
-        const codigosBloco2 = todosItens.map(item => item.CODIGO);
+        const codigosBloco1e2 = todosItens.map(item => item.CODIGO);
 
         // BLOCO 3: Maior valor em estoque (usando configuração)
         try {
@@ -268,7 +265,7 @@ async function gerarListaInventario(req, res) {
                     FROM SaldoAtual s
                     LEFT JOIN CustoMaisRecente c ON s.CODIGO = c.CODIGO
                     WHERE c.CUSTO_UNITARIO IS NOT NULL
-                        ${codigosBloco2.length > 0 ? `AND s.CODIGO NOT IN ('${codigosBloco2.join("','")}')` : ''}
+                        ${codigosBloco1e2.length > 0 ? `AND s.CODIGO NOT IN ('${codigosBloco1e2.join("','")}')`  : ''}
                 )
                 SELECT TOP (@QTD_ITENS)
                     sv.CODIGO,
@@ -288,7 +285,7 @@ async function gerarListaInventario(req, res) {
             console.error('❌ Erro ao buscar bloco 3:', err);
         }
 
-        const codigosBloco3 = todosItens.map(item => item.CODIGO);
+        const codigosBloco1e2e3 = todosItens.map(item => item.CODIGO);
 
         // BLOCO 4: Maior valor unitário
         try {
@@ -331,7 +328,7 @@ async function gerarListaInventario(req, res) {
                 FROM CustoMaisRecente c
                 LEFT JOIN SaldoAtual s ON c.CODIGO = s.CODIGO
                 LEFT JOIN [dbo].[CAD_PROD] cp ON c.CODIGO = cp.CODIGO
-                WHERE ${codigosBloco3.length > 0 ? `c.CODIGO NOT IN ('${codigosBloco3.join("','")}')` : '1=1'}
+                WHERE ${codigosBloco1e2e3.length > 0 ? `c.CODIGO NOT IN ('${codigosBloco1e2e3.join("','")}')`  : '1=1'}
                     AND ISNULL(s.SALDO_ATUAL, 0) > 0
                 ORDER BY c.CUSTO_UNITARIO DESC;
             `);
@@ -342,7 +339,7 @@ async function gerarListaInventario(req, res) {
             console.error('❌ Erro ao buscar bloco 4:', err);
         }
 
-        const codigosBloco4 = todosItens.map(item => item.CODIGO);
+        const codigosBloco1e2e3e4 = todosItens.map(item => item.CODIGO);
 
         // BLOCO 5: Não contados nos últimos N inventários
         try {
@@ -394,7 +391,7 @@ async function gerarListaInventario(req, res) {
                 LEFT JOIN [dbo].[CAD_PROD] cp ON s.CODIGO = cp.CODIGO
                 LEFT JOIN CustoUnitario cu ON s.CODIGO = cu.CODIGO AND cu.RN = 1
                 WHERE s.CODIGO NOT IN (SELECT CODIGO FROM ItensContadosRecentemente)
-                    AND ${codigosBloco4.length > 0 ? `s.CODIGO NOT IN ('${codigosBloco4.join("','")}')` : '1=1'}
+                    AND ${codigosBloco1e2e3e4.length > 0 ? `s.CODIGO NOT IN ('${codigosBloco1e2e3e4.join("','")}')`  : '1=1'}
                 ORDER BY s.SALDO_ATUAL * ISNULL(cu.CUSTO_UNIT, 0) DESC;
             `);
             
