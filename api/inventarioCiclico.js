@@ -556,6 +556,9 @@ async function abrirInventario(req, res) {
                 ORDER BY CODIGO;
             `);
 
+        // Calcula o total a partir dos itens para garantir consistência com as linhas exibidas
+        const valorTotalGeralCalculado = itemsResult.recordset.reduce((sum, item) => sum + (item.VALOR_TOTAL_ESTOQUE || 0), 0);
+
         // Monta o objeto inventário
         const inventario = {
             id: header.ID_INVENTARIO,
@@ -563,7 +566,7 @@ async function abrirInventario(req, res) {
             dataGeracao: header.DT_GERACAO,
             criterio: header.CRITERIO,
             acuracidade: header.ACURACIDADE,
-            valorTotalGeral: header.VALOR_TOTAL_GERAL || 0,
+            valorTotalGeral: valorTotalGeralCalculado,
             itens: itemsResult.recordset.map(item => ({
                 CODIGO: item.CODIGO,
                 DESCRICAO: item.DESCRICAO,

@@ -308,7 +308,9 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     function renderizarInventario(inventario) {
-        const { itens, dataGeracao, criterio, id, status, blocos, valorTotalGeral } = inventario;
+        const { itens, dataGeracao, criterio, id, status, blocos } = inventario;
+        // Sempre recalcula a partir da soma das linhas para garantir consistência
+        const valorTotalGeral = (itens || []).reduce((sum, item) => sum + (item.VALOR_TOTAL_ESTOQUE || 0), 0);
 
         if (!itens || itens.length === 0) {
             infoLista.innerHTML = '<p class="info-message">Nenhum item encontrado para inventário.</p>';
