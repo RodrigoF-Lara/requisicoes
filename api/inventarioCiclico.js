@@ -155,11 +155,11 @@ async function gerarListaInventario(req, res) {
                         SELECT 
                             i.CODIGO,
                             i.DESCRICAO,
-                            i.ACURACIDADE,
+                            ISNULL(i.ACURACIDADE, 0) AS ACURACIDADE,
                             i.SALDO_SISTEMA
                         FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] i
                         WHERE i.ID_INVENTARIO = @ID_INV
-                            AND i.ACURACIDADE < @ACURACIDADE_MIN
+                            AND ISNULL(i.ACURACIDADE, 0) < @ACURACIDADE_MIN
                             ${codigosBloco1.length > 0 ? `AND i.CODIGO NOT IN ('${codigosBloco1.join("','")}')` : ''}
                     ),
                     SaldoAtual AS (
