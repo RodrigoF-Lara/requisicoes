@@ -530,17 +530,46 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Remove o item da lista
-        inventarioAtual.itens = inventarioAtual.itens.filter(item => item.CODIGO !== codigo);
-        
-        // Recalcula o valor total geral
-        inventarioAtual.valorTotalGeral = inventarioAtual.itens.reduce((sum, item) => {
-            const saldo = item.SALDO_ATUAL || item.SALDO_SISTEMA || 0;
-            const custo = item.CUSTO_UNITARIO || item.PRECO_UNITARIO || 0;
-            return sum + (saldo * custo);
-        }, 0);
+        // Se o inventário já está salvo, persiste a remoção no banco
+        if (inventarioAtual.id) {
+            statusMessage.style.color = '#222';
+            statusMessage.textContent = 'Removendo item...';
 
-        // Atualiza a contagem de blocos
+            fetch('/api/inventarioCiclico', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ acao: 'removerItem', idInventario: inventarioAtual.id, codigo })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.message && data.error) throw new Error(data.message);
+                // Remove da memória local e re-renderiza
+                inventarioAtual.itens = inventarioAtual.itens.filter(item => item.CODIGO !== codigo);
+                atualizarBlocos();
+                renderizarInventario(inventarioAtual);
+                statusMessage.style.color = 'green';
+                statusMessage.textContent = `Item ${codigo} excluído com sucesso!`;
+                setTimeout(() => { statusMessage.textContent = ''; }, 3000);
+            })
+            .catch(err => {
+                statusMessage.style.color = '#c00';
+                statusMessage.textContent = `Erro ao remover: ${err.message}`;
+            });
+            return;
+        }
+
+        // Inventário ainda não salvo — apenas memória
+        inventarioAtual.itens = inventarioAtual.itens.filter(item => item.CODIGO !== codigo);
+        atualizarBlocos();
+        renderizarInventario(inventarioAtual);
+
+        statusMessage.style.color = 'green';
+        statusMessage.textContent = `Item ${codigo} excluído com sucesso!`;
+        setTimeout(() => { statusMessage.textContent = ''; }, 3000);
+    }
+
+    // Recalcula blocos na memória local
+    function atualizarBlocos() {
         if (inventarioAtual.blocos) {
             inventarioAtual.blocos = {
                 movimentacao: inventarioAtual.itens.filter(i => i.BLOCO === 'MOVIMENTACAO').length,
@@ -550,12 +579,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 naoContado: inventarioAtual.itens.filter(i => i.BLOCO === 'NAO_CONTADO').length
             };
         }
-
-        renderizarInventario(inventarioAtual);
-        
-        statusMessage.style.color = 'green';
-        statusMessage.textContent = `Item ${codigo} excluído com sucesso!`;
-        setTimeout(() => { statusMessage.textContent = ''; }, 3000);
     }
 
     async function adicionarNovoItem() {
@@ -587,8 +610,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const novoProduto = data.produto;
 
-            // Adiciona o novo item à lista
-            inventarioAtual.itens.push({
+            const novoItem = {
                 CODIGO: novoProduto.CODIGO,
                 DESCRICAO: novoProduto.DESCRICAO,
                 SALDO_ATUAL: novoProduto.SALDO_ATUAL || 0,
@@ -599,23 +621,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 CONTAGEM_FISICA: 0,
                 BLOCO: 'MANUAL',
                 TOTAL_MOVIMENTACOES: 0
-            });
+            };
 
-            // Recalcula o valor total geral
-            inventarioAtual.valorTotalGeral = inventarioAtual.itens.reduce((sum, item) => {
-                const saldo = item.SALDO_ATUAL || item.SALDO_SISTEMA || 0;
-                const custo = item.CUSTO_UNITARIO || item.PRECO_UNITARIO || 0;
-                return sum + (saldo * custo);
-            }, 0);
-
-            // Atualiza a contagem de blocos
-            if (inventarioAtual.blocos) {
-                inventarioAtual.blocos = {
-                    movimentacao: inventarioAtual.itens.filter(i => i.BLOCO === 'MOVIMENTACAO').length,
-                    baixaAcuracidade: inventarioAtual.itens.filter(i => i.BLOCO === 'BAIXA_ACURACIDADE').length,
-                    maiorValor: inventarioAtual.itens.filter(i => i.BLOCO === 'MAIOR_VALOR').length
-                };
+            // Se o inventário já está salvo, persiste no banco
+            if (inventarioAtual.id) {
+                statusMessage.textContent = 'Salvando item no banco...';
+                const respAdd = await fetch('/api/inventarioCiclico', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ acao: 'adicionarItem', idInventario: inventarioAtual.id, item: novoItem })
+                });
+                const dataAdd = await respAdd.json();
+                if (!respAdd.ok) throw new Error(dataAdd.message || 'Erro ao persistir item');
             }
+
+            inventarioAtual.itens.push(novoItem);
+            atualizarBlocos();
 
             renderizarInventario(inventarioAtual);
 

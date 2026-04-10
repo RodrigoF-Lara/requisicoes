@@ -26,6 +26,10 @@ export default async function handler(req, res) {
             return await finalizarInventario(req, res);
         } else if (acao === 'salvarContagem') {
             return await salvarContagemIndividual(req, res);
+        } else if (acao === 'adicionarItem') {
+            return await adicionarItemInventario(req, res);
+        } else if (acao === 'removerItem') {
+            return await removerItemInventario(req, res);
         }
     }
 
@@ -759,5 +763,117 @@ async function buscarProduto(req, res) {
             message: "Erro ao buscar produto", 
             error: err.message 
         });
+    }
+}
+
+// Adiciona um item a um inventário já salvo (EM_ANDAMENTO)
+async function adicionarItemInventario(req, res) {
+    try {
+        const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        const { idInventario, item } = body;
+
+        if (!idInventario || !item || !item.CODIGO) {
+            return res.status(400).json({ message: "idInventario e item.CODIGO são obrigatórios." });
+        }
+
+        const pool = await getConnection();
+
+        // Verifica se inventário existe e está EM_ANDAMENTO
+        const inv = await pool.request()
+            .input('ID', sql.Int, idInventario)
+            .query(`SELECT STATUS FROM [dbo].[TB_INVENTARIO_CICLICO] WHERE ID_INVENTARIO = @ID`);
+
+        if (inv.recordset.length === 0)
+            return res.status(404).json({ message: "Inventário não encontrado." });
+        if (inv.recordset[0].STATUS === 'FINALIZADO')
+            return res.status(409).json({ message: "Não é possível alterar um inventário finalizado." });
+
+        // Verifica se item já está no inventário
+        const existe = await pool.request()
+            .input('ID', sql.Int, idInventario)
+            .input('CODIGO', sql.NVarChar, item.CODIGO)
+            .query(`SELECT 1 FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] WHERE ID_INVENTARIO = @ID AND CODIGO = @CODIGO`);
+
+        if (existe.recordset.length > 0)
+            return res.status(409).json({ message: "Item já está no inventário." });
+
+        const valorTotalEstoque = (item.SALDO_ATUAL || 0) * (item.CUSTO_UNITARIO || 0);
+
+        await pool.request()
+            .input('ID_INVENTARIO', sql.Int, idInventario)
+            .input('CODIGO', sql.NVarChar, item.CODIGO)
+            .input('DESCRICAO', sql.NVarChar, item.DESCRICAO || '')
+            .input('SALDO_SISTEMA', sql.Float, item.SALDO_ATUAL || 0)
+            .input('CONTAGEM_FISICA', sql.Float, 0)
+            .input('TOTAL_MOVIMENTACOES', sql.Int, 0)
+            .input('BLOCO', sql.NVarChar, item.BLOCO || 'MANUAL')
+            .input('CUSTO_UNITARIO', sql.Float, item.CUSTO_UNITARIO || 0)
+            .input('VALOR_TOTAL_ESTOQUE', sql.Float, valorTotalEstoque)
+            .query(`
+                INSERT INTO [dbo].[TB_INVENTARIO_CICLICO_ITEM]
+                (ID_INVENTARIO, CODIGO, DESCRICAO, SALDO_SISTEMA, CONTAGEM_FISICA, TOTAL_MOVIMENTACOES, BLOCO, CUSTO_UNITARIO, VALOR_TOTAL_ESTOQUE)
+                VALUES (@ID_INVENTARIO, @CODIGO, @DESCRICAO, @SALDO_SISTEMA, @CONTAGEM_FISICA, @TOTAL_MOVIMENTACOES, @BLOCO, @CUSTO_UNITARIO, @VALOR_TOTAL_ESTOQUE)
+            `);
+
+        // Atualiza TOTAL_ITENS e VALOR_TOTAL_GERAL no cabeçalho
+        await pool.request()
+            .input('ID', sql.Int, idInventario)
+            .query(`
+                UPDATE [dbo].[TB_INVENTARIO_CICLICO]
+                SET TOTAL_ITENS = (SELECT COUNT(*) FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] WHERE ID_INVENTARIO = @ID),
+                    VALOR_TOTAL_GERAL = (SELECT ISNULL(SUM(VALOR_TOTAL_ESTOQUE), 0) FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] WHERE ID_INVENTARIO = @ID)
+                WHERE ID_INVENTARIO = @ID
+            `);
+
+        return res.status(200).json({ message: "Item adicionado com sucesso." });
+
+    } catch (err) {
+        console.error("ERRO ao adicionar item:", err);
+        return res.status(500).json({ message: "Erro ao adicionar item", error: err.message });
+    }
+}
+
+// Remove um item de um inventário já salvo (EM_ANDAMENTO)
+async function removerItemInventario(req, res) {
+    try {
+        const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        const { idInventario, codigo } = body;
+
+        if (!idInventario || !codigo) {
+            return res.status(400).json({ message: "idInventario e codigo são obrigatórios." });
+        }
+
+        const pool = await getConnection();
+
+        // Verifica se inventário existe e está EM_ANDAMENTO
+        const inv = await pool.request()
+            .input('ID', sql.Int, idInventario)
+            .query(`SELECT STATUS FROM [dbo].[TB_INVENTARIO_CICLICO] WHERE ID_INVENTARIO = @ID`);
+
+        if (inv.recordset.length === 0)
+            return res.status(404).json({ message: "Inventário não encontrado." });
+        if (inv.recordset[0].STATUS === 'FINALIZADO')
+            return res.status(409).json({ message: "Não é possível alterar um inventário finalizado." });
+
+        await pool.request()
+            .input('ID', sql.Int, idInventario)
+            .input('CODIGO', sql.NVarChar, codigo)
+            .query(`DELETE FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] WHERE ID_INVENTARIO = @ID AND CODIGO = @CODIGO`);
+
+        // Atualiza TOTAL_ITENS e VALOR_TOTAL_GERAL no cabeçalho
+        await pool.request()
+            .input('ID', sql.Int, idInventario)
+            .query(`
+                UPDATE [dbo].[TB_INVENTARIO_CICLICO]
+                SET TOTAL_ITENS = (SELECT COUNT(*) FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] WHERE ID_INVENTARIO = @ID),
+                    VALOR_TOTAL_GERAL = (SELECT ISNULL(SUM(VALOR_TOTAL_ESTOQUE), 0) FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM] WHERE ID_INVENTARIO = @ID)
+                WHERE ID_INVENTARIO = @ID
+            `);
+
+        return res.status(200).json({ message: "Item removido com sucesso." });
+
+    } catch (err) {
+        console.error("ERRO ao remover item:", err);
+        return res.status(500).json({ message: "Erro ao remover item", error: err.message });
     }
 }
