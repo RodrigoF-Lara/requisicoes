@@ -215,11 +215,15 @@ export default async function handler(req, res) {
             // Cria o cabeÃ§alho da NF
             if (action === "criar_cabecalho") {
                 const {
-                    cod_forn, num_nf, qnt_itens, pedido_compra, razao,
+                    cod_forn: _cod_forn, num_nf: _num_nf, qnt_itens, pedido_compra, razao,
                     dt_emissao, dt_receb, tipo_forn, aliquota,
                     icms, st, frete, desconto, ipi,
                     valor_prod, valor_total_nf, bc_icms, usuario
                 } = req.body;
+
+                // mssql v10 exige string para VarChar — converte explicitamente
+                const cod_forn = _cod_forn != null ? String(_cod_forn) : null;
+                const num_nf   = _num_nf   != null ? String(_num_nf)   : null;
 
                 if (!cod_forn || !num_nf || !usuario)
                     return res.status(400).json({ message: "Campos obrigatÃ³rios: cod_forn, num_nf, usuario." });
