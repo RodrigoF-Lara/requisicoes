@@ -129,6 +129,7 @@ async function gerarListaInventario(req, res) {
         const codigosBloco1 = todosItens.map(item => item.CODIGO);
         
         // BLOCO 2: Itens com acuracidade < 95% do último inventário FINALIZADO
+        const debugBloco2 = { etapa: 'nao_iniciado' };
         try {
             // Primeiro, vamos verificar qual é o último inventário finalizado
             const ultimoInv = await pool.request().query(`
@@ -142,9 +143,32 @@ async function gerarListaInventario(req, res) {
             
             if (ultimoInv.recordset.length === 0) {
                 console.log('⚠️ Nenhum inventário FINALIZADO encontrado. Pulando Bloco 2.');
+                debugBloco2.etapa = 'sem_inventario_finalizado';
             } else {
                 const idUltimoInventario = ultimoInv.recordset[0].ID_INVENTARIO;
+                debugBloco2.idInventarioFinalizado = idUltimoInventario;
+                debugBloco2.acuracidadeMinima = BLOCO2_ACURACIDADE;
+                debugBloco2.qtdMaxima = BLOCO2_QTD;
+                debugBloco2.codigosExcluidosBloco1 = codigosBloco1;
                 console.log(`📋 Buscando itens com acuracidade < ${BLOCO2_ACURACIDADE}% do inventário #${idUltimoInventario}`);
+
+                // Diagnóstico: busca todos os itens do inventário (sem filtro) para expor no debug
+                const todosItensInv = await pool.request()
+                    .input('ID_INV_DEBUG', sql.Int, idUltimoInventario)
+                    .query(`
+                        SELECT CODIGO, ACURACIDADE, ISNULL(ACURACIDADE, 0) AS ACURACIDADE_TRATADA
+                        FROM [dbo].[TB_INVENTARIO_CICLICO_ITEM]
+                        WHERE ID_INVENTARIO = @ID_INV_DEBUG
+                        ORDER BY ACURACIDADE ASC;
+                    `);
+                debugBloco2.totalItensNoInventarioFinalizado = todosItensInv.recordset.length;
+                debugBloco2.itensComAcuracidadeNull = todosItensInv.recordset.filter(i => i.ACURACIDADE === null).length;
+                debugBloco2.itensBaixaAcuracidadeSemFiltro = todosItensInv.recordset
+                    .filter(i => (i.ACURACIDADE === null ? 0 : i.ACURACIDADE) < BLOCO2_ACURACIDADE)
+                    .map(i => ({ CODIGO: i.CODIGO, ACURACIDADE: i.ACURACIDADE }));
+                debugBloco2.itensBaixaAcuracidadeAposExcluirBloco1 = debugBloco2.itensBaixaAcuracidadeSemFiltro
+                    .filter(i => !codigosBloco1.includes(i.CODIGO));
+                debugBloco2.etapa = 'filtro_aplicado';
                 
                 const bloco2 = await pool.request()
                     .input('ID_INV', sql.Int, idUltimoInventario)
@@ -194,10 +218,12 @@ async function gerarListaInventario(req, res) {
                     ORDER BY iba.ACURACIDADE ASC;
                 `);
 
+                debugBloco2.retornouDaQuery = bloco2.recordset.length;
                 console.log(`✅ Bloco 2 retornou ${bloco2.recordset.length} itens`);
                 todosItens.push(...bloco2.recordset);
             }
         } catch (err) {
+            debugBloco2.erro = err.message;
             console.error('❌ Erro COMPLETO ao buscar bloco 2:', err);
         }
 
@@ -405,6 +431,7 @@ async function gerarListaInventario(req, res) {
             criterio: `Bloco 1: ${blocosCont.movimentacao} movimentados | Bloco 2: ${blocosCont.baixaAcuracidade} acurac.<${BLOCO2_ACURACIDADE}% | Bloco 3: ${blocosCont.maiorValor} maior valor | Bloco 4: ${blocosCont.maiorValorUnitario} maior vlr unit. | Bloco 5: ${blocosCont.naoContado} não contados`,
             blocos: blocosCont,
             valorTotalGeral: valorTotalGeral,
+            debugBloco2: debugBloco2,
             configuracao: {
                 bloco1Qtd: BLOCO1_QTD,
                 bloco1Dias: BLOCO1_DIAS,

@@ -56,6 +56,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(data.message || 'Erro ao gerar lista');
             }
 
+            // ── DEBUG BLOCO 2 ──────────────────────────────────────────
+            console.group('📦 DEBUG gerarLista — resposta completa da API');
+            console.log('Configuração recebida:', data.configuracao);
+            console.log('Blocos (contagens):', data.blocos);
+            console.log('Critério:', data.criterio);
+            console.log('Total de itens:', data.itens?.length);
+            const itensPorBloco = {};
+            (data.itens || []).forEach(i => {
+                itensPorBloco[i.BLOCO] = itensPorBloco[i.BLOCO] || [];
+                itensPorBloco[i.BLOCO].push({ CODIGO: i.CODIGO, DESCRICAO: i.DESCRICAO, ACURACIDADE_ANTERIOR: i.ACURACIDADE_ANTERIOR });
+            });
+            console.log('Itens por bloco:', itensPorBloco);
+            console.log('Itens BAIXA_ACURACIDADE:', itensPorBloco['BAIXA_ACURACIDADE'] || '⚠️ NENHUM');
+            if (data.debugBloco2) {
+                console.group('🔍 DEBUG BLOCO 2 — diagnóstico detalhado');
+                console.log('Etapa atingida:', data.debugBloco2.etapa);
+                console.log('ID inventário finalizado usado:', data.debugBloco2.idInventarioFinalizado);
+                console.log('Acuracidade mínima configurada:', data.debugBloco2.acuracidadeMinima, '%');
+                console.log('Qtd máxima configurada:', data.debugBloco2.qtdMaxima);
+                console.log('Total itens no inventário finalizado:', data.debugBloco2.totalItensNoInventarioFinalizado);
+                console.log('Itens com ACURACIDADE NULL:', data.debugBloco2.itensComAcuracidadeNull);
+                console.log('Itens < acur. mínima (sem excluir bloco1):', data.debugBloco2.itensBaixaAcuracidadeSemFiltro);
+                console.log('Itens < acur. mínima (após excluir bloco1):', data.debugBloco2.itensBaixaAcuracidadeAposExcluirBloco1);
+                console.log('Códigos excluídos pelo bloco1:', data.debugBloco2.codigosExcluidosBloco1);
+                console.log('Retornou da query final:', data.debugBloco2.retornouDaQuery);
+                if (data.debugBloco2.erro) console.error('ERRO no bloco2:', data.debugBloco2.erro);
+                console.groupEnd();
+            }
+            console.groupEnd();
+            // ── FIM DEBUG ──────────────────────────────────────────────
+
             inventarioAtual = {
                 id: null,
                 status: 'NOVO',
