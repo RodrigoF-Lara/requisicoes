@@ -278,9 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            const divisor = janelaDias;
-            const taxaDiaria = totalSaidas / divisor;
-            const projecaoMensal = taxaDiaria * 30;
+            const consumoMensal = totalSaidas * 30 / janelaDias;
 
             corpo.innerHTML = `
                 <div style="display:flex; gap:16px; margin-bottom:16px; flex-wrap:wrap;">
@@ -288,13 +286,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div style="font-size:11px; color:#555; font-weight:600;">TOTAL SAÍDAS (JANELA)</div>
                         <div style="font-size:22px; font-weight:700; color:#1565c0;">${totalSaidas.toLocaleString('pt-BR')}</div>
                     </div>
-                    <div style="background:#e8f5e9; border-radius:8px; padding:12px 20px; text-align:center;">
-                        <div style="font-size:11px; color:#555; font-weight:600;">MÉDIA DIÁRIA</div>
-                        <div style="font-size:22px; font-weight:700; color:#2e7d32;">${taxaDiaria.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
-                    </div>
-                    <div style="background:#fff8e1; border-radius:8px; padding:12px 20px; text-align:center;">
-                        <div style="font-size:11px; color:#555; font-weight:600;">PROJEÇÃO MENSAL (30 dias)</div>
-                        <div style="font-size:22px; font-weight:700; color:#e65100;">${projecaoMensal.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+                    <div style="background:#e8f5e9; border-radius:8px; padding:14px 24px; text-align:center; border:2px solid #2e7d32;">
+                        <div style="font-size:12px; color:#2e7d32; font-weight:700;">CONSUMO MÉDIO MENSAL</div>
+                        <div style="font-size:26px; font-weight:700; color:#2e7d32;">${consumoMensal.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0})}</div>
+                        <div style="font-size:11px; color:#666;">unidades/mês • janela ${label}</div>
                     </div>
                     <div style="background:#f3e5f5; border-radius:8px; padding:12px 20px; text-align:center;">
                         <div style="font-size:11px; color:#555; font-weight:600;">Nº MOVIMENTAÇÕES</div>

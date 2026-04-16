@@ -196,18 +196,19 @@ async function gerarRelatorioConsumo(req, res) {
             ConsumoMedio AS (
                 SELECT 
                     k.CODIGO,
-                    -- Consumo 1 mês: saídas nos últimos 30 dias (a partir de abr/2026)
-                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -30, GETDATE()) AND k.DT >= '${DATA_CORTE}' THEN ABS(k.QNT) ELSE 0 END) / 30.0, 0) AS CONSUMO_1MES,
-                    -- Consumo bimestral: saídas nos últimos 60 dias (a partir de abr/2026)
-                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -60, GETDATE()) AND k.DT >= '${DATA_CORTE}' THEN ABS(k.QNT) ELSE 0 END) / 60.0 * 2, 0) AS CONSUMO_BIMESTRAL,
-                    -- Consumo semestral: saídas nos últimos 180 dias (a partir de abr/2026)
-                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -180, GETDATE()) AND k.DT >= '${DATA_CORTE}' THEN ABS(k.QNT) ELSE 0 END) / 180.0 * 6, 0) AS CONSUMO_SEMESTRAL,
-                    -- Consumo anual: saídas nos últimos 365 dias (a partir de abr/2026)
-                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -365, GETDATE()) AND k.DT >= '${DATA_CORTE}' THEN ABS(k.QNT) ELSE 0 END) / 365.0 * 12, 0) AS CONSUMO_ANUAL
+                    -- Consumo médio MENSAL: total de saídas no período ÷ número de meses da janela
+                    -- 1 mês (30 dias): total / 1  = o próprio total consumido no mês
+                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -30, GETDATE()) AND k.DT >= '2026-04-01' THEN ABS(k.QNT) ELSE 0 END) * 30.0 / 30, 0) AS CONSUMO_1MES,
+                    -- Bimestral (60 dias): total / 2 meses
+                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -60, GETDATE()) AND k.DT >= '2026-04-01' THEN ABS(k.QNT) ELSE 0 END) * 30.0 / 60, 0) AS CONSUMO_BIMESTRAL,
+                    -- Semestral (180 dias): total / 6 meses
+                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -180, GETDATE()) AND k.DT >= '2026-04-01' THEN ABS(k.QNT) ELSE 0 END) * 30.0 / 180, 0) AS CONSUMO_SEMESTRAL,
+                    -- Anual (365 dias): total / 12.17 meses
+                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -365, GETDATE()) AND k.DT >= '2026-04-01' THEN ABS(k.QNT) ELSE 0 END) * 30.0 / 365, 0) AS CONSUMO_ANUAL
                 FROM [dbo].[KARDEX_2026] k
                 WHERE k.OPERACAO = 'SAÍDA'
                     AND k.USUARIO <> 'BEATRIZ JULHAO'
-                    AND k.DT >= '${DATA_CORTE}'
+                    AND k.DT >= '2026-04-01'
                 GROUP BY k.CODIGO
             )
             SELECT 
@@ -317,8 +318,8 @@ async function movimentacoesProduto(req, res) {
                 WHERE CODIGO = @CODIGO
                     AND OPERACAO = 'SAÍDA'
                     AND USUARIO <> 'BEATRIZ JULHAO'
-                    AND DT >= '2026-04-01'
-                    AND DT >= DATEADD(DAY, -@JANELA, GETDATE())
+                    AND CONVERT(DATE, DT) >= '2026-04-01'
+                    AND CONVERT(DATE, DT) >= CONVERT(DATE, DATEADD(DAY, -@JANELA, GETDATE()))
                 ORDER BY DT DESC, HR DESC
             `);
 
