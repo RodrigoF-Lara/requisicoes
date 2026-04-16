@@ -95,6 +95,27 @@
         .custo-info-item { text-align: center; }
         .custo-info-item .ci-label { font-size: 11px; color: #666; font-weight: 600; }
         .custo-info-item .ci-valor { font-size: 20px; font-weight: 700; color: #333; }
+
+        /* ─── Linhas agrupadas de produto ───────────────────────── */
+        .nf-prod-grupos { display: flex; flex-direction: column; gap: 0; margin-bottom: 18px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+        .nf-prod-grupo {
+            display: grid;
+            grid-template-columns: 110px 1fr 1fr;
+            gap: 10px;
+            align-items: center;
+            padding: 8px 14px;
+            border-bottom: 1px solid #f0f0f0;
+            background: #fff;
+        }
+        .nf-prod-grupo:last-child { border-bottom: none; }
+        .nf-prod-grupo:nth-child(odd) { background: #fafafa; }
+        .nf-prod-grupo .nf-grupo-label {
+            font-size: 12px; font-weight: 700; color: #555;
+            text-align: right; padding-right: 10px;
+            border-right: 2px solid #dee2e6;
+        }
+        .nf-prod-grupo .nf-field { margin: 0; }
+        .nf-prod-grupo .nf-field label { font-size: 11px; color: #888; }
     </style>
 </head>
 <body>
@@ -266,70 +287,102 @@
                         </div>
                     </div>
 
-                    <div class="nf-grid cols-4">
-                        <div class="nf-field">
-                            <label>Valor Unit.</label>
-                            <input type="number" id="prod-valor-unit" step="any" value="0" />
+                    <div class="nf-prod-grupos">
+                        <!-- Valor -->
+                        <div class="nf-prod-grupo">
+                            <span class="nf-grupo-label">Valor</span>
+                            <div class="nf-field">
+                                <label>Unit.</label>
+                                <input type="number" id="prod-valor-unit" step="any" value="0" />
+                            </div>
+                            <div class="nf-field">
+                                <label>Total</label>
+                                <input type="number" id="prod-valor-total" step="any" value="0" />
+                            </div>
                         </div>
-                        <div class="nf-field">
-                            <label>Valor Total</label>
-                            <input type="number" id="prod-valor-total" step="any" value="0" />
+                        <!-- IPI -->
+                        <div class="nf-prod-grupo">
+                            <span class="nf-grupo-label">IPI</span>
+                            <div class="nf-field">
+                                <label>Unit.</label>
+                                <input type="number" id="prod-ipi-unit" step="any" value="0" />
+                            </div>
+                            <div class="nf-field">
+                                <label>Total</label>
+                                <input type="number" id="prod-ipi" step="any" value="0" />
+                            </div>
                         </div>
-                        <div class="nf-field">
-                            <label>IPI Unit.</label>
-                            <input type="number" id="prod-ipi-unit" step="any" value="0" />
+                        <!-- ICMS -->
+                        <div class="nf-prod-grupo">
+                            <span class="nf-grupo-label">ICMS</span>
+                            <div class="nf-field">
+                                <label>Unit.</label>
+                                <input type="number" id="prod-icms-unit" step="any" value="0" />
+                            </div>
+                            <div class="nf-field">
+                                <label>Total</label>
+                                <input type="number" id="prod-icms" step="any" value="0" />
+                            </div>
                         </div>
-                        <div class="nf-field">
-                            <label>IPI Total</label>
-                            <input type="number" id="prod-ipi" step="any" value="0" />
+                        <!-- ST -->
+                        <div class="nf-prod-grupo">
+                            <span class="nf-grupo-label">ST</span>
+                            <div class="nf-field">
+                                <label>Unit.</label>
+                                <input type="number" id="prod-st-unit" step="any" value="0" />
+                            </div>
+                            <div class="nf-field">
+                                <label>Total</label>
+                                <input type="number" id="prod-st" step="any" value="0" />
+                            </div>
                         </div>
-                        <div class="nf-field">
-                            <label>ICMS Unit.</label>
-                            <input type="number" id="prod-icms-unit" step="any" value="0" />
+                        <!-- Frete -->
+                        <div class="nf-prod-grupo">
+                            <span class="nf-grupo-label">Frete</span>
+                            <div class="nf-field">
+                                <label>Unit.</label>
+                                <input type="number" id="prod-frete-unit" step="any" value="0" />
+                            </div>
+                            <div class="nf-field">
+                                <label>Linha</label>
+                                <input type="number" id="prod-frete" step="any" value="0" />
+                            </div>
                         </div>
-                        <div class="nf-field">
-                            <label>ICMS Total</label>
-                            <input type="number" id="prod-icms" step="any" value="0" />
+                        <!-- Desconto -->
+                        <div class="nf-prod-grupo">
+                            <span class="nf-grupo-label">Desconto</span>
+                            <div class="nf-field">
+                                <label>Unit.</label>
+                                <input type="number" id="prod-desc-unit" step="any" value="0" />
+                            </div>
+                            <div class="nf-field">
+                                <label>Total</label>
+                                <input type="number" id="prod-desconto" step="any" value="0" />
+                            </div>
                         </div>
-                        <div class="nf-field">
-                            <label>ST Unit.</label>
-                            <input type="number" id="prod-st-unit" step="any" value="0" />
+                        <!-- BC ICMS -->
+                        <div class="nf-prod-grupo">
+                            <span class="nf-grupo-label">BC ICMS</span>
+                            <div class="nf-field">
+                                <label>Unit.</label>
+                                <input type="number" id="prod-bc-icms-unit" step="any" value="0" />
+                            </div>
+                            <div class="nf-field">
+                                <label>Total</label>
+                                <input type="number" id="prod-bc-icms" step="any" value="0" />
+                            </div>
                         </div>
-                        <div class="nf-field">
-                            <label>ST Total</label>
-                            <input type="number" id="prod-st" step="any" value="0" />
-                        </div>
-                        <div class="nf-field">
-                            <label>Frete Unit.</label>
-                            <input type="number" id="prod-frete-unit" step="any" value="0" />
-                        </div>
-                        <div class="nf-field">
-                            <label>Frete Linha</label>
-                            <input type="number" id="prod-frete" step="any" value="0" />
-                        </div>
-                        <div class="nf-field">
-                            <label>Desconto Unit.</label>
-                            <input type="number" id="prod-desc-unit" step="any" value="0" />
-                        </div>
-                        <div class="nf-field">
-                            <label>Desconto Total</label>
-                            <input type="number" id="prod-desconto" step="any" value="0" />
-                        </div>
-                        <div class="nf-field">
-                            <label>BC ICMS Unit.</label>
-                            <input type="number" id="prod-bc-icms-unit" step="any" value="0" />
-                        </div>
-                        <div class="nf-field">
-                            <label>BC ICMS Total</label>
-                            <input type="number" id="prod-bc-icms" step="any" value="0" />
-                        </div>
-                        <div class="nf-field">
-                            <label>Importação Unit.</label>
-                            <input type="number" id="prod-import-unit" step="any" value="0" />
-                        </div>
-                        <div class="nf-field">
-                            <label>Importação Linha</label>
-                            <input type="number" id="prod-import-linha" step="any" value="0" />
+                        <!-- Importação -->
+                        <div class="nf-prod-grupo">
+                            <span class="nf-grupo-label">Importação</span>
+                            <div class="nf-field">
+                                <label>Unit.</label>
+                                <input type="number" id="prod-import-unit" step="any" value="0" />
+                            </div>
+                            <div class="nf-field">
+                                <label>Linha</label>
+                                <input type="number" id="prod-import-linha" step="any" value="0" />
+                            </div>
                         </div>
                     </div>
 
