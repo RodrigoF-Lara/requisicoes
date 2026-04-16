@@ -153,30 +153,18 @@ async function gerarRelatorioConsumo(req, res) {
 
         const pool = await getConnection();
         
-        // Debug: Verificar quais colunas de fornecedor têm dados
-        const debugQuery = `
-            SELECT TOP 5
-                nc.CAB_ID_NF,
-                nc.CAB_NUM_FORN,
-                nc.CAB_RAZAO,
-                nc.CAB_NUM_NF,
-                nc.CAB_DT_EMISSAO
-            FROM [dbo].[NF_CABECALHO] nc
-            WHERE nc.CAB_RAZAO IS NOT NULL
-            ORDER BY nc.CAB_DT_EMISSAO DESC
-        `;
-        
-        const debugResult = await pool.request().query(debugQuery);
-        console.log('🔍 DEBUG - Amostra de fornecedores em NF_CABECALHO:', debugResult.recordset);
-        
         // Query para buscar saldo atual, preço da última NF e fornecedor
+        // Data de corte: apenas movimentações a partir de Abril/2026
+        const DATA_CORTE = '2026-04-01';
+
         let query = `
             WITH SaldoAtual AS (
                 SELECT 
                     CODIGO,
                     ISNULL(SUM(SALDO), 0) AS SALDO_ATUAL
                 FROM [dbo].[KARDEX_2026_EMBALAGEM]
-                -- WHERE D_E_L_E_T_ <> '*'
+                WHERE D_E_L_E_T_ <> '*'
+                    AND KARDEX = 2026
                 GROUP BY CODIGO
                 HAVING ISNULL(SUM(SALDO), 0) > 0
             ),
@@ -206,14 +194,18 @@ async function gerarRelatorioConsumo(req, res) {
             ConsumoMedio AS (
                 SELECT 
                     k.CODIGO,
-                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -30, GETDATE()) THEN ABS(k.QNT) ELSE 0 END) / 30.0, 0) AS CONSUMO_1MES,
-                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -60, GETDATE()) THEN ABS(k.QNT) ELSE 0 END) / 60.0 * 2, 0) AS CONSUMO_BIMESTRAL,
-                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -180, GETDATE()) THEN ABS(k.QNT) ELSE 0 END) / 180.0 * 6, 0) AS CONSUMO_SEMESTRAL,
-                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -365, GETDATE()) THEN ABS(k.QNT) ELSE 0 END) / 365.0 * 12, 0) AS CONSUMO_ANUAL
+                    -- Consumo 1 mês: saídas nos últimos 30 dias (a partir de abr/2026)
+                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -30, GETDATE()) AND k.DT >= '${DATA_CORTE}' THEN ABS(k.QNT) ELSE 0 END) / 30.0, 0) AS CONSUMO_1MES,
+                    -- Consumo bimestral: saídas nos últimos 60 dias (a partir de abr/2026)
+                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -60, GETDATE()) AND k.DT >= '${DATA_CORTE}' THEN ABS(k.QNT) ELSE 0 END) / 60.0 * 2, 0) AS CONSUMO_BIMESTRAL,
+                    -- Consumo semestral: saídas nos últimos 180 dias (a partir de abr/2026)
+                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -180, GETDATE()) AND k.DT >= '${DATA_CORTE}' THEN ABS(k.QNT) ELSE 0 END) / 180.0 * 6, 0) AS CONSUMO_SEMESTRAL,
+                    -- Consumo anual: saídas nos últimos 365 dias (a partir de abr/2026)
+                    ISNULL(SUM(CASE WHEN k.DT >= DATEADD(DAY, -365, GETDATE()) AND k.DT >= '${DATA_CORTE}' THEN ABS(k.QNT) ELSE 0 END) / 365.0 * 12, 0) AS CONSUMO_ANUAL
                 FROM [dbo].[KARDEX_2026] k
                 WHERE k.OPERACAO = 'SAÍDA'
-                    -- AND k.D_E_L_E_T_ <> '*'
                     AND k.USUARIO <> 'BEATRIZ JULHAO'
+                    AND k.DT >= '${DATA_CORTE}'
                 GROUP BY k.CODIGO
             )
             SELECT 
