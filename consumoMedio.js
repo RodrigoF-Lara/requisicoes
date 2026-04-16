@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let dadosRelatorio = [];
     let totalizadores = {};
+    let sortColuna = null;
+    let sortDirecao = 'asc';
 
     // Define período padrão (mês atual)
     const hoje = new Date();
@@ -103,31 +105,73 @@ document.addEventListener('DOMContentLoaded', function() {
             `${meses[parseInt(mes) - 1]}/${ano}`;
     }
 
+    // Mapeamento: índice da coluna → campo no objeto de dados (null = não ordenável)
+    const colunasOrdenacao = [
+        null,                        // #
+        'CODIGO',                    // Código
+        'SALDO_ATUAL',               // Saldo Atual
+        'DESCRICAO',                 // Descrição
+        'PRECO_UNITARIO',            // Preço Unit.
+        '_VALOR_TOTAL',              // Valor Total (calculado)
+        'FORNECEDOR',                // Fornecedor
+        'CONSUMO_MEDIO_1MES',        // Consumo 1 Mês
+        'CONSUMO_MEDIO_BIMESTRAL',   // Consumo Bimestral
+        'CONSUMO_MEDIO_SEMESTRAL',   // Consumo Semestral
+        'CONSUMO_MEDIO_ANUAL'        // Consumo Anual
+    ];
+
+    function getDadosOrdenados() {
+        if (!sortColuna) return dadosRelatorio;
+        return [...dadosRelatorio].sort((a, b) => {
+            let va = sortColuna === '_VALOR_TOTAL' ? (a.SALDO_ATUAL || 0) * (a.PRECO_UNITARIO || 0) : (a[sortColuna] ?? '');
+            let vb = sortColuna === '_VALOR_TOTAL' ? (b.SALDO_ATUAL || 0) * (b.PRECO_UNITARIO || 0) : (b[sortColuna] ?? '');
+            if (typeof va === 'string') va = va.toLowerCase();
+            if (typeof vb === 'string') vb = vb.toLowerCase();
+            if (va < vb) return sortDirecao === 'asc' ? -1 : 1;
+            if (va > vb) return sortDirecao === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
+
+    function iconeSort(campo) {
+        if (sortColuna !== campo) return '<i class="fa fa-sort" style="opacity:.35;margin-left:4px;"></i>';
+        return sortDirecao === 'asc'
+            ? '<i class="fa fa-sort-up" style="margin-left:4px;"></i>'
+            : '<i class="fa fa-sort-down" style="margin-left:4px;"></i>';
+    }
+
     function renderizarTabela() {
         if (dadosRelatorio.length === 0) {
             tabelaRelatorio.innerHTML = '<p class="info-message">Nenhum registro encontrado para o período selecionado.</p>';
             return;
         }
 
+        const dados = getDadosOrdenados();
+
+        const cabecalhos = [
+            { label: '#',                        campo: null },
+            { label: 'Código',                   campo: 'CODIGO' },
+            { label: 'Saldo Atual',              campo: 'SALDO_ATUAL' },
+            { label: 'Descrição',                campo: 'DESCRICAO' },
+            { label: 'Preço Unit. Últ. NF',      campo: 'PRECO_UNITARIO' },
+            { label: 'Valor Total Estoque',      campo: '_VALOR_TOTAL' },
+            { label: 'Fornecedor',               campo: 'FORNECEDOR' },
+            { label: 'Consumo Médio 1 Mês',      campo: 'CONSUMO_MEDIO_1MES' },
+            { label: 'Consumo Médio Bimestral',  campo: 'CONSUMO_MEDIO_BIMESTRAL' },
+            { label: 'Consumo Médio Semestral',  campo: 'CONSUMO_MEDIO_SEMESTRAL' },
+            { label: 'Consumo Médio Anual',      campo: 'CONSUMO_MEDIO_ANUAL' },
+        ];
+
+        const thsHtml = cabecalhos.map(col => {
+            if (!col.campo) return `<th>#</th>`;
+            return `<th style="cursor:pointer;white-space:nowrap;" data-campo="${col.campo}">${col.label}${iconeSort(col.campo)}</th>`;
+        }).join('');
+
         const html = `
             <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Código</th>
-                        <th>Saldo Atual</th>
-                        <th>Descrição</th>
-                        <th>Preço Unit. Últ. NF</th>
-                        <th>Valor Total Estoque</th>
-                        <th>Fornecedor</th>
-                        <th>Consumo Médio 1 Mês</th>
-                        <th>Consumo Médio Bimestral</th>
-                        <th>Consumo Médio Semestral</th>
-                        <th>Consumo Médio Anual</th>
-                    </tr>
-                </thead>
+                <thead><tr>${thsHtml}</tr></thead>
                 <tbody>
-                    ${dadosRelatorio.map((item, index) => {
+                    ${dados.map((item, index) => {
                         const valorTotal = (item.SALDO_ATUAL || 0) * (item.PRECO_UNITARIO || 0);
                         return `
                         <tr>
@@ -142,8 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <td>${(item.CONSUMO_MEDIO_BIMESTRAL || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             <td>${(item.CONSUMO_MEDIO_SEMESTRAL || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             <td>${(item.CONSUMO_MEDIO_ANUAL || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        </tr>
-                    `;
+                        </tr>`;
                     }).join('')}
                 </tbody>
                 <tfoot>
@@ -156,6 +199,20 @@ document.addEventListener('DOMContentLoaded', function() {
             </table>
         `;
         tabelaRelatorio.innerHTML = html;
+
+        // Eventos de ordenação nos cabeçalhos
+        tabelaRelatorio.querySelectorAll('th[data-campo]').forEach(th => {
+            th.addEventListener('click', () => {
+                const campo = th.dataset.campo;
+                if (sortColuna === campo) {
+                    sortDirecao = sortDirecao === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortColuna = campo;
+                    sortDirecao = 'asc';
+                }
+                renderizarTabela();
+            });
+        });
     }
 
     function imprimirRelatorio() {
