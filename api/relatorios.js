@@ -22,6 +22,8 @@ export default async function handler(req, res) {
             return await relatorioBaixaPorPeriodo(req, res);
         } else if (acao === 'consumoMedio') {
             return await gerarRelatorioConsumo(req, res);
+        } else if (acao === 'movimentacoesProduto') {
+            return await movimentacoesProduto(req, res);
         }
         return res.status(400).json({ message: "Ação não reconhecida" });
     }
@@ -287,5 +289,48 @@ async function gerarRelatorioConsumo(req, res) {
         return res.status(500).json({ 
             message: `Erro ao gerar relatório: ${error.message}` 
         });
+    }
+}
+
+async function movimentacoesProduto(req, res) {
+    try {
+        const { codigo, janela } = req.query;
+        if (!codigo) return res.status(400).json({ message: 'Código é obrigatório' });
+
+        const janelaDias = parseInt(janela) || 30;
+        const DATA_CORTE = '2026-04-01';
+
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input('CODIGO', sql.VarChar(20), codigo)
+            .input('JANELA', sql.Int, janelaDias)
+            .input('DATA_CORTE', sql.Date, new Date(DATA_CORTE))
+            .query(`
+                SELECT
+                    ID,
+                    DT,
+                    CONVERT(VARCHAR(8), HR, 108) AS HR,
+                    OPERACAO,
+                    QNT,
+                    USUARIO,
+                    MOTIVO
+                FROM [dbo].[KARDEX_2026]
+                WHERE CODIGO = @CODIGO
+                    AND OPERACAO = 'SAÍDA'
+                    AND USUARIO <> 'BEATRIZ JULHAO'
+                    AND DT >= @DATA_CORTE
+                    AND DT >= DATEADD(DAY, -@JANELA, GETDATE())
+                ORDER BY DT DESC, HR DESC
+            `);
+
+        const totalSaidas = result.recordset.reduce((acc, m) => acc + Math.abs(m.QNT || 0), 0);
+
+        return res.status(200).json({
+            movimentacoes: result.recordset,
+            totalSaidas
+        });
+    } catch (error) {
+        console.error('❌ Erro ao buscar movimentações:', error);
+        return res.status(500).json({ message: `Erro: ${error.message}` });
     }
 }
