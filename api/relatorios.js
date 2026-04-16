@@ -304,7 +304,6 @@ async function movimentacoesProduto(req, res) {
         const result = await pool.request()
             .input('CODIGO', sql.VarChar(20), codigo)
             .input('JANELA', sql.Int, janelaDias)
-            .input('DATA_CORTE', sql.Date, new Date(DATA_CORTE))
             .query(`
                 SELECT
                     ID,
@@ -318,7 +317,7 @@ async function movimentacoesProduto(req, res) {
                 WHERE CODIGO = @CODIGO
                     AND OPERACAO = 'SAÍDA'
                     AND USUARIO <> 'BEATRIZ JULHAO'
-                    AND DT >= @DATA_CORTE
+                    AND DT >= '2026-04-01'
                     AND DT >= DATEADD(DAY, -@JANELA, GETDATE())
                 ORDER BY DT DESC, HR DESC
             `);

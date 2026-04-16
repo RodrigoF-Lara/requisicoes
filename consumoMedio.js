@@ -279,17 +279,22 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const divisor = janelaDias;
-            const consumoMedio = totalSaidas / divisor;
+            const taxaDiaria = totalSaidas / divisor;
+            const projecaoMensal = taxaDiaria * 30;
 
             corpo.innerHTML = `
                 <div style="display:flex; gap:16px; margin-bottom:16px; flex-wrap:wrap;">
                     <div style="background:#e3f2fd; border-radius:8px; padding:12px 20px; text-align:center;">
-                        <div style="font-size:11px; color:#555; font-weight:600;">TOTAL SAÍDAS</div>
+                        <div style="font-size:11px; color:#555; font-weight:600;">TOTAL SAÍDAS (JANELA)</div>
                         <div style="font-size:22px; font-weight:700; color:#1565c0;">${totalSaidas.toLocaleString('pt-BR')}</div>
                     </div>
                     <div style="background:#e8f5e9; border-radius:8px; padding:12px 20px; text-align:center;">
-                        <div style="font-size:11px; color:#555; font-weight:600;">CONSUMO MÉDIO / MÊS</div>
-                        <div style="font-size:22px; font-weight:700; color:#2e7d32;">${consumoMedio.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+                        <div style="font-size:11px; color:#555; font-weight:600;">MÉDIA DIÁRIA</div>
+                        <div style="font-size:22px; font-weight:700; color:#2e7d32;">${taxaDiaria.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+                    </div>
+                    <div style="background:#fff8e1; border-radius:8px; padding:12px 20px; text-align:center;">
+                        <div style="font-size:11px; color:#555; font-weight:600;">PROJEÇÃO MENSAL (30 dias)</div>
+                        <div style="font-size:22px; font-weight:700; color:#e65100;">${projecaoMensal.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
                     </div>
                     <div style="background:#f3e5f5; border-radius:8px; padding:12px 20px; text-align:center;">
                         <div style="font-size:11px; color:#555; font-weight:600;">Nº MOVIMENTAÇÕES</div>
